@@ -1,0 +1,2039 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Your Labour Market | Jobs</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Poppins',sans-serif;
+        }
+
+        html{
+            scroll-behavior:smooth;
+            overflow-x:hidden;
+        }
+
+        body{
+            background:linear-gradient(
+                135deg,
+                #031633,
+                #05285a,
+                #0b5ed7,
+                #04162c
+            );
+            color:white;
+            min-height:100vh;
+        }
+
+        body::before{
+            content:"";
+            position:fixed;
+            width:450px;
+            height:450px;
+            top:-200px;
+            right:-200px;
+            background:#0d6efd;
+            filter:blur(170px);
+            opacity:.18;
+            z-index:-1;
+        }
+
+        body::after{
+            content:"";
+            position:fixed;
+            width:420px;
+            height:420px;
+            bottom:-200px;
+            left:-200px;
+            background:#4da3ff;
+            filter:blur(170px);
+            opacity:.15;
+            z-index:-1;
+        }
+
+        /*=========================
+        NAVBAR
+        =========================*/
+
+        .navbar{
+            background:rgba(7,14,30,.88);
+            backdrop-filter:blur(20px);
+            border-bottom:1px solid rgba(255,255,255,.08);
+        }
+
+        .navbar-brand img{
+            height:70px;
+        }
+
+        .search-box{
+            width:320px;
+            background:#132847;
+            border:none;
+            color:#fff;
+            border-radius:30px;
+            padding:12px 20px;
+        }
+
+        .search-box:focus{
+            outline:none;
+            box-shadow:none;
+            background:#18355d;
+            color:#fff;
+        }
+
+        .nav-link{
+            color:white!important;
+            font-weight:600;
+            transition:.3s;
+            margin-left:12px;
+        }
+
+        .nav-link:hover{
+            color:#4da3ff!important;
+        }
+
+        .active-page{
+            color:#4da3ff!important;
+        }
+
+        .profile-img{
+            width:45px;
+            height:45px;
+            border-radius:50%;
+            object-fit:cover;
+            border:2px solid #4da3ff;
+        }
+
+        .btn-post{
+            background:#0d6efd;
+            border:none;
+            color:white;
+            border-radius:30px;
+            padding:10px 22px;
+            font-weight:600;
+            transition:.3s;
+        }
+
+        .btn-post:hover{
+            background:#3d8bfd;
+        }
+
+        /*=========================
+        MAIN CONTENT
+        =========================*/
+
+        .main-container{
+            max-width:1000px;
+            margin:auto;
+            padding:25px 15px;
+        }
+
+        .post-box{
+            background:rgba(255,255,255,.06);
+            border-radius:20px;
+            padding:25px;
+            backdrop-filter:blur(15px);
+            border:1px solid rgba(255,255,255,.08);
+            margin-bottom:25px;
+        }
+
+        .job-image{
+            width:100%;
+            max-height:430px;
+            object-fit:cover;
+            border-radius:18px;
+        }
+
+        .notif-badge{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            min-width:18px;
+            height:18px;
+            background:#dc3545;
+            color:white;
+            border-radius:20px;
+            font-size:.7rem;
+            padding:0 5px;
+            margin-left:4px;
+        }
+
+        /*=========================
+        SEE MORE BUTTON
+        =========================*/
+
+        .see-more-wrap{
+            text-align:center;
+            margin:10px 0 30px;
+        }
+
+        .btn-see-more{
+            background:rgba(255,255,255,.08);
+            border:1px solid rgba(255,255,255,.18);
+            color:#fff;
+            border-radius:30px;
+            padding:12px 30px;
+            font-weight:600;
+            transition:.3s;
+        }
+
+        .btn-see-more:hover{
+            background:#0d6efd;
+            border-color:#0d6efd;
+        }
+
+        /*=========================
+        MODAL SCROLL FIX
+        =========================*/
+
+        .modal-content{
+            background:#0b1b36;
+            color:#fff;
+            border:1px solid rgba(255,255,255,.1);
+        }
+
+        /* Force the dialog to a fixed viewport-relative height so the body
+           (not the whole modal) is what scrolls. Header and footer stay
+           pinned in view at all times, on any screen size. */
+
+        #jobModal .modal-dialog,
+        #chatModal .modal-dialog{
+            height:90vh;
+            max-height:90vh;
+            display:flex;
+            align-items:center;
+        }
+
+        #jobModal .modal-content,
+        #chatModal .modal-content{
+            max-height:90vh;
+            height:90vh;
+            display:flex;
+            flex-direction:column;
+            overflow:hidden;
+        }
+
+        #jobModal #jobForm{
+            display:flex;
+            flex-direction:column;
+            height:100%;
+            min-height:0;
+            overflow:hidden;
+        }
+
+        #jobModal .modal-header,
+        #chatModal .modal-header,
+        #jobModal .modal-top-actions,
+        #jobModal .modal-footer,
+        #chatModal .modal-footer{
+            flex:0 0 auto;
+        }
+
+        #jobModal .modal-body,
+        #chatModal .modal-body{
+            flex:1 1 auto;
+            min-height:0;
+            overflow-y:auto;
+            -webkit-overflow-scrolling:touch;
+        }
+
+        .modal-top-actions{
+            display:flex;
+            justify-content:flex-end;
+            gap:10px;
+            padding:14px 20px;
+            border-bottom:1px solid rgba(255,255,255,.1);
+            background:rgba(255,255,255,.03);
+        }
+
+        .modal-footer{
+            border-top:1px solid rgba(255,255,255,.1);
+        }
+
+        .modal-header{
+            border-bottom:1px solid rgba(255,255,255,.1);
+        }
+
+        .form-control,
+        .form-select{
+            background:#132847;
+            border:1px solid rgba(255,255,255,.1);
+            color:#fff;
+        }
+
+        .form-control:focus,
+        .form-select:focus{
+            background:#18355d;
+            color:#fff;
+            border-color:#0d6efd;
+            box-shadow:none;
+        }
+
+        .form-label{
+            color:#cfe0ff;
+        }
+
+        /*=========================
+        BACK TO TOP
+        =========================*/
+
+        .back-to-top{
+            position:fixed;
+            right:25px;
+            bottom:25px;
+            width:48px;
+            height:48px;
+            border-radius:50%;
+            background:#0d6efd;
+            color:#fff;
+            border:none;
+            font-size:1.2rem;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            box-shadow:0 6px 18px rgba(0,0,0,.35);
+            opacity:0;
+            visibility:hidden;
+            transform:translateY(15px);
+            transition:.3s;
+            z-index:1050;
+        }
+
+        .back-to-top.show{
+            opacity:1;
+            visibility:visible;
+            transform:translateY(0);
+        }
+
+        .back-to-top:hover{
+            background:#3d8bfd;
+        }
+
+        /*=========================
+        FOOTER
+        =========================*/
+
+        .site-footer{
+            background:#000;
+            color:#cfd6e3;
+            padding:50px 15px 20px;
+            margin-top:40px;
+            border-top:1px solid rgba(255,255,255,.08);
+        }
+
+        .site-footer .footer-inner{
+            max-width:1100px;
+            margin:0 auto;
+        }
+
+        .site-footer h5{
+            color:#fff;
+            font-weight:700;
+            margin-bottom:16px;
+        }
+
+        .site-footer a{
+            color:#cfd6e3;
+            text-decoration:none;
+            display:block;
+            margin-bottom:10px;
+            transition:.3s;
+        }
+
+        .site-footer a:hover{
+            color:#4da3ff;
+        }
+
+        .site-footer .footer-social a{
+            display:inline-flex;
+            width:38px;
+            height:38px;
+            align-items:center;
+            justify-content:center;
+            background:rgba(255,255,255,.08);
+            border-radius:50%;
+            margin-right:10px;
+            margin-bottom:0;
+        }
+
+        .site-footer .footer-bottom{
+            border-top:1px solid rgba(255,255,255,.08);
+            margin-top:30px;
+            padding-top:20px;
+            text-align:center;
+            font-size:.85rem;
+            color:#8a93a6;
+        }
+
+        @media(max-width:992px){
+
+            .search-box{
+                width:100%;
+                margin:15px 0;
+            }
+
+            .navbar-brand img{
+                height:55px;
+            }
+
+            .main-container{
+                padding:15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<!--=========================
+TOP NAVBAR
+==========================-->
+
+<nav class="navbar navbar-expand-lg sticky-top">
+
+<div class="container-fluid px-4">
+
+<a class="navbar-brand" href="index.html">
+<img src="images/LIGHT MARKET.png" alt="logo">
+</a>
+
+<input
+type="search"
+class="search-box d-none d-lg-block"
+id="searchInputDesktop"
+placeholder="Search jobs, companies...">
+
+<button
+class="navbar-toggler"
+data-bs-toggle="collapse"
+data-bs-target="#menu">
+
+<span class="navbar-toggler-icon"></span>
+
+</button>
+
+<div class="collapse navbar-collapse" id="menu">
+
+<input
+type="search"
+class="search-box d-lg-none"
+id="searchInputMobile"
+placeholder="Search jobs, companies...">
+
+<ul class="navbar-nav mx-auto">
+
+<li class="nav-item">
+<a class="nav-link" href="/home.html">
+<i class="bi bi-house-fill"></i>
+Home
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link active-page" href="#">
+<i class="bi bi-briefcase-fill"></i>
+Jobs
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#jobModal">
+<i class="bi bi-plus-circle-fill"></i>
+Post Job
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#">
+<i class="bi bi-chat-dots-fill"></i>
+Messages
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#">
+<i class="bi bi-bell-fill"></i>
+Notifications
+<span id="notifBadge" class="notif-badge d-none">0</span>
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#">
+<i class="bi bi-person-fill"></i>
+Profile
+</a>
+</li>
+
+<li class="nav-item">
+<a class="nav-link" href="#">
+<i class="bi bi-gear-fill"></i>
+Settings
+</a>
+</li>
+
+</ul>
+
+<img
+id="navAvatar"
+class="profile-img"
+src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
+alt="Profile">
+
+</div>
+
+</div>
+
+</nav>
+
+<!--=========================
+MAIN PAGE
+==========================-->
+
+<div class="main-container">
+
+<!-- =========================
+POST JOB SECTION
+========================= -->
+
+<div class="post-box mb-4">
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+        <div class="d-flex align-items-center gap-3">
+
+            <div style="
+                width:55px;
+                height:55px;
+                border-radius:50%;
+                background:#0d6efd;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-size:1.5rem;">
+
+                <i class="bi bi-briefcase-fill"></i>
+
+            </div>
+
+            <div>
+
+                <h4 class="mb-1">
+                    Post a Job
+                </h4>
+
+                <small class="text-secondary">
+                    Reach thousands of job seekers across Nigeria.
+                </small>
+
+            </div>
+
+        </div>
+
+        <button
+            class="btn-post"
+            data-bs-toggle="modal"
+            data-bs-target="#jobModal">
+
+            <i class="bi bi-plus-circle-fill"></i>
+
+            Post Job
+
+        </button>
+
+    </div>
+
+</div>
+
+<!-- =========================
+JOB FEED
+========================= -->
+
+<div id="jobFeed">
+
+<!-- =========================
+JOB 1
+========================= -->
+
+<div
+class="post-box mb-4"
+data-job-id="sample-1"
+data-title="Frontend Developer Needed"
+data-company="AK Tech Solutions">
+
+<div class="d-flex align-items-center mb-3">
+
+<img
+src="https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg"
+class="profile-img me-3">
+
+<div>
+
+<h5 class="mb-0">
+AK Tech Solutions
+</h5>
+
+<small class="text-secondary">
+
+2 hours ago • Uyo, Akwa Ibom
+
+</small>
+
+</div>
+
+</div>
+
+<p>
+
+🚀 <strong>Frontend Developer Needed</strong>
+
+<br><br>
+
+We are looking for a skilled
+
+HTML,
+
+CSS,
+
+Bootstrap,
+
+JavaScript Developer.
+
+<br><br>
+
+Salary:
+<strong>₦250,000/month</strong>
+
+</p>
+
+<img
+class="job-image mb-3"
+src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg">
+
+<div class="d-flex flex-wrap gap-2 justify-content-between">
+
+<button class="btn btn-outline-light btn-like">
+❤️
+<span class="like-count">
+Like
+</span>
+</button>
+
+<button class="btn btn-outline-light btn-comment">
+💬
+<span class="comment-count">
+Comment
+</span>
+</button>
+
+<button class="btn btn-outline-light btn-save">
+
+<i class="bi bi-bookmark"></i>
+
+Save
+
+</button>
+
+<button class="btn btn-success btn-apply">
+
+Apply Now
+
+</button>
+
+<button class="btn btn-primary btn-chat">
+
+Chat Recruiter
+
+</button>
+
+</div>
+
+</div>
+
+<!-- =========================
+JOB 2
+========================= -->
+
+<div
+class="post-box mb-4"
+data-job-id="sample-2"
+data-title="Civil Engineer Wanted"
+data-company="Ibom Engineering Ltd">
+
+<div class="d-flex align-items-center mb-3">
+
+<img
+src="https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg"
+class="profile-img me-3">
+
+<div>
+
+<h5 class="mb-0">
+
+Ibom Engineering Ltd
+
+</h5>
+
+<small class="text-secondary">
+
+Today • Eket
+
+</small>
+
+</div>
+
+</div>
+
+<p>
+
+📢 <strong>Civil Engineer Wanted</strong>
+
+<br><br>
+
+Minimum Qualification:
+
+B.Eng Civil Engineering
+
+<br>
+
+3 Years Experience
+
+<br>
+
+Accommodation Available
+
+<br>
+
+Salary Negotiable.
+
+</p>
+
+<img
+class="job-image mb-3"
+src="https://images.pexels.com/photos/1216589/pexels-photo-1216589.jpeg">
+
+<div class="d-flex flex-wrap gap-2 justify-content-between">
+
+<button class="btn btn-outline-light btn-like">
+
+❤️
+
+<span class="like-count">
+
+92
+
+</span>
+
+</button>
+
+<button class="btn btn-outline-light btn-comment">
+
+💬
+
+<span class="comment-count">
+
+16
+
+</span>
+
+</button>
+
+<button class="btn btn-outline-light btn-save">
+
+<i class="bi bi-bookmark"></i>
+
+Save
+
+</button>
+
+<button class="btn btn-success btn-apply">
+
+Apply Now
+
+</button>
+
+<button class="btn btn-primary btn-chat">
+
+Chat Recruiter
+
+</button>
+
+</div>
+
+</div>
+
+<!-- =========================
+JOB 3
+========================= -->
+
+<div
+class="post-box mb-4"
+data-job-id="sample-3"
+data-title="Registered Nurse"
+data-company="Grace Specialist Hospital">
+
+<div class="d-flex align-items-center mb-3">
+
+<img
+src="https://images.pexels.com/photos/5452201/pexels-photo-5452201.jpeg"
+class="profile-img me-3"
+alt="Grace Specialist Hospital">
+
+<div>
+
+<h5 class="mb-0">
+Grace Specialist Hospital
+</h5>
+
+<small class="text-secondary">
+Yesterday • Uyo, Akwa Ibom
+</small>
+
+</div>
+
+</div>
+
+<p>
+
+🏥 <strong>Registered Nurse Needed</strong>
+
+<br><br>
+
+Grace Specialist Hospital is hiring qualified Registered Nurses.
+
+<br><br>
+
+<strong>Requirements</strong>
+
+<ul class="mb-3">
+<li>Registered Nurse (RN) Certificate</li>
+<li>Current practicing licence</li>
+<li>Minimum of 2 years experience</li>
+<li>Good communication skills</li>
+</ul>
+
+<strong>Salary:</strong> ₦180,000 - ₦250,000/month
+
+</p>
+
+<img
+class="job-image mb-3"
+src="https://images.pexels.com/photos/7089401/pexels-photo-7089401.jpeg"
+alt="Hospital">
+
+<div class="d-flex flex-wrap gap-2 justify-content-between">
+
+<button class="btn btn-outline-light btn-like">
+❤️
+<span class="like-count">68</span>
+</button>
+
+<button class="btn btn-outline-light btn-comment">
+💬
+<span class="comment-count">12</span>
+</button>
+
+<button class="btn btn-outline-light btn-save">
+<i class="bi bi-bookmark"></i>
+Save
+</button>
+
+<button class="btn btn-success btn-apply">
+Apply Now
+</button>
+
+<button class="btn btn-primary btn-chat">
+Chat Recruiter
+</button>
+
+</div>
+
+</div>
+
+<!-- =========================
+JOB 4
+========================= -->
+
+<div
+class="post-box mb-4"
+data-job-id="sample-4"
+data-title="Mathematics Teacher"
+data-company="Bright Future International School">
+
+<div class="d-flex align-items-center mb-3">
+
+<img
+src="https://images.pexels.com/photos/5212345/pexels-photo-5212345.jpeg"
+class="profile-img me-3"
+alt="Bright Future International School">
+
+<div>
+
+<h5 class="mb-0">
+Bright Future International School
+</h5>
+
+<small class="text-secondary">
+3 days ago • Ikot Ekpene
+</small>
+
+</div>
+
+</div>
+
+<p>
+
+📚 <strong>Mathematics Teacher Wanted</strong>
+
+<br><br>
+
+Bright Future International School is looking for a passionate Mathematics Teacher for Senior Secondary classes.
+
+<br><br>
+
+<strong>Requirements</strong>
+
+<ul class="mb-3">
+<li>B.Ed, B.Sc (Education) or equivalent</li>
+<li>Minimum of 2 years teaching experience</li>
+<li>Excellent classroom management</li>
+<li>Ability to prepare students for WAEC and NECO</li>
+</ul>
+
+<strong>Salary:</strong> ₦150,000 - ₦220,000/month
+
+</p>
+
+<img
+class="job-image mb-3"
+src="https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg"
+alt="Teaching">
+
+<div class="d-flex flex-wrap gap-2 justify-content-between">
+
+<button class="btn btn-outline-light btn-like">
+❤️
+<span class="like-count">44</span>
+</button>
+
+<button class="btn btn-outline-light btn-comment">
+💬
+<span class="comment-count">8</span>
+</button>
+
+<button class="btn btn-outline-light btn-save">
+<i class="bi bi-bookmark"></i>
+Save
+</button>
+
+<button class="btn btn-success btn-apply">
+Apply Now
+</button>
+
+<button class="btn btn-primary btn-chat">
+Chat Recruiter
+</button>
+
+</div>
+
+</div>
+
+<!-- =========================
+NO JOBS FOUND
+========================= -->
+
+<div
+id="noJobsMessage"
+class="post-box text-center d-none">
+
+<i class="bi bi-search display-1 text-secondary"></i>
+
+<h3 class="mt-3">
+No Jobs Found
+</h3>
+
+<p class="text-secondary">
+Try another keyword or check back later for new opportunities.
+</p>
+
+</div>
+
+</div>
+<!-- END OF JOB FEED -->
+
+<!-- =========================
+SEE MORE BUTTON
+========================= -->
+
+<div id="seeMoreWrap" class="see-more-wrap d-none">
+    <button id="seeMoreBtn" class="btn-see-more">
+        See More <i class="bi bi-chevron-down"></i>
+    </button>
+</div>
+
+</div>
+<!-- END OF MAIN CONTAINER -->
+
+<!-- =====================
+SAVED JOBS
+===================== -->
+
+<div id="view-saved" class="app-view d-none">
+
+    <div class="post-box">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h3>
+                <i class="bi bi-bookmark-fill text-warning"></i>
+                Saved Jobs
+            </h3>
+
+            <span
+                id="savedCount"
+                class="badge bg-primary">
+
+                0
+
+            </span>
+
+        </div>
+
+        <div id="savedJobsList">
+
+            <div
+                id="emptySavedJobs"
+                class="text-center py-5 text-secondary">
+
+                <i class="bi bi-bookmark display-3"></i>
+
+                <h5 class="mt-3">
+                    No Saved Jobs
+                </h5>
+
+                <p>
+                    Jobs you save will appear here.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =====================
+APPLICATIONS
+===================== -->
+
+<div
+id="view-applications"
+class="app-view d-none">
+
+<div class="post-box">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<h3>
+
+<i class="bi bi-file-earmark-person-fill text-success"></i>
+
+Applications
+
+</h3>
+
+<span
+id="applicationsCount"
+class="badge bg-success">
+
+0
+
+</span>
+
+</div>
+
+<div id="applicationsList">
+
+<div
+id="emptyApplications"
+class="text-center py-5 text-secondary">
+
+<i class="bi bi-send display-3"></i>
+
+<h5 class="mt-3">
+
+No Applications Yet
+
+</h5>
+
+<p>
+
+Jobs you apply for will appear here.
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- =====================
+MESSAGES
+===================== -->
+
+<div id="view-messages" class="app-view d-none">
+
+    <div class="post-box">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h3>
+                <i class="bi bi-chat-dots-fill text-info"></i>
+                Messages
+            </h3>
+
+            <span id="messagesCount" class="badge bg-info">
+                0
+            </span>
+
+        </div>
+
+        <div id="messagesList">
+
+            <div id="emptyMessages"
+                class="text-center py-5 text-secondary">
+
+                <i class="bi bi-chat-square-text display-3"></i>
+
+                <h5 class="mt-3">
+                    No Messages
+                </h5>
+
+                <p>
+                    Recruiter conversations will appear here.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =====================
+PROFILE
+===================== -->
+
+<div id="view-profile" class="app-view d-none">
+
+    <div class="post-box">
+
+        <h3 class="mb-4">
+            <i class="bi bi-person-circle text-primary"></i>
+            My Profile
+        </h3>
+
+        <form id="profileForm">
+
+            <div class="text-center mb-4">
+
+                <img
+                    id="profilePreview"
+                    src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
+                    class="profile-img"
+                    style="width:110px;height:110px;">
+
+            </div>
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Full Name
+                </label>
+
+                <input
+                    type="text"
+                    id="profileName"
+                    class="form-control">
+
+            </div>
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    Profession
+                </label>
+
+                <input
+                    type="text"
+                    id="profileProfession"
+                    class="form-control">
+
+            </div>
+
+            <div class="mb-3">
+
+                <label class="form-label">
+                    About Me
+                </label>
+
+                <textarea
+                    id="profileBio"
+                    class="form-control"
+                    rows="4"></textarea>
+
+            </div>
+
+            <button
+                type="submit"
+                class="btn-post">
+
+                Save Profile
+
+            </button>
+
+            <div
+                id="profileSavedMsg"
+                class="text-success small mt-3 d-none">
+
+                Profile updated successfully.
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- =====================
+SETTINGS
+===================== -->
+
+<div id="view-settings" class="app-view d-none">
+
+<div class="post-box">
+
+<h3 class="mb-4">
+
+<i class="bi bi-gear-fill text-warning"></i>
+
+Settings
+
+</h3>
+
+<form id="settingsForm">
+
+<div class="row">
+
+<div class="col-md-6 mb-3">
+
+<label class="form-label">
+
+Preferred Location
+
+</label>
+
+<input
+type="text"
+class="form-control"
+id="settingsLocation"
+placeholder="e.g. Uyo, Akwa Ibom">
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<label class="form-label">
+
+Minimum Salary
+
+</label>
+
+<input
+type="text"
+class="form-control"
+id="settingsSalary"
+placeholder="e.g. ₦150,000/month">
+
+</div>
+
+</div>
+
+<div class="mb-4">
+
+<label class="form-label">
+
+Work Type
+
+</label>
+
+<select
+class="form-select"
+id="settingsWorkType">
+
+<option value="any">
+Any
+</option>
+
+<option value="onsite">
+Onsite
+</option>
+
+<option value="hybrid">
+Hybrid
+</option>
+
+<option value="remote">
+Remote
+</option>
+
+</select>
+
+</div>
+
+<hr class="my-4">
+
+<h5 class="mb-3">
+
+Notifications
+
+</h5>
+
+<div class="form-check form-switch mb-2">
+
+<input
+class="form-check-input"
+type="checkbox"
+id="settingsNotifyMessages">
+
+<label
+class="form-check-label"
+for="settingsNotifyMessages">
+
+Notify me about new recruiter messages
+
+</label>
+
+</div>
+
+<div class="form-check form-switch mb-2">
+
+<input
+class="form-check-input"
+type="checkbox"
+id="settingsNotifyJobs">
+
+<label
+class="form-check-label"
+for="settingsNotifyJobs">
+
+Notify me about matching jobs
+
+</label>
+
+</div>
+
+<div class="form-check form-switch mb-4">
+
+<input
+class="form-check-input"
+type="checkbox"
+id="settingsNotifyApplications">
+
+<label
+class="form-check-label"
+for="settingsNotifyApplications">
+
+Notify me about application updates
+
+</label>
+
+</div>
+
+<hr class="my-4">
+
+<h5 class="mb-3">
+
+Privacy
+
+</h5>
+
+<div class="form-check form-switch mb-4">
+
+<input
+class="form-check-input"
+type="checkbox"
+id="settingsPublicProfile">
+
+<label
+class="form-check-label"
+for="settingsPublicProfile">
+
+Make my profile visible to recruiters
+
+</label>
+
+</div>
+
+<button
+type="submit"
+class="btn-post">
+
+Save Settings
+
+</button>
+
+<div
+id="settingsSavedMsg"
+class="text-success small mt-3 d-none">
+
+Settings saved successfully.
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+<!-- =======================
+NEW JOB MODAL
+======================= -->
+
+<div class="modal fade" id="jobModal" tabindex="-1" aria-labelledby="jobModalLabel" aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <form id="jobForm" novalidate>
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title" id="jobModalLabel">Post a Job</h5>
+
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+                        aria-label="Close"></button>
+
+                </div>
+
+                <div class="modal-top-actions">
+
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+
+                    <button type="submit" class="btn-post">Post Job</button>
+
+                </div>
+
+                <div class="modal-body">
+
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label" for="jobCompany">Company / Organisation name</label>
+
+                        <input type="text" class="form-control" id="jobCompany" required maxlength="80">
+
+                    </div>
+
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label" for="jobTitle">Job title</label>
+
+                        <input type="text" class="form-control" id="jobTitle" required maxlength="100">
+
+                    </div>
+
+
+
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label" for="jobLocation">Location</label>
+
+                            <input type="text" class="form-control" id="jobLocation" placeholder="e.g. Uyo, Akwa Ibom"
+
+                                maxlength="80">
+
+                        </div>
+
+
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label" for="jobSalary">Salary (optional)</label>
+
+                            <input type="text" class="form-control" id="jobSalary"
+
+                                placeholder="e.g. ₦200,000/month" maxlength="60">
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label" for="jobDescription">Description</label>
+
+                        <textarea class="form-control" id="jobDescription" rows="3" required
+
+                            maxlength="600"></textarea>
+
+                    </div>
+
+
+
+                    <div class="mb-1">
+
+                        <label class="form-label" for="jobImage">Image URL (optional)</label>
+
+                        <input type="url" class="form-control" id="jobImage"
+
+                            placeholder="https://example.com/photo.jpg">
+
+                    </div>
+
+
+
+                    <div id="jobFormError" class="text-danger small mt-2 d-none">
+
+                        Please fill in company, job title and description.
+
+                    </div>
+
+
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =======================
+CHAT MODAL
+======================= -->
+
+<div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalTitle" aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title" id="chatModalTitle">Chat</h5>
+
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+
+                    aria-label="Close"></button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div id="chatMessages" style="min-height:200px;"></div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <input type="text" id="chatInput" class="form-control" placeholder="Type a message...">
+
+                <button class="btn-post" id="chatSendBtn">Send</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =======================
+FOOTER
+======================= -->
+
+<footer class="site-footer">
+
+    <div class="footer-inner">
+
+        <div class="row gy-4">
+
+            <div class="col-6 col-md-3">
+                <h5>Your Labour Market</h5>
+                <p class="text-secondary small">Connecting job seekers with employers across Nigeria, one opportunity at a time.</p>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <h5>Company</h5>
+                <a href="#">About Us</a>
+                <a href="#">How It Works</a>
+                <a href="#">Careers</a>
+                <a href="#">Contact Us</a>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <h5>For Job Seekers</h5>
+                <a href="#">Browse Jobs</a>
+                <a href="#">Saved Jobs</a>
+                <a href="#">My Applications</a>
+                <a href="#">Career Advice</a>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <h5>For Employers</h5>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#jobModal">Post a Job</a>
+                <a href="#">Pricing</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+
+        </div>
+
+        <div class="footer-social mt-4">
+            <a href="#"><i class="bi bi-facebook"></i></a>
+            <a href="#"><i class="bi bi-twitter-x"></i></a>
+            <a href="#"><i class="bi bi-instagram"></i></a>
+            <a href="#"><i class="bi bi-linkedin"></i></a>
+        </div>
+
+        <div class="footer-bottom">
+            &copy; <span id="footerYear"></span> Your Labour Market. All rights reserved.
+        </div>
+
+    </div>
+
+</footer>
+
+<!-- =======================
+BACK TO TOP + AI ASSISTANT
+======================= -->
+
+<button id="backToTop" class="back-to-top" aria-label="Back to top">
+
+    <i class="bi bi-arrow-up"></i>
+
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ================= Pagination: show 10, then See More reveals 5 more each click ================= */
+    var jobFeed = document.getElementById('jobFeed');
+    var seeMoreWrap = document.getElementById('seeMoreWrap');
+    var seeMoreBtn = document.getElementById('seeMoreBtn');
+    var INITIAL_COUNT = 10;
+    var STEP_COUNT = 5;
+    var visibleCount = INITIAL_COUNT;
+
+    function getAllCards() {
+        return jobFeed ? Array.prototype.slice.call(jobFeed.querySelectorAll(':scope > .post-box:not(#noJobsMessage)')) : [];
+    }
+
+    function applyPagination() {
+        var cards = getAllCards();
+        cards.forEach(function (card, i) {
+            if (i < visibleCount) {
+                card.classList.remove('pagination-hidden');
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        if (seeMoreWrap) {
+            if (visibleCount < cards.length) {
+                seeMoreWrap.classList.remove('d-none');
+            } else {
+                seeMoreWrap.classList.add('d-none');
+            }
+        }
+    }
+
+    if (seeMoreBtn) {
+        seeMoreBtn.addEventListener('click', function () {
+            visibleCount += STEP_COUNT;
+            applyPagination();
+        });
+    }
+
+    /* ================= Footer year ================= */
+    var footerYear = document.getElementById('footerYear');
+    if (footerYear) footerYear.textContent = new Date().getFullYear();
+
+    /* ================= Search / filter (kept simple, respects pagination) ================= */
+    function filterJobs(query) {
+        var q = query.trim().toLowerCase();
+        var cards = getAllCards();
+        var anyVisible = false;
+
+        if (!q) {
+            // no filter: fall back to normal pagination
+            applyPagination();
+            var noJobsMsg = document.getElementById('noJobsMessage');
+            if (noJobsMsg) noJobsMsg.classList.add('d-none');
+            return;
+        }
+
+        cards.forEach(function (card) {
+            var haystack = ((card.dataset.title || '') + ' ' + (card.dataset.company || '') + ' ' + card.textContent).toLowerCase();
+            var match = haystack.indexOf(q) !== -1;
+            card.style.display = match ? '' : 'none';
+            if (match) anyVisible = true;
+        });
+
+        if (seeMoreWrap) seeMoreWrap.classList.add('d-none');
+
+        var noJobsMsg = document.getElementById('noJobsMessage');
+        if (noJobsMsg) noJobsMsg.classList.toggle('d-none', anyVisible);
+    }
+
+    var searchDesktop = document.getElementById('searchInputDesktop');
+    var searchMobile = document.getElementById('searchInputMobile');
+
+    function handleSearchInput(e) {
+        filterJobs(e.target.value);
+        if (searchDesktop && e.target !== searchDesktop) searchDesktop.value = e.target.value;
+        if (searchMobile && e.target !== searchMobile) searchMobile.value = e.target.value;
+    }
+    if (searchDesktop) searchDesktop.addEventListener('input', handleSearchInput);
+    if (searchMobile) searchMobile.addEventListener('input', handleSearchInput);
+
+    /* ================= Like / Save / Apply / Comment (delegated) ================= */
+    var savedJobs = {};
+    var appliedJobs = {};
+    var comments = {};
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
+    }
+
+    function ensureCommentsPanel(card) {
+        var panel = card.querySelector('.comments-panel');
+        if (panel) return panel;
+        panel = document.createElement('div');
+        panel.className = 'comments-panel mt-3';
+        panel.innerHTML =
+            '<div class="comments-list mb-3"></div>' +
+            '<div class="d-flex gap-2">' +
+            '<input type="text" class="form-control comment-input" placeholder="Write a comment...">' +
+            '<button class="btn-post comment-send">Send</button>' +
+            '</div>';
+        card.appendChild(panel);
+        renderComments(card);
+        return panel;
+    }
+
+    function renderComments(card) {
+        var id = card.dataset.jobId;
+        var list = card.querySelector('.comments-list');
+        var list_comments = comments[id] || [];
+        if (!list_comments.length) {
+            list.innerHTML = '<div class="text-secondary small">No comments yet. Be the first to comment.</div>';
+            return;
+        }
+        list.innerHTML = list_comments.map(function (c) {
+            return '<div class="mb-2 small"><strong>' + escapeHtml(c.author) + ':</strong> ' + escapeHtml(c.text) + '</div>';
+        }).join('');
+    }
+
+    function updateCommentCount(card) {
+        var id = card.dataset.jobId;
+        var count = (comments[id] || []).length;
+        var span = card.querySelector('.comment-count');
+        if (span && count > 0 && !isNaN(parseInt(span.textContent, 10))) span.textContent = count;
+        else if (span && count > 0) span.textContent = count;
+    }
+
+    if (jobFeed) {
+        jobFeed.addEventListener('click', function (e) {
+            var card = e.target.closest('.post-box');
+            if (!card) return;
+
+            var likeBtn = e.target.closest('.btn-like');
+            if (likeBtn) {
+                var countEl = likeBtn.querySelector('.like-count');
+                var count = parseInt(countEl.textContent, 10);
+                var wasLiked = likeBtn.classList.contains('liked');
+                if (isNaN(count)) { countEl.textContent = wasLiked ? 'Like' : '1'; likeBtn.classList.toggle('liked'); return; }
+                count += wasLiked ? -1 : 1;
+                likeBtn.classList.toggle('liked', !wasLiked);
+                countEl.textContent = count;
+                return;
+            }
+
+            var saveBtn = e.target.closest('.btn-save');
+            if (saveBtn) {
+                var id = card.dataset.jobId;
+                var isSaved = !!savedJobs[id];
+                if (isSaved) { delete savedJobs[id]; } else { savedJobs[id] = true; }
+                saveBtn.innerHTML = !isSaved
+                    ? '<i class="bi bi-bookmark-fill"></i> Saved'
+                    : '<i class="bi bi-bookmark"></i> Save';
+                return;
+            }
+
+            var applyBtn = e.target.closest('.btn-apply');
+            if (applyBtn) {
+                var jid = card.dataset.jobId;
+                var isApplied = !!appliedJobs[jid];
+                if (isApplied) { delete appliedJobs[jid]; } else { appliedJobs[jid] = true; }
+                applyBtn.textContent = !isApplied ? 'Applied ✓' : 'Apply Now';
+                return;
+            }
+
+            var chatBtn = e.target.closest('.btn-chat');
+            if (chatBtn) {
+                var chatModalTitle = document.getElementById('chatModalTitle');
+                var chatModalEl = document.getElementById('chatModal');
+                if (chatModalTitle) chatModalTitle.textContent = 'Chat with ' + (card.dataset.company || 'Recruiter');
+                if (chatModalEl && window.bootstrap) new bootstrap.Modal(chatModalEl).show();
+                return;
+            }
+
+            var commentBtn = e.target.closest('.btn-comment');
+            if (commentBtn) {
+                var panel = ensureCommentsPanel(card);
+                panel.classList.toggle('d-none');
+                if (!panel.classList.contains('d-none')) panel.querySelector('.comment-input').focus();
+                return;
+            }
+
+            var sendBtn = e.target.closest('.comment-send');
+            if (sendBtn) {
+                var input = card.querySelector('.comment-input');
+                var text = input.value.trim();
+                if (!text) return;
+                var cid = card.dataset.jobId;
+                if (!comments[cid]) comments[cid] = [];
+                comments[cid].push({ author: 'You', text: text });
+                input.value = '';
+                renderComments(card);
+                updateCommentCount(card);
+                return;
+            }
+        });
+
+        jobFeed.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && e.target.classList.contains('comment-input')) {
+                e.preventDefault();
+                var panel = e.target.closest('.comments-panel');
+                var sendBtn = panel && panel.querySelector('.comment-send');
+                if (sendBtn) sendBtn.click();
+            }
+        });
+    }
+
+    /* ================= New job posting via modal ================= */
+    var jobForm = document.getElementById('jobForm');
+    var jobFormError = document.getElementById('jobFormError');
+    var idCounter = 1;
+    function newId() { return 'job-' + Date.now() + '-' + (idCounter++); }
+
+    function buildJobCard(job) {
+        var card = document.createElement('div');
+        card.className = 'post-box mb-4';
+        card.dataset.jobId = job.id;
+        card.dataset.title = job.title;
+        card.dataset.company = job.company;
+
+        var salaryLine = job.salary ? ('<br><br>Salary: <strong>' + escapeHtml(job.salary) + '</strong>') : '';
+        var locationLine = job.location ? (' • ' + escapeHtml(job.location)) : '';
+        var descLine = job.description ? escapeHtml(job.description).replace(/\n/g, '<br>') : '';
+        var imageMarkup = job.image ? '<img class="job-image mb-3" src="' + job.image + '">' : '';
+
+        card.innerHTML =
+            '<div class="d-flex align-items-center mb-3">' +
+            '<img src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg" class="profile-img me-3">' +
+            '<div><h5 class="mb-0">' + escapeHtml(job.company) + '</h5>' +
+            '<small class="text-secondary">Just now' + locationLine + '</small></div></div>' +
+            '<p>📢 <strong>' + escapeHtml(job.title) + '</strong><br><br>' + descLine + salaryLine + '</p>' +
+            imageMarkup +
+            '<div class="d-flex flex-wrap gap-2 justify-content-between">' +
+            '<button class="btn btn-outline-light btn-like">❤️ <span class="like-count">Like</span></button>' +
+            '<button class="btn btn-outline-light btn-comment">💬 <span class="comment-count">Comment</span></button>' +
+            '<button class="btn btn-outline-light btn-save"><i class="bi bi-bookmark"></i> Save</button>' +
+            '<button class="btn btn-success btn-apply">Apply Now</button>' +
+            '<button class="btn btn-primary btn-chat">Chat Recruiter</button>' +
+            '</div>';
+        return card;
+    }
+
+    if (jobForm) {
+        jobForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            var company = document.getElementById('jobCompany').value.trim();
+            var title = document.getElementById('jobTitle').value.trim();
+            var location = document.getElementById('jobLocation').value.trim();
+            var salary = document.getElementById('jobSalary').value.trim();
+            var description = document.getElementById('jobDescription').value.trim();
+            var imageUrl = document.getElementById('jobImage').value.trim();
+
+            if (!company || !title || !description) {
+                jobFormError.classList.remove('d-none');
+                return;
+            }
+            jobFormError.classList.add('d-none');
+
+            var finalImage = imageUrl || '';
+
+            var job = {
+                id: newId(),
+                company: company,
+                title: title,
+                location: location,
+                salary: salary,
+                description: description,
+                image: finalImage
+            };
+
+            var card = buildJobCard(job);
+            jobFeed.prepend(card);
+            visibleCount += 1;
+            applyPagination();
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            jobForm.reset();
+            var jobModalEl = document.getElementById('jobModal');
+            if (jobModalEl && window.bootstrap) {
+                var instance = bootstrap.Modal.getInstance(jobModalEl) || new bootstrap.Modal(jobModalEl);
+                instance.hide();
+            }
+        });
+    }
+
+    var jobModalElRef = document.getElementById('jobModal');
+    if (jobModalElRef) {
+        jobModalElRef.addEventListener('hidden.bs.modal', function () {
+            if (jobForm) jobForm.reset();
+            if (jobFormError) jobFormError.classList.add('d-none');
+        });
+    }
+
+    /* ================= Chat send (demo only) ================= */
+    var chatMessagesEl = document.getElementById('chatMessages');
+    var chatInput = document.getElementById('chatInput');
+    var chatSendBtn = document.getElementById('chatSendBtn');
+
+    function appendChatMessage(from, text) {
+        if (!chatMessagesEl) return;
+        var isMe = from !== 'Recruiter';
+        var align = isMe ? 'text-end' : 'text-start';
+        var bg = isMe ? '#0d6efd' : '#132847';
+        var wrap = document.createElement('div');
+        wrap.className = 'mb-2 ' + align;
+        wrap.innerHTML = '<span style="display:inline-block;background:' + bg +
+            ';padding:8px 14px;border-radius:14px;max-width:80%;text-align:left;"><strong>' +
+            escapeHtml(from) + ':</strong> ' + escapeHtml(text) + '</span>';
+        chatMessagesEl.appendChild(wrap);
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    function sendChatMessage() {
+        if (!chatInput) return;
+        var text = chatInput.value.trim();
+        if (!text) return;
+        appendChatMessage('You', text);
+        chatInput.value = '';
+        setTimeout(function () {
+            appendChatMessage('Recruiter', "Thanks for reaching out — we'll review your message and get back to you soon.");
+        }, 900);
+    }
+    if (chatSendBtn) chatSendBtn.addEventListener('click', sendChatMessage);
+    if (chatInput) {
+        chatInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+        });
+    }
+
+    /* ================= Profile / Settings forms (local only) ================= */
+    var profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var msg = document.getElementById('profileSavedMsg');
+            if (msg) {
+                msg.classList.remove('d-none');
+                setTimeout(function () { msg.classList.add('d-none'); }, 2500);
+            }
+        });
+    }
+
+    var settingsForm = document.getElementById('settingsForm');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var msg = document.getElementById('settingsSavedMsg');
+            if (msg) {
+                msg.classList.remove('d-none');
+                setTimeout(function () { msg.classList.add('d-none'); }, 2500);
+            }
+        });
+    }
+
+    /* ================= Back to top ================= */
+    var backToTopBtn = document.getElementById('backToTop');
+    if (backToTopBtn) {
+        window.addEventListener('scroll', function () {
+            backToTopBtn.classList.toggle('show', window.scrollY > 300);
+        });
+        backToTopBtn.addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    /* ================= Boot ================= */
+    applyPagination();
+
+})();
+</script>
+
+</body>
+
+</html>
