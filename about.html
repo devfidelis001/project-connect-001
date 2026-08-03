@@ -1113,3 +1113,1119 @@
 </body>
 
 </html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Labour Market | About Us</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        html {
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: linear-gradient(135deg, #031633, #05285a, #0b5ed7, #04162c);
+            min-height: 100vh;
+            color: white;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            top: -200px;
+            right: -200px;
+            background: #0d6efd;
+            filter: blur(170px);
+            opacity: .18;
+            z-index: -1;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            bottom: -200px;
+            left: -200px;
+            background: #4da3ff;
+            filter: blur(170px);
+            opacity: .15;
+            z-index: -1;
+        }
+
+        .navbar {
+            background: rgba(7, 14, 30, .85);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .nav-link {
+            color: white !important;
+            font-weight: 600;
+            margin-left: 20px;
+            transition: .3s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: #4da3ff !important;
+        }
+
+        .profile-img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4da3ff;
+        }
+
+        .card-glass {
+            background: rgba(255, 255, 255, .06);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        section {
+            padding: 70px 0;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            background: rgba(13, 110, 253, .18);
+            color: #4da3ff;
+            font-weight: 600;
+            font-size: .78rem;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 30px;
+            margin-bottom: 18px;
+        }
+
+        h1, h2, h3 {
+            font-weight: 700;
+        }
+
+        .lead-text {
+            color: rgba(255, 255, 255, .75);
+            font-weight: 300;
+        }
+
+        .btn-primary-glow {
+            background: #0d6efd;
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            border: none;
+            transition: .3s;
+        }
+
+        .btn-primary-glow:hover {
+            background: #3d8bfd;
+            color: #fff;
+        }
+
+        .btn-outline-glow {
+            background: transparent;
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, .3);
+            transition: .3s;
+        }
+
+        .btn-outline-glow:hover {
+            background: rgba(255, 255, 255, .08);
+            color: #fff;
+        }
+
+        /* Hero */
+        .hero-shape {
+            width: 100%;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        /* Stats */
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-box .num {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #4da3ff;
+        }
+
+        .stat-box small {
+            color: rgba(255, 255, 255, .6);
+            font-weight: 500;
+        }
+
+        /* Value / feature cards */
+        .value-card {
+            height: 100%;
+            transition: .3s;
+        }
+
+        .value-card:hover {
+            transform: translateY(-6px);
+            border-color: #0d6efd;
+        }
+
+        .value-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            background: rgba(13, 110, 253, .2);
+            color: #4da3ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 16px;
+        }
+
+        /* Founder */
+        .founder-photo-wrap {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto;
+        }
+
+        .founder-photo {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #4da3ff;
+            background: #132847;
+        }
+
+        .founder-badge {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: #0d6efd;
+            color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #05285a;
+        }
+
+        .social-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            transition: .3s;
+        }
+
+        .social-circle:hover {
+            background: #0d6efd;
+            color: #fff;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            border-left: 2px solid rgba(255, 255, 255, .12);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 34px;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -37px;
+            top: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #0d6efd;
+            border: 3px solid #05285a;
+        }
+
+        .timeline-item .year {
+            color: #4da3ff;
+            font-weight: 700;
+            font-size: .85rem;
+            letter-spacing: .05em;
+        }
+
+        /* Testimonials */
+        .quote-mark {
+            font-size: 2.2rem;
+            color: #0d6efd;
+            line-height: 1;
+        }
+
+        /* FAQ */
+        .accordion-item {
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 14px !important;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .accordion-button {
+            background: transparent;
+            color: #fff;
+            font-weight: 600;
+            box-shadow: none !important;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background: rgba(13, 110, 253, .12);
+            color: #fff;
+        }
+
+        .accordion-button::after {
+            filter: invert(1);
+        }
+
+        .accordion-body {
+            color: rgba(255, 255, 255, .75);
+        }
+
+        /* Contact */
+        .contact-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .contact-row:last-child {
+            border-bottom: none;
+        }
+
+        .contact-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            background: rgba(13, 110, 253, .18);
+            color: #4da3ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.1rem;
+        }
+
+        .contact-row a {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .contact-row a:hover {
+            color: #4da3ff;
+        }
+
+        /* Feedback form */
+        .form-control,
+        .form-select {
+            background: #132847;
+            border: none;
+            color: white;
+            border-radius: 12px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: #18355d;
+            color: white;
+            box-shadow: none;
+            border: none;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, .4);
+        }
+
+        .form-label {
+            font-weight: 500;
+            font-size: .9rem;
+            color: rgba(255, 255, 255, .8);
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 6px;
+            font-size: 1.6rem;
+            cursor: pointer;
+        }
+
+        .star-rating i {
+            color: rgba(255, 255, 255, .25);
+            transition: .15s;
+        }
+
+        .star-rating i.active {
+            color: #ffc107;
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(3, 10, 26, .9);
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            padding: 60px 0 0;
+            margin-top: 40px;
+        }
+
+        footer h6 {
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        footer a {
+            color: rgba(255, 255, 255, .65);
+            text-decoration: none;
+            display: block;
+            margin-bottom: 10px;
+            transition: .2s;
+            font-size: .92rem;
+        }
+
+        footer a:hover {
+            color: #4da3ff;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            margin-top: 40px;
+            padding: 20px 0;
+            text-align: center;
+            color: rgba(255, 255, 255, .5);
+            font-size: .85rem;
+        }
+
+        .newsletter-input {
+            background: #132847;
+            border: none;
+            border-radius: 30px 0 0 30px;
+            color: #fff;
+            padding: 10px 16px;
+        }
+
+        .newsletter-input:focus {
+            outline: none;
+            background: #18355d;
+            color: #fff;
+        }
+
+        .newsletter-btn {
+            border-radius: 0 30px 30px 0;
+            background: #0d6efd;
+            border: none;
+            color: #fff;
+            padding: 0 20px;
+            font-weight: 600;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #132847;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, .15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            z-index: 1040;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: .25s;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            background: #18355d;
+        }
+
+        @media (max-width: 575.98px) {
+            section {
+                padding: 46px 0;
+            }
+
+            .navbar-brand img {
+                height: 46px !important;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- =======================
+    NAVBAR (same as home page)
+    ======================= -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="index.html">
+                <img src="images/LIGHT MARKET.png" style="height:70px;" alt="Your Labour Market logo">
+            </a>
+
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse justify-content-end" id="menu">
+                <ul class="navbar-nav align-items-lg-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html"><i class="bi bi-house-fill"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/jobs.html"><i class="bi bi-briefcase-fill"></i> Jobs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="about.html"><i class="bi bi-info-circle-fill"></i> About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact"><i class="bi bi-envelope-fill"></i> Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <img src="images/founder.jpg" onerror="this.src='https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg'"
+                            class="profile-img ms-lg-3 mt-3 mt-lg-0" alt="Your profile">
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- =======================
+    HERO
+    ======================= -->
+    <section class="pb-4">
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6">
+                    <span class="eyebrow">About Your Labour Market</span>
+                    <h1 class="display-5 mb-4">Connecting Nigeria's talent <br> with real opportunities.</h1>
+                    <p class="lead-text mb-4">
+                        Your Labour Market is a job board built to make finding — and posting — work simple,
+                        fast and honest. We connect job seekers directly with employers, recruiters and
+                        organisations across Nigeria, with no middlemen and no hidden fees.
+                    </p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="/jobs.html" class="btn-primary-glow">Browse Jobs</a>
+                        <a href="#contact" class="btn-outline-glow">Get in Touch</a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <img src="https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg"
+                        class="hero-shape" alt="Team collaborating">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    STATS
+    ======================= -->
+    <section class="py-4">
+        <div class="container">
+            <div class="card-glass">
+                <div class="row g-4">
+                    <div class="col-6 col-md-3 stat-box">
+                        <div class="num">1,200+</div>
+                        <small>Jobs Posted</small>
+                    </div>
+                    <div class="col-6 col-md-3 stat-box">
+                        <div class="num">8,500+</div>
+                        <small>Job Seekers</small>
+                    </div>
+                    <div class="col-6 col-md-3 stat-box">
+                        <div class="num">340+</div>
+                        <small>Companies</small>
+                    </div>
+                    <div class="col-6 col-md-3 stat-box">
+                        <div class="num">36</div>
+                        <small>States Covered</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    OUR STORY
+    ======================= -->
+    <section>
+        <div class="container">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6 order-lg-2">
+                    <span class="eyebrow">Our Story</span>
+                    <h2 class="mb-4">Why we built this platform</h2>
+                    <p class="lead-text mb-3">
+                        [Your story goes here — e.g. what problem you saw in the job market, why you decided
+                        to build Your Labour Market, and what you wanted to change for job seekers and
+                        employers.]
+                    </p>
+                    <p class="lead-text">
+                        Replace this paragraph with a short, honest account of the journey — from the first
+                        idea to where the platform is today, and where you want to take it next.
+                    </p>
+                </div>
+                <div class="col-lg-6 order-lg-1">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="year">2024</div>
+                            <h6 class="mt-1 mb-1">The idea</h6>
+                            <p class="lead-text mb-0 small">[Describe the spark that started it all.]</p>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="year">2025</div>
+                            <h6 class="mt-1 mb-1">First version launched</h6>
+                            <p class="lead-text mb-0 small">[Describe your first milestone.]</p>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="year">2026</div>
+                            <h6 class="mt-1 mb-1">Growing the community</h6>
+                            <p class="lead-text mb-0 small">[Describe where things stand now.]</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    MISSION / VISION / VALUES
+    ======================= -->
+    <section>
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="eyebrow">What Drives Us</span>
+                <h2>Mission, vision and values</h2>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card-glass value-card">
+                        <div class="value-icon"><i class="bi bi-bullseye"></i></div>
+                        <h5>Our Mission</h5>
+                        <p class="lead-text mb-0">To make finding honest work — and finding the right person
+                            for a job — simple, fast and free of unnecessary barriers.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-glass value-card">
+                        <div class="value-icon"><i class="bi bi-eye"></i></div>
+                        <h5>Our Vision</h5>
+                        <p class="lead-text mb-0">A labour market where every qualified person can be found,
+                            and every genuine opportunity can be seen.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-glass value-card">
+                        <div class="value-icon"><i class="bi bi-shield-check"></i></div>
+                        <h5>Our Values</h5>
+                        <p class="lead-text mb-0">Transparency, respect for people's time, and zero tolerance
+                            for scam job postings.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    WHAT WE OFFER / FEATURES
+    ======================= -->
+    <section>
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="eyebrow">What We Offer</span>
+                <h2>Everything you need in one place</h2>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card-glass value-card">
+                        <div class="value-icon"><i class="bi bi-briefcase-fill"></i></div>
+                        <h6>Verified Job Listings</h6>
+                        <p class="lead-text small mb-0">Real roles from real employers, updated daily.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-glass value-card">
+                        <div class="value-icon"><i class="bi bi-chat-dots-fill"></i></div>
+                        <h6>Direct Messaging</h6>
+                        <p class="lead-text small mb-0">Chat with recruiters directly — no third party in between.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-glass value-card">
+                        <div class="value-icon"><i class="bi bi-robot"></i></div>
+                        <h6>AI Career Assistant</h6>
+                        <p class="lead-text small mb-0">Get instant help with resumes, interviews and salary
+                            negotiation.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-glass value-card">
+                        <div class="value-icon"><i class="bi bi-bookmark-fill"></i></div>
+                        <h6>Save & Track</h6>
+                        <p class="lead-text small mb-0">Bookmark jobs and track every application in one dashboard.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-glass value-card">
+                        <div class="value-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                        <h6>Local Focus</h6>
+                        <p class="lead-text small mb-0">Jobs filtered by state and city, built for the Nigerian
+                            market.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-glass value-card">
+                        <div class="value-icon"><i class="bi bi-lock-fill"></i></div>
+                        <h6>Privacy Controls</h6>
+                        <p class="lead-text small mb-0">Decide exactly what recruiters can see on your profile.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    FOUNDER / ABOUT ME
+    ======================= -->
+    <section>
+        <div class="container">
+            <div class="card-glass">
+                <div class="row align-items-center g-5">
+                    <div class="col-lg-3 text-center">
+                        <div class="founder-photo-wrap">
+                            <!-- Replace images/founder.jpg with your real photo in the images folder -->
+                            <img src="images/founder.jpg"
+                                onerror="this.src='https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg'"
+                                class="founder-photo" alt="Founder photo">
+                            <div class="founder-badge"><i class="bi bi-patch-check-fill"></i></div>
+                        </div>
+                        <div class="d-flex justify-content-center gap-2 mt-3">
+                            <a href="#" class="social-circle"><i class="bi bi-linkedin"></i></a>
+                            <a href="#" class="social-circle"><i class="bi bi-twitter-x"></i></a>
+                            <a href="mailto:info@yourlabourmarket.com" class="social-circle"><i class="bi bi-envelope-fill"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-9">
+                        <span class="eyebrow">Founder</span>
+                        <h3 class="mb-2">[Your Full Name]</h3>
+                        <p class="text-secondary mb-3">Founder &amp; Developer, Your Labour Market</p>
+                        <p class="lead-text mb-0">
+                            [Write a short bio here — who you are, your background, and why you're building
+                            Your Labour Market. Two or three sentences is plenty. This is the section your
+                            visitors read to decide they trust the person behind the platform.]
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    TESTIMONIALS
+    ======================= -->
+    <section>
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="eyebrow">Testimonials</span>
+                <h2>What our users say</h2>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card-glass h-100">
+                        <div class="quote-mark"><i class="bi bi-quote"></i></div>
+                        <p class="lead-text">[Placeholder testimonial — replace with a real quote from a job
+                            seeker who found work through the platform.]</p>
+                        <div class="d-flex align-items-center gap-2 mt-3">
+                            <img src="https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg"
+                                class="profile-img" alt="User">
+                            <div>
+                                <h6 class="mb-0">[Name]</h6>
+                                <small class="text-secondary">Job Seeker</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-glass h-100">
+                        <div class="quote-mark"><i class="bi bi-quote"></i></div>
+                        <p class="lead-text">[Placeholder testimonial — replace with a real quote from an
+                            employer who hired through the platform.]</p>
+                        <div class="d-flex align-items-center gap-2 mt-3">
+                            <img src="https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg"
+                                class="profile-img" alt="User">
+                            <div>
+                                <h6 class="mb-0">[Name]</h6>
+                                <small class="text-secondary">HR Manager</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card-glass h-100">
+                        <div class="quote-mark"><i class="bi bi-quote"></i></div>
+                        <p class="lead-text">[Placeholder testimonial — replace with a third real quote.]</p>
+                        <div class="d-flex align-items-center gap-2 mt-3">
+                            <img src="https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg"
+                                class="profile-img" alt="User">
+                            <div>
+                                <h6 class="mb-0">[Name]</h6>
+                                <small class="text-secondary">Recruiter</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    FAQ
+    ======================= -->
+    <section>
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="eyebrow">FAQ</span>
+                <h2>Frequently asked questions</h2>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faq1">Is Your Labour Market free to use?</button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">Yes — job seekers can browse, save and apply to
+                                    jobs for free. [Add details on any paid employer features if applicable.]</div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faq2">How do I post a job?</button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">Click the "Job" option in the post composer on the
+                                    home page, fill in the details, and publish. Your listing appears
+                                    instantly in the feed.</div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faq3">How do you verify job postings?</button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">[Describe your verification process here, if any —
+                                    e.g. manual review, reporting system, company checks.]</div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#faq4">How can I contact support?</button>
+                            </h2>
+                            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">Use the contact details or the feedback form below,
+                                    or email us directly — we usually reply within 24 hours.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    IMPROVEMENT / FEEDBACK FORM
+    ======================= -->
+    <section id="feedback">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card-glass">
+                        <div class="text-center mb-4">
+                            <span class="eyebrow">Help Us Get Better</span>
+                            <h2>What should we improve?</h2>
+                            <p class="lead-text">Your feedback shapes what we build next. Tell us what's
+                                working, what isn't, or what you'd love to see.</p>
+                        </div>
+                        <form id="feedbackForm">
+                            <div class="mb-3">
+                                <label class="form-label" for="fbName">Your name (optional)</label>
+                                <input type="text" class="form-control" id="fbName" placeholder="Your name">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="fbEmail">Your email (optional)</label>
+                                <input type="email" class="form-control" id="fbEmail" placeholder="you@example.com">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="fbCategory">What is this about?</label>
+                                <select class="form-select" id="fbCategory">
+                                    <option value="general">General feedback</option>
+                                    <option value="feature">Feature request</option>
+                                    <option value="bug">Something isn't working</option>
+                                    <option value="jobs">Job listing quality</option>
+                                    <option value="design">Design / usability</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label d-block">How would you rate your experience?</label>
+                                <div class="star-rating" id="fbStars">
+                                    <i class="bi bi-star-fill" data-value="1"></i>
+                                    <i class="bi bi-star-fill" data-value="2"></i>
+                                    <i class="bi bi-star-fill" data-value="3"></i>
+                                    <i class="bi bi-star-fill" data-value="4"></i>
+                                    <i class="bi bi-star-fill" data-value="5"></i>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="fbMessage">What should we improve?</label>
+                                <textarea class="form-control" id="fbMessage" rows="4" required
+                                    placeholder="Tell us what you'd like to see improved..."></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary-glow w-100">Send Feedback</button>
+                            <div id="fbSuccess" class="text-success small mt-3 text-center d-none">
+                                <i class="bi bi-check-circle-fill"></i> Thank you! Your feedback has been received.
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    CONTACT
+    ======================= -->
+    <section id="contact">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <span class="eyebrow">Get In Touch</span>
+                    <h2 class="mb-3">Contact us</h2>
+                    <p class="lead-text">Have a question, partnership idea, or need help with your account?
+                        Reach out any of these ways.</p>
+                </div>
+                <div class="col-lg-7">
+                    <div class="card-glass">
+                        <div class="contact-row">
+                            <div class="contact-icon"><i class="bi bi-envelope-fill"></i></div>
+                            <div>
+                                <small class="text-secondary d-block">Email</small>
+                                <a href="mailto:info@yourlabourmarket.com">info@yourlabourmarket.com</a>
+                            </div>
+                        </div>
+                        <div class="contact-row">
+                            <div class="contact-icon"><i class="bi bi-telephone-fill"></i></div>
+                            <div>
+                                <small class="text-secondary d-block">Phone</small>
+                                <a href="tel:+2348000000000">+234 800 000 0000</a>
+                            </div>
+                        </div>
+                        <div class="contact-row">
+                            <div class="contact-icon"><i class="bi bi-geo-alt-fill"></i></div>
+                            <div>
+                                <small class="text-secondary d-block">Location</small>
+                                <span>Uyo, Akwa Ibom State, Nigeria</span>
+                            </div>
+                        </div>
+                        <div class="contact-row">
+                            <div class="contact-icon"><i class="bi bi-clock-fill"></i></div>
+                            <div>
+                                <small class="text-secondary d-block">Support hours</small>
+                                <span>Mon – Fri, 9:00 AM – 6:00 PM WAT</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+    FOOTER
+    ======================= -->
+    <footer>
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <img src="images/LIGHT MARKET.png" style="height:55px;" alt="Your Labour Market logo" class="mb-3">
+                    <p class="lead-text small">Connecting Nigeria's talent with real opportunities — one honest
+                        job listing at a time.</p>
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="#" class="social-circle"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="social-circle"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="social-circle"><i class="bi bi-twitter-x"></i></a>
+                        <a href="#" class="social-circle"><i class="bi bi-linkedin"></i></a>
+                        <a href="#" class="social-circle"><i class="bi bi-whatsapp"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6>Company</h6>
+                    <a href="index.html">Home</a>
+                    <a href="about.html">About Us</a>
+                    <a href="/jobs.html">Jobs</a>
+                    <a href="#contact">Contact</a>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6>For Job Seekers</h6>
+                    <a href="/jobs.html">Browse Jobs</a>
+                    <a href="index.html">Saved Jobs</a>
+                    <a href="index.html">Applications</a>
+                    <a href="#faqAccordion">FAQ</a>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6>Legal</h6>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Cookie Policy</a>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h6>Stay Updated</h6>
+                    <p class="lead-text small mb-3">Get new jobs in your inbox.</p>
+                    <form class="d-flex" id="newsletterForm">
+                        <input type="email" class="newsletter-input flex-grow-1" placeholder="Email" required>
+                        <button type="submit" class="newsletter-btn"><i class="bi bi-send-fill"></i></button>
+                    </form>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; <span id="footerYear"></span> Your Labour Market. All rights reserved. Built with care in Nigeria.
+            </div>
+        </div>
+    </footer>
+
+    <button id="backToTop" class="back-to-top" aria-label="Back to top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+            // Back to top
+            const backToTopBtn = document.getElementById('backToTop');
+            window.addEventListener('scroll', function () {
+                backToTopBtn.classList.toggle('show', window.scrollY > 300);
+            });
+            backToTopBtn.addEventListener('click', function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // Star rating
+            let selectedStars = 0;
+            const stars = document.querySelectorAll('#fbStars i');
+            stars.forEach(function (star) {
+                star.addEventListener('click', function () {
+                    selectedStars = parseInt(star.dataset.value, 10);
+                    stars.forEach(function (s) {
+                        s.classList.toggle('active', parseInt(s.dataset.value, 10) <= selectedStars);
+                    });
+                });
+            });
+
+            // Feedback form -- stored locally so it works even without a backend.
+            // Replace this with a real fetch() call to your server/email API
+            // once you have one set up.
+            const feedbackForm = document.getElementById('feedbackForm');
+            feedbackForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const entry = {
+                    name: document.getElementById('fbName').value.trim(),
+                    email: document.getElementById('fbEmail').value.trim(),
+                    category: document.getElementById('fbCategory').value,
+                    rating: selectedStars,
+                    message: document.getElementById('fbMessage').value.trim(),
+                    at: new Date().toISOString()
+                };
+                try {
+                    const existing = JSON.parse(localStorage.getItem('ylm.feedback') || '[]');
+                    existing.push(entry);
+                    localStorage.setItem('ylm.feedback', JSON.stringify(existing));
+                } catch (err) { /* storage unavailable -- fail silently */ }
+
+                document.getElementById('fbSuccess').classList.remove('d-none');
+                feedbackForm.reset();
+                selectedStars = 0;
+                stars.forEach(function (s) { s.classList.remove('active'); });
+                setTimeout(function () {
+                    document.getElementById('fbSuccess').classList.add('d-none');
+                }, 4000);
+            });
+
+            // Newsletter (front-end only placeholder)
+            document.getElementById('newsletterForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                this.reset();
+                alert('Thanks for subscribing!');
+            });
+
+        })();
+    </script>
+
+</body>
+
+</html>

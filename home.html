@@ -2126,3 +2126,2132 @@
 </body>
 
 </html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Your Labour Market | Home</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        html {
+            overflow-x: hidden;
+        }
+
+        body {
+            background: linear-gradient(135deg,
+                    #031633,
+                    #05285a,
+                    #0b5ed7,
+                    #04162c);
+            min-height: 100vh;
+            color: white;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            top: -200px;
+            right: -200px;
+            background: #0d6efd;
+            filter: blur(170px);
+            opacity: .18;
+            z-index: -1;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            bottom: -200px;
+            left: -200px;
+            background: #4da3ff;
+            filter: blur(170px);
+            opacity: .15;
+            z-index: -1;
+        }
+
+        .navbar {
+            background: rgba(7, 14, 30, .85);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .search-box {
+            background: #132847;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            padding: 12px 20px;
+            width: 320px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            box-shadow: none;
+            background: #18355d;
+            color: white;
+        }
+
+        .nav-link {
+            color: white !important;
+            font-weight: 600;
+            margin-left: 20px;
+            transition: .3s;
+        }
+
+        .nav-link:hover {
+            color: #4da3ff !important;
+        }
+
+        .profile-img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4da3ff;
+        }
+
+        .dashboard-row {
+            align-items: flex-start;
+        }
+
+        /* LEFT MENU -- static (scrolls with the page) on mobile.
+           On desktop (>=992px) JS switches this to position:fixed and
+           computes left/width from the column so it stays perfectly
+           aligned and genuinely stays put while the page scrolls. */
+        .left-card {
+            background: rgba(255, 255, 255, .05);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, .08);
+            margin-bottom: 24px;
+        }
+
+        @media (min-width: 992px) {
+            .left-card.is-fixed {
+                z-index: 900;
+            }
+        }
+
+        .left-card a {
+            display: flex;
+            align-items: center;
+            padding: 14px;
+            text-decoration: none;
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: .3s;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .left-card a:hover {
+            background: #0d6efd;
+        }
+
+        .left-card a.active-link {
+            background: #0d6efd;
+        }
+
+        .post-box {
+            background: rgba(255, 255, 255, .06);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .post-input {
+            background: #132847;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            padding: 15px;
+            width: 100%;
+        }
+
+        .post-input:focus {
+            outline: none;
+            background: #173861;
+            color: white;
+        }
+
+        .post-option {
+            padding: 10px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: .3s;
+            user-select: none;
+        }
+
+        .post-option:hover {
+            background: #0d6efd;
+        }
+
+        .btn-post {
+            background: #0d6efd;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .btn-post:hover {
+            background: #3d8bfd;
+        }
+
+        .btn-post:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .modal-content {
+            background: #0b2244;
+            color: white;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .modal-header,
+        .modal-footer {
+            border-color: rgba(255, 255, 255, .08);
+        }
+
+        .modal-footer {
+            flex-wrap: nowrap;
+        }
+
+        .form-control,
+        .form-select {
+            background: #132847;
+            border: none;
+            color: white;
+            border-radius: 12px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: #18355d;
+            color: white;
+            box-shadow: none;
+            border: none;
+        }
+
+        .form-control::file-selector-button {
+            background: #0d6efd;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            margin-right: 10px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            font-size: .9rem;
+            color: rgba(255, 255, 255, .8);
+        }
+
+        .form-check-label {
+            color: rgba(255, 255, 255, .85);
+            font-size: .9rem;
+        }
+
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .btn-like.liked {
+            color: #ff4d6d !important;
+            border-color: #ff4d6d !important;
+        }
+
+        .btn-save.active {
+            background: #0d6efd;
+            color: #fff;
+            border-color: #0d6efd;
+        }
+
+        .btn-apply.applied {
+            background: #146c2e;
+            border-color: #146c2e;
+        }
+
+        .badge-new {
+            background: #0d6efd;
+            font-weight: 500;
+            font-size: .7rem;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        .job-image {
+            max-height: 420px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .doc-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #132847;
+            padding: 10px 16px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .doc-chip:hover {
+            background: #173861;
+            color: #fff;
+        }
+
+        .attach-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #132847;
+            padding: 8px 14px;
+            border-radius: 14px;
+            margin-top: 12px;
+            font-size: .85rem;
+        }
+
+        .attach-chip .remove-chip {
+            cursor: pointer;
+            color: #ff8080;
+            margin-left: auto;
+            font-weight: 700;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .mini-card {
+            display: flex;
+            gap: 14px;
+            background: rgba(255, 255, 255, .06);
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 14px;
+            border: 1px solid rgba(255, 255, 255, .08);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .mini-card img {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #132847;
+        }
+
+        .mini-card .mini-info {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .mini-card .mini-info h6 {
+            margin-bottom: 2px;
+        }
+
+        .mini-card .mini-info small {
+            color: rgba(255, 255, 255, .6);
+        }
+
+        .mini-card .mini-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+
+        .mini-remove,
+        .mini-view,
+        .mini-chat {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, .2);
+            color: #fff;
+            border-radius: 30px;
+            padding: 6px 14px;
+            font-size: .8rem;
+            white-space: nowrap;
+        }
+
+        .mini-remove:hover {
+            background: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .mini-view:hover {
+            background: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .mini-chat:hover {
+            background: #146c2e;
+            border-color: #146c2e;
+        }
+
+        .placeholder-view {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, .6);
+        }
+
+        .comments-panel {
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            margin-top: 16px;
+            padding-top: 16px;
+        }
+
+        .comments-panel .comment-input {
+            border-radius: 30px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, .6);
+        }
+
+        /* Notification badge (navbar bell + messages list + sidebar) */
+        .notif-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background: #dc3545;
+            color: #fff;
+            font-size: .7rem;
+            font-weight: 700;
+            border-radius: 10px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .notif-bell-wrap {
+            position: relative;
+        }
+
+        .notif-badge-bell {
+            position: absolute;
+            top: -4px;
+            right: -14px;
+            margin-left: 0;
+        }
+
+        .notif-dropdown {
+            background: #0b2244;
+            border: 1px solid rgba(255, 255, 255, .08);
+            min-width: 280px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .notif-dropdown .dropdown-item,
+        .notif-dropdown .dropdown-item-text {
+            color: #fff;
+            white-space: normal;
+        }
+
+        .notif-dropdown .dropdown-item:hover {
+            background: #132847;
+            color: #fff;
+        }
+
+        /* Back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #132847;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, .15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            z-index: 1040;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: .25s;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            background: #18355d;
+        }
+
+        /* AI assistant bubble + panel */
+        .ai-bubble {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: #0d6efd;
+            color: #fff;
+            border: none;
+            font-size: 1.4rem;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+            z-index: 1040;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-bubble:hover {
+            background: #3d8bfd;
+        }
+
+        .ai-panel {
+            position: fixed;
+            bottom: 92px;
+            right: 24px;
+            width: 320px;
+            max-width: calc(100vw - 32px);
+            height: 420px;
+            max-height: calc(100vh - 140px);
+            background: #0b2244;
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 18px;
+            z-index: 1040;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
+        }
+
+        .ai-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
+            font-weight: 600;
+        }
+
+        .ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            font-size: .88rem;
+        }
+
+        .ai-input-row {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .ai-input-row .form-control {
+            border-radius: 20px;
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 575.98px) {
+            .navbar-brand img {
+                height: 46px !important;
+            }
+
+            .post-box {
+                padding: 18px;
+            }
+
+            .post-option {
+                padding: 8px 14px;
+                font-size: .85rem;
+            }
+
+            .btn-post {
+                padding: 8px 18px;
+                font-size: .9rem;
+            }
+
+            .ai-bubble {
+                width: 50px;
+                height: 50px;
+                bottom: 16px;
+                right: 16px;
+            }
+
+            .ai-panel {
+                right: 16px;
+                bottom: 78px;
+            }
+
+            .back-to-top {
+                width: 42px;
+                height: 42px;
+                bottom: 16px;
+                left: 16px;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <!-- =======================
+    NAVBAR
+    ======================= -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="index.html">
+                <img src="images/LIGHT MARKET.png" style="height:70px;" alt="Your Labour Market logo">
+            </a>
+
+            <input type="search" id="searchInputDesktop" placeholder="Search jobs, companies, professionals..."
+                class="search-box d-none d-lg-block">
+
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="menu">
+
+                <input type="search" id="searchInputMobile" placeholder="Search jobs, companies..."
+                    class="search-box d-lg-none w-100 my-3">
+
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">
+                            <i class="bi bi-house-fill"></i>
+                            Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="jobs.html">
+                            <i class="bi bi-briefcase-fill"></i>
+                            Jobs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-chat-dots-fill"></i>
+                            Chat
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown notif-bell-wrap">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" id="notifBell"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell-fill"></i>
+                            Notifications
+                            <span id="notifBadge" class="notif-badge notif-badge-bell d-none">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end notif-dropdown" id="notifList"
+                            aria-labelledby="notifBell">
+                            <li><span class="dropdown-item-text text-secondary small">No new messages.</span></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-person-fill"></i>
+                            Profile
+                        </a>
+                    </li>
+                </ul>
+
+                <img id="navAvatar" src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
+                    class="profile-img" alt="Your profile">
+            </div>
+        </div>
+    </nav>
+
+    <!-- =======================
+    BODY
+    ======================= -->
+    <div class="container-fluid mt-4">
+        <div class="row dashboard-row">
+
+            <!-- LEFT MENU -->
+            <div class="col-12 col-lg-3" id="sidebarCol">
+                <div class="left-card" id="leftCard">
+                    <h4 class="mb-4" id="welcomeHeading">Welcome 👋</h4>
+                    <a class="left-link active-link" data-view="home"><i class="bi bi-house-door-fill"></i> Home</a>
+                    <a class="left-link" data-view="saved"><i class="bi bi-bookmark-fill"></i> Saved Jobs</a>
+                    <a class="left-link" data-view="applications"><i class="bi bi-file-earmark-person-fill"></i> Applications</a>
+                    <a class="left-link" data-view="messages"><i class="bi bi-chat-fill"></i> Messages
+                        <span id="sidebarMsgBadge" class="notif-badge d-none">0</span>
+                    </a>
+                    <a class="left-link" data-view="profile"><i class="bi bi-person-circle"></i> My Profile</a>
+                    <a class="left-link" data-view="settings"><i class="bi bi-gear-fill"></i> Settings</a>
+                </div>
+            </div>
+
+            <!-- CENTER -->
+            <div class="col-12 col-lg-6">
+
+                <!-- ===================== HOME VIEW ===================== -->
+                <div id="view-home" class="app-view">
+
+                    <!-- POST COMPOSER -->
+                    <div class="post-box mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <img id="composerAvatar" src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
+                                class="profile-img me-3" alt="Your profile">
+                            <input type="text" id="quickPostInput"
+                                placeholder="Share a job, announcement or opportunity..." class="post-input">
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div class="d-flex gap-3 flex-wrap">
+                                <div class="post-option" id="photoOption">
+                                    <i class="bi bi-image-fill text-primary"></i>
+                                    Photo
+                                </div>
+                                <div class="post-option" id="videoOption">
+                                    <i class="bi bi-camera-video-fill text-danger"></i>
+                                    Video
+                                </div>
+                                <div class="post-option" id="documentOption">
+                                    <i class="bi bi-file-earmark-text-fill text-warning"></i>
+                                    Document
+                                </div>
+                                <div class="post-option" data-bs-toggle="modal" data-bs-target="#jobModal">
+                                    <i class="bi bi-briefcase-fill text-info"></i>
+                                    Job
+                                </div>
+                            </div>
+                            <button class="btn-post" id="quickPostBtn">Post</button>
+                        </div>
+
+                        <input type="file" id="photoInput" accept="image/*" hidden>
+                        <input type="file" id="videoInput" accept="video/*" hidden>
+                        <input type="file" id="documentInput"
+                            accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.csv" hidden>
+                        <div id="composerAttachment"></div>
+                    </div>
+
+                    <!-- Job feed starts here -->
+                    <div id="jobFeed">
+
+                        <!-- ===========================
+                        FIRST JOB POST
+                        =========================== -->
+                        <div class="post-box mb-4" data-job-id="sample-1" data-title="Frontend Developer Needed"
+                            data-company="AK Tech Solutions">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg"
+                                    class="profile-img me-3" alt="AK Tech Solutions">
+                                <div>
+                                    <h5 class="mb-0">AK Tech Solutions</h5>
+                                    <small class="text-secondary">2 hours ago • Uyo, Akwa Ibom</small>
+                                </div>
+                            </div>
+                            <p class="mb-3">
+                                🚀 <strong>Frontend Developer Needed</strong><br><br>
+                                We are looking for a skilled HTML, CSS, Bootstrap and JavaScript developer to join our
+                                growing team.
+                                Salary: ₦250,000/month
+                            </p>
+                            <img src="https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg"
+                                class="img-fluid rounded-4 mb-3 job-image" alt="Job post image">
+                            <div class="d-flex flex-wrap gap-2 justify-content-between">
+                                <button class="btn btn-outline-light btn-like">❤️ <span class="like-count">Like</span></button>
+                                <button class="btn btn-outline-light btn-comment">💬 <span class="comment-count">Comment</span></button>
+                                <button class="btn btn-outline-light btn-save"><i class="bi bi-bookmark"></i> Save</button>
+                                <button class="btn btn-success btn-apply">Apply Now</button>
+                                <button class="btn btn-primary btn-chat">Chat Recruiter</button>
+                            </div>
+                        </div>
+
+                        <!-- ===========================
+                        SECOND JOB POST
+                        =========================== -->
+                        <div class="post-box mb-4" data-job-id="sample-2" data-title="Civil Engineer Wanted"
+                            data-company="Ibom Engineering Ltd">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg"
+                                    class="profile-img me-3" alt="Ibom Engineering Ltd">
+                                <div>
+                                    <h5 class="mb-0">Ibom Engineering Ltd</h5>
+                                    <small class="text-secondary">Today • Eket</small>
+                                </div>
+                            </div>
+                            <p>
+                                📢 <strong>Civil Engineer Wanted</strong>
+                                <br><br>
+                                Minimum qualification:
+                                B.Eng Civil Engineering
+                                3 Years Experience
+                                Accommodation Available
+                                Salary Negotiable.
+                            </p>
+                            <img src="https://images.pexels.com/photos/1216589/pexels-photo-1216589.jpeg"
+                                class="img-fluid rounded-4 mb-3 job-image" alt="Job post image">
+                            <div class="d-flex flex-wrap gap-2 justify-content-between">
+                                <button class="btn btn-outline-light btn-like">❤️ <span class="like-count">92</span></button>
+                                <button class="btn btn-outline-light btn-comment">💬 <span class="comment-count">16</span></button>
+                                <button class="btn btn-outline-light btn-save"><i class="bi bi-bookmark"></i> Save</button>
+                                <button class="btn btn-success btn-apply">Apply Now</button>
+                                <button class="btn btn-primary btn-chat">Chat Recruiter</button>
+                            </div>
+                        </div>
+
+                        <!-- ===========================
+                        THIRD JOB POST
+                        =========================== -->
+                        <div class="post-box mb-4" data-job-id="sample-3" data-title="Registered Nurse Needed"
+                            data-company="Divine Hospital">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg"
+                                    class="profile-img me-3" alt="Divine Hospital">
+                                <div>
+                                    <h5 class="mb-0">Divine Hospital</h5>
+                                    <small class="text-secondary">Yesterday</small>
+                                </div>
+                            </div>
+                            <p>
+                                🏥 Registered Nurse Needed.
+                                Morning Shift.
+                                Accommodation Available.
+                                Salary:
+                                ₦180,000 Monthly.
+                            </p>
+                            <img src="https://images.pexels.com/photos/5452293/pexels-photo-5452293.jpeg"
+                                class="img-fluid rounded-4 mb-3 job-image" alt="Job post image">
+                            <div class="d-flex flex-wrap gap-2 justify-content-between">
+                                <button class="btn btn-outline-light btn-like">❤️ <span class="like-count">64</span></button>
+                                <button class="btn btn-outline-light btn-comment">💬 <span class="comment-count">8</span></button>
+                                <button class="btn btn-outline-light btn-save"><i class="bi bi-bookmark"></i> Save</button>
+                                <button class="btn btn-success btn-apply">Apply Now</button>
+                                <button class="btn btn-primary btn-chat">Chat Recruiter</button>
+                            </div>
+                        </div>
+
+                        <!-- ===========================
+                        FOURTH JOB POST
+                        =========================== -->
+                        <div class="post-box mb-4" data-job-id="sample-4" data-title="Mathematics Teacher Needed"
+                            data-company="Royal Schools">
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg"
+                                    class="profile-img me-3" alt="Royal Schools">
+                                <div>
+                                    <h5 class="mb-0">Royal Schools</h5>
+                                    <small class="text-secondary">3 days ago</small>
+                                </div>
+                            </div>
+                            <p>
+                                📚 Mathematics Teacher Needed.
+                                B.Sc Mathematics.
+                                Teaching experience is an added advantage.
+                            </p>
+                            <img src="https://images.pexels.com/photos/5212337/pexels-photo-5212337.jpeg"
+                                class="img-fluid rounded-4 mb-3 job-image" alt="Job post image">
+                            <div class="d-flex flex-wrap gap-2 justify-content-between">
+                                <button class="btn btn-outline-light btn-like">❤️ <span class="like-count">Like</span></button>
+                                <button class="btn btn-outline-light btn-comment">💬 <span class="comment-count">Comment</span></button>
+                                <button class="btn btn-outline-light btn-save"><i class="bi bi-bookmark"></i> Save</button>
+                                <button class="btn btn-success btn-apply">Apply Now</button>
+                                <button class="btn btn-primary btn-chat">Chat Recruiter</button>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- /jobFeed -->
+
+                    <div id="noResultsMsg" class="post-box no-results d-none">
+                        <i class="bi bi-search" style="font-size:2rem;"></i>
+                        <p class="mt-3 mb-0">No jobs match your search.</p>
+                    </div>
+                </div>
+                <!-- /view-home -->
+
+                <!-- ===================== SAVED JOBS VIEW ===================== -->
+                <div id="view-saved" class="app-view d-none">
+                    <h4 class="mb-3">Saved Jobs</h4>
+                    <div id="savedList"></div>
+                </div>
+
+                <!-- ===================== APPLICATIONS VIEW ===================== -->
+                <div id="view-applications" class="app-view d-none">
+                    <h4 class="mb-3">Your Applications</h4>
+                    <div id="applicationsList"></div>
+                </div>
+
+                <!-- ===================== MESSAGES VIEW ===================== -->
+                <div id="view-messages" class="app-view d-none">
+                    <h4 class="mb-3">Messages</h4>
+                    <div id="messagesList"></div>
+                </div>
+
+                <!-- ===================== PROFILE VIEW ===================== -->
+                <div id="view-profile" class="app-view d-none">
+                    <div class="post-box mb-4">
+                        <h4 class="mb-4">My Profile</h4>
+                        <form id="profileForm">
+                            <div class="d-flex align-items-center mb-4 gap-3 flex-wrap">
+                                <img id="profileAvatarPreview"
+                                    src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
+                                    class="profile-img" style="width:80px;height:80px;" alt="Profile preview">
+                                <div class="flex-grow-1">
+                                    <label class="form-label" for="profileAvatarInput">Profile photo</label>
+                                    <input type="file" class="form-control" id="profileAvatarInput" accept="image/*">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="profileName">Full name</label>
+                                <input type="text" class="form-control" id="profileName" maxlength="60"
+                                    placeholder="Your name">
+                            </div>
+                            <button type="submit" class="btn-post">Save Profile</button>
+                            <div id="profileSavedMsg" class="text-success small mt-3 d-none">Profile saved. Your photo
+                                now shows in the navbar and on anything you post.</div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ===================== SETTINGS VIEW ===================== -->
+                <div id="view-settings" class="app-view d-none">
+                    <div class="post-box mb-4">
+                        <h4 class="mb-4">Job Preferences &amp; Settings</h4>
+                        <form id="settingsForm">
+
+                            <div class="mb-4">
+                                <label class="form-label d-block">Preferred job categories</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input settings-category" type="checkbox" value="Tech" id="catTech">
+                                        <label class="form-check-label" for="catTech">Tech</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input settings-category" type="checkbox" value="Engineering" id="catEng">
+                                        <label class="form-check-label" for="catEng">Engineering</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input settings-category" type="checkbox" value="Healthcare" id="catHealth">
+                                        <label class="form-check-label" for="catHealth">Healthcare</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input settings-category" type="checkbox" value="Education" id="catEdu">
+                                        <label class="form-check-label" for="catEdu">Education</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input settings-category" type="checkbox" value="Sales" id="catSales">
+                                        <label class="form-check-label" for="catSales">Sales</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input settings-category" type="checkbox" value="Admin" id="catAdmin">
+                                        <label class="form-check-label" for="catAdmin">Admin</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="settingsLocation">Preferred location</label>
+                                    <input type="text" class="form-control" id="settingsLocation"
+                                        placeholder="e.g. Uyo, Akwa Ibom">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="settingsSalary">Minimum expected salary</label>
+                                    <input type="text" class="form-control" id="settingsSalary"
+                                        placeholder="e.g. ₦150,000/month">
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" for="settingsWorkType">Work type</label>
+                                <select class="form-select" id="settingsWorkType">
+                                    <option value="any">Any</option>
+                                    <option value="onsite">Onsite</option>
+                                    <option value="hybrid">Hybrid</option>
+                                    <option value="remote">Remote</option>
+                                </select>
+                            </div>
+
+                            <hr style="border-color:rgba(255,255,255,.08);" class="my-4">
+
+                            <h6 class="mb-3">Notifications</h6>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="settingsNotifyMessages">
+                                <label class="form-check-label" for="settingsNotifyMessages">Notify me about new
+                                    recruiter messages</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="settingsNotifyJobs">
+                                <label class="form-check-label" for="settingsNotifyJobs">Notify me about jobs
+                                    matching my preferences</label>
+                            </div>
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="settingsNotifyApplications">
+                                <label class="form-check-label" for="settingsNotifyApplications">Notify me about
+                                    application status updates</label>
+                            </div>
+
+                            <hr style="border-color:rgba(255,255,255,.08);" class="my-4">
+
+                            <h6 class="mb-3">Privacy</h6>
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="settingsPublicProfile">
+                                <label class="form-check-label" for="settingsPublicProfile">Make my profile visible
+                                    to recruiters</label>
+                            </div>
+
+                            <button type="submit" class="btn-post">Save Settings</button>
+                            <div id="settingsSavedMsg" class="text-success small mt-3 d-none">Settings saved.</div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+            <!-- /col-lg-6 -->
+
+        </div>
+    </div>
+
+    <!-- =======================
+    NEW JOB MODAL
+    ======================= -->
+    <div class="modal fade" id="jobModal" tabindex="-1" aria-labelledby="jobModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <form id="jobForm" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="jobModalLabel">Post a Job</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+
+                        <div class="mb-3">
+                            <label class="form-label" for="jobCompany">Company / Organisation name</label>
+                            <input type="text" class="form-control" id="jobCompany" required maxlength="80">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="jobTitle">Job title</label>
+                            <input type="text" class="form-control" id="jobTitle" required maxlength="100">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="jobLocation">Location</label>
+                            <input type="text" class="form-control" id="jobLocation" placeholder="e.g. Uyo, Akwa Ibom"
+                                maxlength="80">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="jobSalary">Salary (optional)</label>
+                            <input type="text" class="form-control" id="jobSalary"
+                                placeholder="e.g. ₦200,000/month or Negotiable" maxlength="60">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="jobDescription">Description</label>
+                            <textarea class="form-control" id="jobDescription" rows="4" required
+                                maxlength="600"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="jobImageFile">Upload a photo (optional)</label>
+                            <input type="file" class="form-control" id="jobImageFile" accept="image/*">
+                            <img id="jobImagePreview" class="img-fluid rounded-4 mt-2 d-none job-image"
+                                style="max-height:180px;" alt="Preview">
+                        </div>
+
+                        <div class="mb-1">
+                            <label class="form-label" for="jobImage">Or paste an image URL</label>
+                            <input type="url" class="form-control" id="jobImage"
+                                placeholder="https://example.com/photo.jpg">
+                        </div>
+
+                        <div id="jobFormError" class="text-danger small mt-2 d-none">
+                            Please fill in company, job title and description.
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn-post">Post Job</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================
+    CHAT MODAL
+    ======================= -->
+    <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="chatModalTitle">Chat</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="chatMessages" style="min-height:200px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <input type="text" id="chatInput" class="form-control" placeholder="Type a message...">
+                    <button class="btn-post" id="chatSendBtn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================
+    BACK TO TOP + AI ASSISTANT
+    ======================= -->
+    <button id="backToTop" class="back-to-top" aria-label="Back to top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <button id="aiBubble" class="ai-bubble" aria-label="Open career assistant">
+        <i class="bi bi-robot"></i>
+    </button>
+    <div id="aiPanel" class="ai-panel d-none">
+        <div class="ai-panel-header">
+            <span><i class="bi bi-robot"></i> Career Assistant</span>
+            <button id="aiCloseBtn" type="button" class="btn-close btn-close-white" aria-label="Close"></button>
+        </div>
+        <div id="aiMessages" class="ai-messages"></div>
+        <div class="ai-input-row">
+            <input type="text" id="aiInput" class="form-control" placeholder="Ask about jobs, resumes, interviews...">
+            <button id="aiSendBtn" class="btn-post">Send</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        (function () {
+            'use strict';
+
+            const STORAGE_KEYS = {
+                posts: 'ylm.posts',
+                saved: 'ylm.saved',
+                applied: 'ylm.applied',
+                comments: 'ylm.comments',
+                chats: 'ylm.chats',
+                profile: 'ylm.profile',
+                settings: 'ylm.settings',
+                readMarkers: 'ylm.readMarkers',
+                aiChat: 'ylm.aiChat'
+            };
+
+            function loadJSON(key, fallback) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    return raw ? JSON.parse(raw) : fallback;
+                } catch (err) {
+                    return fallback;
+                }
+            }
+            function saveJSON(key, value) {
+                try { localStorage.setItem(key, JSON.stringify(value)); }
+                catch (err) { /* storage full/unavailable - fail silently, app still works this session */ }
+            }
+
+            const DEFAULT_SETTINGS = {
+                categories: [],
+                location: '',
+                salary: '',
+                workType: 'any',
+                notifyMessages: true,
+                notifyJobs: true,
+                notifyApplications: true,
+                publicProfile: true
+            };
+
+            const state = {
+                posts: loadJSON(STORAGE_KEYS.posts, []),
+                saved: loadJSON(STORAGE_KEYS.saved, {}),
+                applied: loadJSON(STORAGE_KEYS.applied, {}),
+                comments: loadJSON(STORAGE_KEYS.comments, {}),
+                chats: loadJSON(STORAGE_KEYS.chats, {}),
+                profile: loadJSON(STORAGE_KEYS.profile, { name: '', avatar: '' }),
+                settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {})),
+                readMarkers: loadJSON(STORAGE_KEYS.readMarkers, {})
+            };
+
+            let idCounter = 1;
+            function newId() { return 'job-' + Date.now() + '-' + (idCounter++); }
+
+            function timeAgo(iso) {
+                if (!iso) return 'Just now';
+                const diffMs = Date.now() - new Date(iso).getTime();
+                const mins = Math.floor(diffMs / 60000);
+                if (mins < 1) return 'Just now';
+                if (mins < 60) return mins + ' min ago';
+                const hrs = Math.floor(mins / 60);
+                if (hrs < 24) return hrs + ' hour' + (hrs > 1 ? 's' : '') + ' ago';
+                const days = Math.floor(hrs / 24);
+                return days + ' day' + (days > 1 ? 's' : '') + ' ago';
+            }
+
+            const jobFeed = document.getElementById('jobFeed');
+            const DEFAULT_AVATAR = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg';
+            const DEFAULT_IMAGES = [
+                'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg',
+                'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg',
+                'https://images.pexels.com/photos/3182773/pexels-photo-3182773.jpeg'
+            ];
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str || '';
+                return div.innerHTML;
+            }
+
+            /* ================= Profile ================= */
+            function getAvatar() { return state.profile.avatar || DEFAULT_AVATAR; }
+
+            function updateProfileUI() {
+                const avatarUrl = getAvatar();
+                const navAvatar = document.getElementById('navAvatar');
+                const composerAvatar = document.getElementById('composerAvatar');
+                const welcomeHeading = document.getElementById('welcomeHeading');
+                const preview = document.getElementById('profileAvatarPreview');
+                const nameInput = document.getElementById('profileName');
+                if (navAvatar) navAvatar.src = avatarUrl;
+                if (composerAvatar) composerAvatar.src = avatarUrl;
+                if (preview) preview.src = avatarUrl;
+                if (welcomeHeading) {
+                    welcomeHeading.textContent = state.profile.name
+                        ? ('Welcome, ' + state.profile.name + ' 👋')
+                        : 'Welcome 👋';
+                }
+                if (nameInput && document.activeElement !== nameInput) {
+                    nameInput.value = state.profile.name || '';
+                }
+            }
+
+            const profileAvatarInput = document.getElementById('profileAvatarInput');
+            const profileForm = document.getElementById('profileForm');
+            const profileNameInput = document.getElementById('profileName');
+            const profileSavedMsg = document.getElementById('profileSavedMsg');
+
+            profileAvatarInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function () {
+                    state.profile.avatar = reader.result;
+                    document.getElementById('profileAvatarPreview').src = reader.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            profileForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                state.profile.name = profileNameInput.value.trim();
+                saveJSON(STORAGE_KEYS.profile, state.profile);
+                updateProfileUI();
+                profileSavedMsg.classList.remove('d-none');
+                setTimeout(function () { profileSavedMsg.classList.add('d-none'); }, 2500);
+            });
+
+            /* ================= Settings ================= */
+            function populateSettingsForm() {
+                document.querySelectorAll('.settings-category').forEach(function (cb) {
+                    cb.checked = state.settings.categories.indexOf(cb.value) !== -1;
+                });
+                document.getElementById('settingsLocation').value = state.settings.location;
+                document.getElementById('settingsSalary').value = state.settings.salary;
+                document.getElementById('settingsWorkType').value = state.settings.workType;
+                document.getElementById('settingsNotifyMessages').checked = state.settings.notifyMessages;
+                document.getElementById('settingsNotifyJobs').checked = state.settings.notifyJobs;
+                document.getElementById('settingsNotifyApplications').checked = state.settings.notifyApplications;
+                document.getElementById('settingsPublicProfile').checked = state.settings.publicProfile;
+            }
+            document.getElementById('settingsForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                state.settings.categories = Array.prototype.slice.call(document.querySelectorAll('.settings-category:checked')).map(function (cb) { return cb.value; });
+                state.settings.location = document.getElementById('settingsLocation').value.trim();
+                state.settings.salary = document.getElementById('settingsSalary').value.trim();
+                state.settings.workType = document.getElementById('settingsWorkType').value;
+                state.settings.notifyMessages = document.getElementById('settingsNotifyMessages').checked;
+                state.settings.notifyJobs = document.getElementById('settingsNotifyJobs').checked;
+                state.settings.notifyApplications = document.getElementById('settingsNotifyApplications').checked;
+                state.settings.publicProfile = document.getElementById('settingsPublicProfile').checked;
+                saveJSON(STORAGE_KEYS.settings, state.settings);
+                updateNotifBadge();
+                document.getElementById('settingsSavedMsg').classList.remove('d-none');
+                setTimeout(function () { document.getElementById('settingsSavedMsg').classList.add('d-none'); }, 2500);
+            });
+
+            /* ================= View switching ================= */
+            const views = document.querySelectorAll('.app-view');
+            const leftLinks = document.querySelectorAll('.left-link');
+            leftLinks.forEach(function (link) {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = link.dataset.view;
+                    views.forEach(function (v) { v.classList.add('d-none'); });
+                    document.getElementById('view-' + target).classList.remove('d-none');
+                    leftLinks.forEach(function (l) { l.classList.remove('active-link'); });
+                    link.classList.add('active-link');
+                    if (target === 'saved') renderSavedView();
+                    if (target === 'applications') renderApplicationsView();
+                    if (target === 'messages') renderMessagesView();
+                    if (target === 'settings') populateSettingsForm();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            });
+            function ensureHomeView() {
+                const homeLink = document.querySelector('.left-link[data-view="home"]');
+                if (homeLink && !homeLink.classList.contains('active-link')) homeLink.click();
+            }
+
+            /* ================= Search / filter ================= */
+            function filterJobs(query) {
+                const q = query.trim().toLowerCase();
+                const cards = jobFeed.querySelectorAll(':scope > .post-box');
+                let anyVisible = false;
+                cards.forEach(function (card) {
+                    const haystack = (card.dataset.title + ' ' + card.dataset.company + ' ' + card.textContent).toLowerCase();
+                    const match = !q || haystack.indexOf(q) !== -1;
+                    card.classList.toggle('d-none', !match);
+                    if (match) anyVisible = true;
+                });
+                document.getElementById('noResultsMsg').classList.toggle('d-none', anyVisible || !q);
+            }
+            const searchDesktop = document.getElementById('searchInputDesktop');
+            const searchMobile = document.getElementById('searchInputMobile');
+            function handleSearchInput(e) {
+                ensureHomeView();
+                filterJobs(e.target.value);
+                if (searchDesktop && e.target !== searchDesktop) searchDesktop.value = e.target.value;
+                if (searchMobile && e.target !== searchMobile) searchMobile.value = e.target.value;
+            }
+            searchDesktop.addEventListener('input', handleSearchInput);
+            searchMobile.addEventListener('input', handleSearchInput);
+
+            /* ================= Attachment markup for a job card ================= */
+            function attachmentMarkup(attachment) {
+                if (!attachment) return '';
+                if (attachment.kind === 'image') {
+                    return '<img src="' + attachment.url + '" class="img-fluid rounded-4 mb-3 job-image" alt="Job post image">';
+                }
+                if (attachment.kind === 'video') {
+                    return '<video controls class="img-fluid rounded-4 mb-3 job-image" src="' + attachment.url + '"></video>';
+                }
+                if (attachment.kind === 'document') {
+                    return '<a href="' + attachment.url + '" download="' + escapeHtml(attachment.name) +
+                        '" class="doc-chip"><i class="bi bi-file-earmark-text-fill text-warning"></i> ' +
+                        escapeHtml(attachment.name) + '</a>';
+                }
+                return '';
+            }
+
+            /* ================= Build & insert a job card ================= */
+            function buildJobCard(job) {
+                const card = document.createElement('div');
+                card.className = 'post-box mb-4';
+                card.dataset.jobId = job.id;
+                card.dataset.title = job.title;
+                card.dataset.company = job.company;
+
+                const metaParts = [job.meta || timeAgo(job.createdAt)];
+                if (job.location) metaParts.push(job.location);
+                const salaryLine = job.salary ? ('<br><br>Salary: ' + escapeHtml(job.salary)) : '';
+                const descLine = job.description ? escapeHtml(job.description).replace(/\n/g, '<br>') : '';
+                const badge = job.isNew ? '<span class="badge rounded-pill badge-new">New</span>' : '';
+
+                card.innerHTML =
+                    '<div class="d-flex align-items-center mb-3">' +
+                    '<img src="' + getAvatar() + '" class="profile-img me-3" alt="' + escapeHtml(job.company) + '">' +
+                    '<div><h5 class="mb-0">' + escapeHtml(job.company) + badge + '</h5>' +
+                    '<small class="text-secondary">' + metaParts.map(escapeHtml).join(' • ') + '</small></div></div>' +
+                    '<p class="mb-3">📢 <strong>' + escapeHtml(job.title) + '</strong><br><br>' + descLine + salaryLine + '</p>' +
+                    attachmentMarkup(job.attachment) +
+                    '<div class="d-flex flex-wrap gap-2 justify-content-between">' +
+                    '<button class="btn btn-outline-light btn-like">❤️ <span class="like-count">Like</span></button>' +
+                    '<button class="btn btn-outline-light btn-comment">💬 <span class="comment-count">Comment</span></button>' +
+                    '<button class="btn btn-outline-light btn-save"><i class="bi bi-bookmark"></i> Save</button>' +
+                    '<button class="btn btn-success btn-apply">Apply Now</button>' +
+                    '<button class="btn btn-primary btn-chat">Chat Recruiter</button>' +
+                    '</div>';
+                return card;
+            }
+
+            function addJobToFeed(job, opts) {
+                opts = opts || {};
+                const card = buildJobCard(job);
+                jobFeed.prepend(card);
+                applyStoredState(card);
+                if (opts.scroll) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return card;
+            }
+
+            function applyStoredState(card) {
+                const id = card.dataset.jobId;
+                if (state.saved[id]) setSaveButtonState(card.querySelector('.btn-save'), true);
+                if (state.applied[id]) setApplyButtonState(card.querySelector('.btn-apply'), true);
+                updateCommentCount(card);
+            }
+
+            /* ================= Save ================= */
+            function setSaveButtonState(btn, isSaved) {
+                btn.classList.toggle('active', isSaved);
+                btn.innerHTML = isSaved
+                    ? '<i class="bi bi-bookmark-fill"></i> Saved'
+                    : '<i class="bi bi-bookmark"></i> Save';
+            }
+            function snapshotFromCard(card) {
+                const img = card.querySelector('.job-image');
+                const smallEl = card.querySelector('small');
+                return {
+                    id: card.dataset.jobId,
+                    title: card.dataset.title,
+                    company: card.dataset.company,
+                    meta: smallEl ? smallEl.textContent.trim() : '',
+                    image: img ? img.src : ''
+                };
+            }
+            function toggleSave(card, btn) {
+                const id = card.dataset.jobId;
+                if (state.saved[id]) {
+                    delete state.saved[id];
+                    setSaveButtonState(btn, false);
+                } else {
+                    state.saved[id] = snapshotFromCard(card);
+                    setSaveButtonState(btn, true);
+                }
+                saveJSON(STORAGE_KEYS.saved, state.saved);
+                if (!document.getElementById('view-saved').classList.contains('d-none')) renderSavedView();
+            }
+
+            /* ================= Apply ================= */
+            function setApplyButtonState(btn, isApplied) {
+                btn.classList.toggle('applied', isApplied);
+                btn.textContent = isApplied ? 'Applied ✓' : 'Apply Now';
+            }
+            function toggleApply(card, btn) {
+                const id = card.dataset.jobId;
+                if (state.applied[id]) {
+                    delete state.applied[id];
+                    setApplyButtonState(btn, false);
+                } else {
+                    const snap = snapshotFromCard(card);
+                    snap.appliedAt = new Date().toISOString();
+                    state.applied[id] = snap;
+                    setApplyButtonState(btn, true);
+                }
+                saveJSON(STORAGE_KEYS.applied, state.applied);
+                if (!document.getElementById('view-applications').classList.contains('d-none')) renderApplicationsView();
+            }
+
+            /* ================= Comments ================= */
+            function ensureCommentsPanel(card) {
+                let panel = card.querySelector('.comments-panel');
+                if (panel) return panel;
+                panel = document.createElement('div');
+                panel.className = 'comments-panel d-none';
+                panel.innerHTML =
+                    '<div class="comments-list mb-3"></div>' +
+                    '<div class="d-flex gap-2">' +
+                    '<input type="text" class="form-control comment-input" placeholder="Write a comment...">' +
+                    '<button class="btn-post comment-send">Send</button>' +
+                    '</div>';
+                card.appendChild(panel);
+                renderComments(card);
+                return panel;
+            }
+            function renderComments(card) {
+                const id = card.dataset.jobId;
+                const list = card.querySelector('.comments-list');
+                const comments = state.comments[id] || [];
+                if (!comments.length) {
+                    list.innerHTML = '<div class="text-secondary small">No comments yet. Be the first to comment.</div>';
+                    return;
+                }
+                list.innerHTML = comments.map(function (c) {
+                    return '<div class="mb-2 small"><strong>' + escapeHtml(c.author) + ':</strong> ' + escapeHtml(c.text) + '</div>';
+                }).join('');
+            }
+            function updateCommentCount(card) {
+                const id = card.dataset.jobId;
+                const count = (state.comments[id] || []).length;
+                const span = card.querySelector('.comment-count');
+                if (span && count > 0) span.textContent = count;
+            }
+
+            /* ================= Mini list rendering (Saved / Applications) =================
+               extraButtonsHtml(job) is optional and, when supplied, is called per row
+               to render additional action buttons (used by Saved Jobs for "View Post"
+               and "Chat with Recruiter"). Their click handlers are wired up afterwards
+               via delegation-free direct binding, matched by class name. */
+            function renderMiniList(container, dict, emptyMsg, removeHandler, opts) {
+                opts = opts || {};
+                const entries = Object.keys(dict).map(function (k) { return dict[k]; });
+                if (!entries.length) {
+                    container.innerHTML = '<div class="placeholder-view"><i class="bi bi-inbox" style="font-size:2.5rem;"></i>' +
+                        '<p class="mt-3 mb-0">' + emptyMsg + '</p></div>';
+                    return;
+                }
+                container.innerHTML = entries.map(function (job) {
+                    const extraBtns = opts.showViewChat
+                        ? '<button class="mini-view"><i class="bi bi-eye-fill"></i> View Post</button>' +
+                          '<button class="mini-chat"><i class="bi bi-chat-dots-fill"></i> Chat with Recruiter</button>'
+                        : '';
+                    return '<div class="mini-card" data-job-id="' + escapeHtml(job.id) + '">' +
+                        '<img src="' + (job.image || DEFAULT_AVATAR) + '" alt="">' +
+                        '<div class="mini-info"><h6>' + escapeHtml(job.title) + '</h6>' +
+                        '<small>' + escapeHtml(job.company) + ' • ' + escapeHtml(job.meta || '') + '</small></div>' +
+                        '<div class="mini-actions">' + extraBtns + '<button class="mini-remove">Remove</button></div></div>';
+                }).join('');
+                container.querySelectorAll('.mini-remove').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        const id = btn.closest('.mini-card').dataset.jobId;
+                        removeHandler(id);
+                    });
+                });
+                if (opts.showViewChat) {
+                    container.querySelectorAll('.mini-view').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            const id = btn.closest('.mini-card').dataset.jobId;
+                            viewSavedPost(id);
+                        });
+                    });
+                    container.querySelectorAll('.mini-chat').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            const id = btn.closest('.mini-card').dataset.jobId;
+                            const job = dict[id];
+                            if (job) openChatById(id, job.company);
+                        });
+                    });
+                }
+            }
+            function viewSavedPost(id) {
+                ensureHomeView();
+                if (searchDesktop) searchDesktop.value = '';
+                if (searchMobile) searchMobile.value = '';
+                filterJobs('');
+                const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    card.style.outline = '2px solid #0d6efd';
+                    card.style.outlineOffset = '4px';
+                    setTimeout(function () {
+                        card.style.outline = '';
+                        card.style.outlineOffset = '';
+                    }, 1600);
+                }
+            }
+            function renderSavedView() {
+                renderMiniList(document.getElementById('savedList'), state.saved,
+                    "You haven't saved any jobs yet. Tap Save on a post to keep it here.",
+                    function (id) {
+                        delete state.saved[id];
+                        saveJSON(STORAGE_KEYS.saved, state.saved);
+                        const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
+                        if (card) setSaveButtonState(card.querySelector('.btn-save'), false);
+                        renderSavedView();
+                    }, { showViewChat: true });
+            }
+            function renderApplicationsView() {
+                renderMiniList(document.getElementById('applicationsList'), state.applied,
+                    "You haven't applied to any jobs yet. Tap Apply Now on a post to track it here.",
+                    function (id) {
+                        delete state.applied[id];
+                        saveJSON(STORAGE_KEYS.applied, state.applied);
+                        const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
+                        if (card) setApplyButtonState(card.querySelector('.btn-apply'), false);
+                        renderApplicationsView();
+                    });
+            }
+
+            /* ================= Chat (Messages + Notifications) ================= */
+            const chatModalEl = document.getElementById('chatModal');
+            const chatModal = new bootstrap.Modal(chatModalEl);
+            const chatMessagesEl = document.getElementById('chatMessages');
+            const chatInput = document.getElementById('chatInput');
+            const chatSendBtn = document.getElementById('chatSendBtn');
+            const chatModalTitle = document.getElementById('chatModalTitle');
+            let activeChatJobId = null;
+
+            function getUnread(jobId) {
+                const thread = state.chats[jobId];
+                if (!thread) return 0;
+                const marker = state.readMarkers[jobId] || '1970-01-01T00:00:00.000Z';
+                return (thread.messages || []).filter(function (m) { return m.from === 'Recruiter' && m.at > marker; }).length;
+            }
+            function getTotalUnread() {
+                return Object.keys(state.chats).reduce(function (sum, id) { return sum + getUnread(id); }, 0);
+            }
+            function updateNotifBadge() {
+                const badge = document.getElementById('notifBadge');
+                const sidebarBadge = document.getElementById('sidebarMsgBadge');
+                const list = document.getElementById('notifList');
+                if (!state.settings.notifyMessages) {
+                    badge.classList.add('d-none');
+                    sidebarBadge.classList.add('d-none');
+                    list.innerHTML = '<li><span class="dropdown-item-text text-secondary small">Message notifications are turned off in Settings.</span></li>';
+                    return;
+                }
+                const total = getTotalUnread();
+                if (total > 0) {
+                    badge.textContent = total;
+                    badge.classList.remove('d-none');
+                    sidebarBadge.textContent = total;
+                    sidebarBadge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                    sidebarBadge.classList.add('d-none');
+                }
+                const unreadIds = Object.keys(state.chats).filter(function (id) { return getUnread(id) > 0; });
+                if (!unreadIds.length) {
+                    list.innerHTML = '<li><span class="dropdown-item-text text-secondary small">No new messages.</span></li>';
+                    return;
+                }
+                list.innerHTML = unreadIds.map(function (id) {
+                    const thread = state.chats[id];
+                    const msgs = thread.messages || [];
+                    const last = msgs[msgs.length - 1];
+                    return '<li><a class="dropdown-item notif-item" href="#" data-job-id="' + escapeHtml(id) + '">' +
+                        '<strong>' + escapeHtml(thread.company) + '</strong><br><span class="small text-secondary">' +
+                        escapeHtml(last ? last.text : '') + '</span></a></li>';
+                }).join('');
+                list.querySelectorAll('.notif-item').forEach(function (item) {
+                    item.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const id = item.dataset.jobId;
+                        openChatById(id, state.chats[id].company);
+                    });
+                });
+            }
+            function markChatRead(jobId) {
+                state.readMarkers[jobId] = new Date().toISOString();
+                saveJSON(STORAGE_KEYS.readMarkers, state.readMarkers);
+                updateNotifBadge();
+                if (!document.getElementById('view-messages').classList.contains('d-none')) renderMessagesView();
+            }
+
+            function renderMessagesView() {
+                const container = document.getElementById('messagesList');
+                const ids = Object.keys(state.chats);
+                if (!ids.length) {
+                    container.innerHTML = '<div class="placeholder-view"><i class="bi bi-chat-dots" style="font-size:2.5rem;"></i>' +
+                        '<p class="mt-3 mb-0">No messages yet. Open a job\'s Chat Recruiter button to start a conversation.</p></div>';
+                    return;
+                }
+                container.innerHTML = ids.map(function (id) {
+                    const thread = state.chats[id];
+                    const msgs = thread.messages || [];
+                    const last = msgs[msgs.length - 1];
+                    const unread = getUnread(id);
+                    const preview = last ? (escapeHtml(last.from) + ': ' + escapeHtml(last.text)) : 'No messages yet';
+                    const badge = unread > 0 ? '<span class="notif-badge">' + unread + '</span>' : '';
+                    return '<div class="mini-card message-row" data-job-id="' + escapeHtml(id) + '" style="cursor:pointer;">' +
+                        '<img src="' + DEFAULT_AVATAR + '" alt="">' +
+                        '<div class="mini-info"><h6>' + escapeHtml(thread.company) + badge + '</h6>' +
+                        '<small>' + preview + '</small></div></div>';
+                }).join('');
+                container.querySelectorAll('.message-row').forEach(function (row) {
+                    row.addEventListener('click', function () {
+                        const id = row.dataset.jobId;
+                        openChatById(id, state.chats[id].company);
+                    });
+                });
+            }
+
+            function renderChat(jobId) {
+                const thread = state.chats[jobId];
+                const msgs = (thread && thread.messages) || [];
+                if (!msgs.length) {
+                    chatMessagesEl.innerHTML = '<div class="text-secondary small">No messages yet. Say hello!</div>';
+                    return;
+                }
+                chatMessagesEl.innerHTML = msgs.map(function (m) {
+                    const isMe = m.from !== 'Recruiter';
+                    const align = isMe ? 'text-end' : 'text-start';
+                    const bubbleBg = isMe ? '#0d6efd' : '#132847';
+                    return '<div class="mb-2 ' + align + '"><span style="display:inline-block;background:' + bubbleBg +
+                        ';padding:8px 14px;border-radius:14px;max-width:80%;text-align:left;"><strong>' +
+                        escapeHtml(m.from) + ':</strong> ' + escapeHtml(m.text) + '</span></div>';
+                }).join('');
+                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+            }
+            function openChatById(jobId, company) {
+                activeChatJobId = jobId;
+                chatModalTitle.textContent = 'Chat with ' + company;
+                if (!state.chats[jobId]) state.chats[jobId] = { company: company, title: '', messages: [] };
+                renderChat(jobId);
+                chatModal.show();
+                markChatRead(jobId);
+            }
+            function openChat(card) {
+                const id = card.dataset.jobId;
+                if (!state.chats[id]) state.chats[id] = { company: card.dataset.company, title: card.dataset.title, messages: [] };
+                openChatById(id, card.dataset.company);
+            }
+            function sendChatMessage() {
+                const text = chatInput.value.trim();
+                if (!text || !activeChatJobId) return;
+                if (!state.chats[activeChatJobId]) state.chats[activeChatJobId] = { company: chatModalTitle.textContent.replace('Chat with ', ''), title: '', messages: [] };
+                state.chats[activeChatJobId].messages.push({ from: (state.profile.name || 'You'), text: text, at: new Date().toISOString() });
+                saveJSON(STORAGE_KEYS.chats, state.chats);
+                chatInput.value = '';
+                renderChat(activeChatJobId);
+
+                // Demo auto-reply so the thread feels alive. This is NOT a real
+                // recruiter -- there's no backend behind this app. The recruiter
+                // is simulated as "not active": whether or not you have the chat
+                // modal open on this job when the reply lands, it always gets
+                // pushed into notifications (bell badge, sidebar Messages badge,
+                // and the Messages list) so you never miss it. If the modal for
+                // THIS job happens to be open, it's shown live instead and marked
+                // read immediately.
+                const jobId = activeChatJobId;
+                setTimeout(function () {
+                    if (!state.chats[jobId]) state.chats[jobId] = { company: '', title: '', messages: [] };
+                    state.chats[jobId].messages.push({
+                        from: 'Recruiter',
+                        text: "Thanks for reaching out — we'll review your message and get back to you soon.",
+                        at: new Date().toISOString()
+                    });
+                    saveJSON(STORAGE_KEYS.chats, state.chats);
+                    const modalOpenOnThisJob = chatModalEl.classList.contains('show') && activeChatJobId === jobId;
+                    if (modalOpenOnThisJob) {
+                        renderChat(jobId);
+                        markChatRead(jobId);
+                    } else {
+                        // Recruiter is "not active" (chat window not open on this
+                        // job right now) -- surface it as a notification instead.
+                        updateNotifBadge();
+                        if (!document.getElementById('view-messages').classList.contains('d-none')) renderMessagesView();
+                    }
+                }, 900);
+            }
+            chatSendBtn.addEventListener('click', sendChatMessage);
+            chatInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
+            });
+
+            // Same-browser "real-time" sync: if this site is open in another tab
+            // (e.g. simulating a recruiter view), new messages appear there as
+            // soon as they're sent, via the storage event.
+            window.addEventListener('storage', function (e) {
+                if (e.key === STORAGE_KEYS.chats) {
+                    state.chats = loadJSON(STORAGE_KEYS.chats, {});
+                    if (activeChatJobId && chatModalEl.classList.contains('show')) renderChat(activeChatJobId);
+                    updateNotifBadge();
+                    if (!document.getElementById('view-messages').classList.contains('d-none')) renderMessagesView();
+                }
+            });
+
+            /* ================= Delegated clicks/keys on the feed ================= */
+            jobFeed.addEventListener('click', function (e) {
+                const card = e.target.closest('.post-box');
+                if (!card) return;
+
+                const likeBtn = e.target.closest('.btn-like');
+                if (likeBtn) {
+                    const countEl = likeBtn.querySelector('.like-count');
+                    let count = parseInt(countEl.textContent, 10);
+                    const wasLiked = likeBtn.classList.contains('liked');
+                    if (isNaN(count)) { countEl.textContent = '1'; likeBtn.classList.add('liked'); return; }
+                    count += wasLiked ? -1 : 1;
+                    likeBtn.classList.toggle('liked', !wasLiked);
+                    countEl.textContent = count;
+                    return;
+                }
+
+                const saveBtn = e.target.closest('.btn-save');
+                if (saveBtn) { toggleSave(card, saveBtn); return; }
+
+                const applyBtn = e.target.closest('.btn-apply');
+                if (applyBtn) { toggleApply(card, applyBtn); return; }
+
+                const chatBtn = e.target.closest('.btn-chat');
+                if (chatBtn) { openChat(card); return; }
+
+                const commentBtn = e.target.closest('.btn-comment');
+                if (commentBtn) {
+                    const panel = ensureCommentsPanel(card);
+                    panel.classList.toggle('d-none');
+                    if (!panel.classList.contains('d-none')) panel.querySelector('.comment-input').focus();
+                    return;
+                }
+
+                const sendBtn = e.target.closest('.comment-send');
+                if (sendBtn) {
+                    const input = card.querySelector('.comment-input');
+                    const text = input.value.trim();
+                    if (!text) return;
+                    const id = card.dataset.jobId;
+                    if (!state.comments[id]) state.comments[id] = [];
+                    state.comments[id].push({ author: (state.profile.name || 'You'), text: text, at: new Date().toISOString() });
+                    saveJSON(STORAGE_KEYS.comments, state.comments);
+                    input.value = '';
+                    renderComments(card);
+                    updateCommentCount(card);
+                    return;
+                }
+            });
+            jobFeed.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.classList.contains('comment-input')) {
+                    e.preventDefault();
+                    const panel = e.target.closest('.comments-panel');
+                    const sendBtn = panel && panel.querySelector('.comment-send');
+                    if (sendBtn) sendBtn.click();
+                }
+            });
+
+            /* ================= Composer attachments (Photo / Video / Document) ================= */
+            const photoOption = document.getElementById('photoOption');
+            const videoOption = document.getElementById('videoOption');
+            const documentOption = document.getElementById('documentOption');
+            const photoInput = document.getElementById('photoInput');
+            const videoInput = document.getElementById('videoInput');
+            const documentInput = document.getElementById('documentInput');
+            const composerAttachmentBox = document.getElementById('composerAttachment');
+
+            let composerAttachment = null;
+
+            photoOption.addEventListener('click', function () { photoInput.click(); });
+            videoOption.addEventListener('click', function () { videoInput.click(); });
+            documentOption.addEventListener('click', function () { documentInput.click(); });
+
+            photoInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function () {
+                    setComposerAttachment({ kind: 'image', url: reader.result, name: file.name });
+                };
+                reader.readAsDataURL(file);
+                e.target.value = '';
+            });
+            videoInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                setComposerAttachment({ kind: 'video', url: URL.createObjectURL(file), name: file.name });
+                e.target.value = '';
+            });
+            documentInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                setComposerAttachment({ kind: 'document', url: URL.createObjectURL(file), name: file.name });
+                e.target.value = '';
+            });
+
+            function setComposerAttachment(att) {
+                composerAttachment = att;
+                const icon = att.kind === 'image' ? 'bi-image-fill text-primary'
+                    : att.kind === 'video' ? 'bi-camera-video-fill text-danger'
+                        : 'bi-file-earmark-text-fill text-warning';
+                composerAttachmentBox.innerHTML = '<div class="attach-chip"><i class="bi ' + icon + '"></i>' +
+                    '<span>' + escapeHtml(att.name) + '</span><span class="remove-chip">&times;</span></div>';
+                composerAttachmentBox.querySelector('.remove-chip').addEventListener('click', clearComposerAttachment);
+            }
+            function clearComposerAttachment() {
+                composerAttachment = null;
+                composerAttachmentBox.innerHTML = '';
+            }
+
+            /* ================= Quick composer post ================= */
+            const quickPostInput = document.getElementById('quickPostInput');
+            const quickPostBtn = document.getElementById('quickPostBtn');
+
+            function submitQuickPost() {
+                const text = quickPostInput.value.trim();
+                if (!text && !composerAttachment) return;
+
+                const job = {
+                    id: newId(),
+                    company: 'You',
+                    title: 'Announcement',
+                    location: '',
+                    salary: '',
+                    description: text,
+                    attachment: composerAttachment,
+                    createdAt: new Date().toISOString(),
+                    isNew: true
+                };
+                addJobToFeed(job, { scroll: true });
+
+                const persistable = Object.assign({}, job, {
+                    attachment: (job.attachment && job.attachment.kind === 'image') ? job.attachment : null
+                });
+                state.posts.unshift(persistable);
+                saveJSON(STORAGE_KEYS.posts, state.posts);
+
+                quickPostInput.value = '';
+                clearComposerAttachment();
+            }
+            quickPostBtn.addEventListener('click', submitQuickPost);
+            quickPostInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); submitQuickPost(); }
+            });
+
+            /* ================= Job modal (full job post form) ================= */
+            const jobModalEl = document.getElementById('jobModal');
+            const jobModal = new bootstrap.Modal(jobModalEl);
+            const jobForm = document.getElementById('jobForm');
+            const jobFormError = document.getElementById('jobFormError');
+            const jobImageFileInput = document.getElementById('jobImageFile');
+            const jobImagePreview = document.getElementById('jobImagePreview');
+
+            let jobModalImageDataUrl = null;
+
+            jobImageFileInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function () {
+                    jobModalImageDataUrl = reader.result;
+                    jobImagePreview.src = reader.result;
+                    jobImagePreview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            });
+
+            jobForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const company = document.getElementById('jobCompany').value.trim();
+                const title = document.getElementById('jobTitle').value.trim();
+                const location = document.getElementById('jobLocation').value.trim();
+                const salary = document.getElementById('jobSalary').value.trim();
+                const description = document.getElementById('jobDescription').value.trim();
+                const imageUrl = document.getElementById('jobImage').value.trim();
+
+                if (!company || !title || !description) {
+                    jobFormError.classList.remove('d-none');
+                    return;
+                }
+                jobFormError.classList.add('d-none');
+
+                const finalImage = jobModalImageDataUrl || imageUrl ||
+                    DEFAULT_IMAGES[Math.floor(Math.random() * DEFAULT_IMAGES.length)];
+
+                const job = {
+                    id: newId(),
+                    company: company,
+                    title: title,
+                    location: location,
+                    salary: salary,
+                    description: description,
+                    attachment: { kind: 'image', url: finalImage, name: 'job-image' },
+                    createdAt: new Date().toISOString(),
+                    isNew: true
+                };
+
+
+                fetch("http://localhost:3000/jobs", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify(job)
+})
+.then(response => response.json())
+.then(data => {
+    console.log("Backend:", data);
+})
+.catch(error => {
+    console.error("Error:", error);
+});
+                addJobToFeed(job, { scroll: true });
+
+                state.posts.unshift(job);
+                saveJSON(STORAGE_KEYS.posts, state.posts);
+
+                jobForm.reset();
+                jobModalImageDataUrl = null;
+                jobImagePreview.src = '';
+                jobImagePreview.classList.add('d-none');
+                jobModal.hide();
+            });
+            jobModalEl.addEventListener('show.bs.modal', function () { jobFormError.classList.add('d-none'); });
+            jobModalEl.addEventListener('hidden.bs.modal', function () {
+                jobForm.reset();
+                jobModalImageDataUrl = null;
+                jobImagePreview.src = '';
+                jobImagePreview.classList.add('d-none');
+            });
+
+            /* ================= Sidebar: fixed on desktop, static/scrollable on mobile ================= */
+            const sidebarCol = document.getElementById('sidebarCol');
+            const leftCard = document.getElementById('leftCard');
+            function layoutSidebar() {
+                if (window.innerWidth >= 992) {
+                    const rect = sidebarCol.getBoundingClientRect();
+                    leftCard.style.position = 'fixed';
+                    leftCard.style.top = '90px';
+                    leftCard.style.left = rect.left + 'px';
+                    leftCard.style.width = rect.width + 'px';
+                    leftCard.style.margin = '0';
+                    leftCard.classList.add('is-fixed');
+                } else {
+                    leftCard.style.position = '';
+                    leftCard.style.top = '';
+                    leftCard.style.left = '';
+                    leftCard.style.width = '';
+                    leftCard.style.margin = '';
+                    leftCard.classList.remove('is-fixed');
+                }
+            }
+            window.addEventListener('resize', layoutSidebar);
+            window.addEventListener('load', layoutSidebar);
+            layoutSidebar();
+
+            /* ================= Back to top ================= */
+            const backToTopBtn = document.getElementById('backToTop');
+            window.addEventListener('scroll', function () {
+                backToTopBtn.classList.toggle('show', window.scrollY > 300);
+            });
+            backToTopBtn.addEventListener('click', function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            /* ================= AI career assistant =================
+               AI_API_ENDPOINT is intentionally empty: a real API key must
+               never be shipped inside client-side HTML/JS, since anyone can
+               view-source and steal it. To connect a real employment/jobs AI
+               API, set up your own small backend that holds the key and proxies
+               requests to it, then point AI_API_ENDPOINT at that backend.
+               Until then, this uses a small built-in rule-based assistant so
+               it still works out of the box. */
+            const AI_API_ENDPOINT = '';
+
+            const aiBubble = document.getElementById('aiBubble');
+            const aiPanel = document.getElementById('aiPanel');
+            const aiCloseBtn = document.getElementById('aiCloseBtn');
+            const aiMessages = document.getElementById('aiMessages');
+            const aiInput = document.getElementById('aiInput');
+            const aiSendBtn = document.getElementById('aiSendBtn');
+            let aiHistory = loadJSON(STORAGE_KEYS.aiChat, []);
+
+            function renderAiMessages() {
+                if (!aiHistory.length) {
+                    aiMessages.innerHTML = '<div class="text-secondary small">Hi! Ask me about job search, resumes, interviews, or salary negotiation.</div>';
+                    return;
+                }
+                aiMessages.innerHTML = aiHistory.map(function (m) {
+                    const isMe = m.from === 'You';
+                    const align = isMe ? 'text-end' : 'text-start';
+                    const bg = isMe ? '#0d6efd' : '#132847';
+                    return '<div class="mb-2 ' + align + '"><span style="display:inline-block;background:' + bg +
+                        ';padding:8px 12px;border-radius:12px;max-width:85%;text-align:left;">' + escapeHtml(m.text) + '</span></div>';
+                }).join('');
+                aiMessages.scrollTop = aiMessages.scrollHeight;
+            }
+            aiBubble.addEventListener('click', function () {
+                aiPanel.classList.toggle('d-none');
+                if (!aiPanel.classList.contains('d-none')) { renderAiMessages(); aiInput.focus(); }
+            });
+            aiCloseBtn.addEventListener('click', function () { aiPanel.classList.add('d-none'); });
+            [jobModalEl, chatModalEl].forEach(function (el) {
+                el.addEventListener('show.bs.modal', function () { aiPanel.classList.add('d-none'); });
+            });
+
+            function localCareerReply(text) {
+                const t = text.toLowerCase();
+                if (t.indexOf('resume') !== -1 || t.indexOf('cv') !== -1) {
+                    return "Keep your resume to one page if you have under 10 years experience, lead bullet points with strong action verbs, and quantify results wherever you can (e.g. 'reduced costs by 20%').";
+                }
+                if (t.indexOf('interview') !== -1) {
+                    return "Research the company, prepare 2-3 STAR-format stories (Situation, Task, Action, Result), and have 2-3 thoughtful questions ready for the interviewer.";
+                }
+                if (t.indexOf('salary') !== -1 || t.indexOf('negotiat') !== -1) {
+                    return "Research the market rate for the role and location first, let the employer name a number first if possible, and negotiate the whole package -- not just base salary.";
+                }
+                if (t.indexOf('cover letter') !== -1) {
+                    return "Keep a cover letter to 3-4 short paragraphs: why this company, why this role, your relevant strengths with a specific example, and a confident close.";
+                }
+                if (t.indexOf('apply') !== -1 || t.indexOf('search') !== -1 || t.indexOf('find a job') !== -1) {
+                    return "Try the search bar at the top to filter open roles by title, company or location, or use the Job button in the composer if you're posting a role instead.";
+                }
+                return "I can help with resumes, cover letters, interview prep, and salary negotiation -- ask me about any of those, or use the search bar above to browse open roles.";
+            }
+
+            function getAiReply(text) {
+                if (!AI_API_ENDPOINT) return Promise.resolve(localCareerReply(text));
+                return fetch(AI_API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                }).then(function (res) {
+                    if (!res.ok) throw new Error('bad response');
+                    return res.json();
+                }).then(function (data) {
+                    return (data && data.reply) ? data.reply : localCareerReply(text);
+                }).catch(function () {
+                    return localCareerReply(text);
+                });
+            }
+            function sendAiMessage() {
+                const text = aiInput.value.trim();
+                if (!text) return;
+                aiHistory.push({ from: 'You', text: text });
+                aiInput.value = '';
+                renderAiMessages();
+                saveJSON(STORAGE_KEYS.aiChat, aiHistory);
+
+                getAiReply(text).then(function (reply) {
+                    aiHistory.push({ from: 'AI', text: reply });
+                    saveJSON(STORAGE_KEYS.aiChat, aiHistory);
+                    renderAiMessages();
+                });
+            }
+            aiSendBtn.addEventListener('click', sendAiMessage);
+            aiInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendAiMessage(); } });
+
+            /* ================= Boot ================= */
+            updateProfileUI();
+            populateSettingsForm();
+            document.querySelectorAll('#jobFeed .post-box').forEach(applyStoredState);
+            state.posts.slice().reverse().forEach(function (job) {
+                addJobToFeed(Object.assign({}, job, { isNew: false }));
+            });
+            updateNotifBadge();
+
+        })();
+    </script>
+
+</body>
+
+</html>
