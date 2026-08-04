@@ -1881,7 +1881,11 @@
                     createdAt: new Date().toISOString(),
                     isNew: true
                 };
-                addJobToFeed(job, { scroll: true });
+                console.log("Before adding feed");
+
+addJobToFeed(job, { scroll: true });
+
+console.log("After adding feed");
 
                 const persistable = Object.assign({}, job, {
                     attachment: (job.attachment && job.attachment.kind === 'image') ? job.attachment : null
@@ -1951,7 +1955,7 @@
                 };
 
 
-                fetch("http://localhost:3000/jobs", {
+         fetch("https://project-connect-001.onrender.com/jobs", {
     method: "POST",
     headers: {
         "Content-Type": "application/json"
@@ -4080,7 +4084,7 @@
                 };
 
 
-                fetch("http://localhost:3000/jobs", {
+ fetch("https://project-connect-001.onrender.com/jobs", {
     method: "POST",
     headers: {
         "Content-Type": "application/json"
@@ -4094,163 +4098,367 @@
 .catch(error => {
     console.error("Error:", error);
 });
-                addJobToFeed(job, { scroll: true });
 
-                state.posts.unshift(job);
-                saveJSON(STORAGE_KEYS.posts, state.posts);
 
-                jobForm.reset();
-                jobModalImageDataUrl = null;
-                jobImagePreview.src = '';
-                jobImagePreview.classList.add('d-none');
-                jobModal.hide();
-            });
-            jobModalEl.addEventListener('show.bs.modal', function () { jobFormError.classList.add('d-none'); });
-            jobModalEl.addEventListener('hidden.bs.modal', function () {
-                jobForm.reset();
-                jobModalImageDataUrl = null;
-                jobImagePreview.src = '';
-                jobImagePreview.classList.add('d-none');
-            });
+addJobToFeed(job, { scroll: true });
 
-            /* ================= Sidebar: fixed on desktop, static/scrollable on mobile ================= */
-            const sidebarCol = document.getElementById('sidebarCol');
-            const leftCard = document.getElementById('leftCard');
-            function layoutSidebar() {
-                if (window.innerWidth >= 992) {
-                    const rect = sidebarCol.getBoundingClientRect();
-                    leftCard.style.position = 'fixed';
-                    leftCard.style.top = '90px';
-                    leftCard.style.left = rect.left + 'px';
-                    leftCard.style.width = rect.width + 'px';
-                    leftCard.style.margin = '0';
-                    leftCard.classList.add('is-fixed');
-                } else {
-                    leftCard.style.position = '';
-                    leftCard.style.top = '';
-                    leftCard.style.left = '';
-                    leftCard.style.width = '';
-                    leftCard.style.margin = '';
-                    leftCard.classList.remove('is-fixed');
-                }
-            }
-            window.addEventListener('resize', layoutSidebar);
-            window.addEventListener('load', layoutSidebar);
-            layoutSidebar();
+state.posts.unshift(job);
+saveJSON(STORAGE_KEYS.posts, state.posts);
 
-            /* ================= Back to top ================= */
-            const backToTopBtn = document.getElementById('backToTop');
-            window.addEventListener('scroll', function () {
-                backToTopBtn.classList.toggle('show', window.scrollY > 300);
-            });
-            backToTopBtn.addEventListener('click', function () {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
+jobForm.reset();
+jobModalImageDataUrl = null;
+jobImagePreview.src = '';
+jobImagePreview.classList.add('d-none');
+jobModal.hide();
 
-            /* ================= AI career assistant =================
-               AI_API_ENDPOINT is intentionally empty: a real API key must
-               never be shipped inside client-side HTML/JS, since anyone can
-               view-source and steal it. To connect a real employment/jobs AI
-               API, set up your own small backend that holds the key and proxies
-               requests to it, then point AI_API_ENDPOINT at that backend.
-               Until then, this uses a small built-in rule-based assistant so
-               it still works out of the box. */
-            const AI_API_ENDPOINT = '';
+});
 
-            const aiBubble = document.getElementById('aiBubble');
-            const aiPanel = document.getElementById('aiPanel');
-            const aiCloseBtn = document.getElementById('aiCloseBtn');
-            const aiMessages = document.getElementById('aiMessages');
-            const aiInput = document.getElementById('aiInput');
-            const aiSendBtn = document.getElementById('aiSendBtn');
-            let aiHistory = loadJSON(STORAGE_KEYS.aiChat, []);
 
-            function renderAiMessages() {
-                if (!aiHistory.length) {
-                    aiMessages.innerHTML = '<div class="text-secondary small">Hi! Ask me about job search, resumes, interviews, or salary negotiation.</div>';
-                    return;
-                }
-                aiMessages.innerHTML = aiHistory.map(function (m) {
-                    const isMe = m.from === 'You';
-                    const align = isMe ? 'text-end' : 'text-start';
-                    const bg = isMe ? '#0d6efd' : '#132847';
-                    return '<div class="mb-2 ' + align + '"><span style="display:inline-block;background:' + bg +
-                        ';padding:8px 12px;border-radius:12px;max-width:85%;text-align:left;">' + escapeHtml(m.text) + '</span></div>';
-                }).join('');
-                aiMessages.scrollTop = aiMessages.scrollHeight;
-            }
-            aiBubble.addEventListener('click', function () {
-                aiPanel.classList.toggle('d-none');
-                if (!aiPanel.classList.contains('d-none')) { renderAiMessages(); aiInput.focus(); }
-            });
-            aiCloseBtn.addEventListener('click', function () { aiPanel.classList.add('d-none'); });
-            [jobModalEl, chatModalEl].forEach(function (el) {
-                el.addEventListener('show.bs.modal', function () { aiPanel.classList.add('d-none'); });
-            });
+jobModalEl.addEventListener('show.bs.modal', function () {
+    jobFormError.classList.add('d-none');
+});
 
-            function localCareerReply(text) {
-                const t = text.toLowerCase();
-                if (t.indexOf('resume') !== -1 || t.indexOf('cv') !== -1) {
-                    return "Keep your resume to one page if you have under 10 years experience, lead bullet points with strong action verbs, and quantify results wherever you can (e.g. 'reduced costs by 20%').";
-                }
-                if (t.indexOf('interview') !== -1) {
-                    return "Research the company, prepare 2-3 STAR-format stories (Situation, Task, Action, Result), and have 2-3 thoughtful questions ready for the interviewer.";
-                }
-                if (t.indexOf('salary') !== -1 || t.indexOf('negotiat') !== -1) {
-                    return "Research the market rate for the role and location first, let the employer name a number first if possible, and negotiate the whole package -- not just base salary.";
-                }
-                if (t.indexOf('cover letter') !== -1) {
-                    return "Keep a cover letter to 3-4 short paragraphs: why this company, why this role, your relevant strengths with a specific example, and a confident close.";
-                }
-                if (t.indexOf('apply') !== -1 || t.indexOf('search') !== -1 || t.indexOf('find a job') !== -1) {
-                    return "Try the search bar at the top to filter open roles by title, company or location, or use the Job button in the composer if you're posting a role instead.";
-                }
-                return "I can help with resumes, cover letters, interview prep, and salary negotiation -- ask me about any of those, or use the search bar above to browse open roles.";
-            }
 
-            function getAiReply(text) {
-                if (!AI_API_ENDPOINT) return Promise.resolve(localCareerReply(text));
-                return fetch(AI_API_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
-                }).then(function (res) {
-                    if (!res.ok) throw new Error('bad response');
-                    return res.json();
-                }).then(function (data) {
-                    return (data && data.reply) ? data.reply : localCareerReply(text);
-                }).catch(function () {
-                    return localCareerReply(text);
-                });
-            }
-            function sendAiMessage() {
-                const text = aiInput.value.trim();
-                if (!text) return;
-                aiHistory.push({ from: 'You', text: text });
-                aiInput.value = '';
-                renderAiMessages();
-                saveJSON(STORAGE_KEYS.aiChat, aiHistory);
+jobModalEl.addEventListener('hidden.bs.modal', function () {
+    jobForm.reset();
+    jobModalImageDataUrl = null;
+    jobImagePreview.src = '';
+    jobImagePreview.classList.add('d-none');
+});
 
-                getAiReply(text).then(function (reply) {
-                    aiHistory.push({ from: 'AI', text: reply });
-                    saveJSON(STORAGE_KEYS.aiChat, aiHistory);
-                    renderAiMessages();
-                });
-            }
-            aiSendBtn.addEventListener('click', sendAiMessage);
-            aiInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendAiMessage(); } });
 
-            /* ================= Boot ================= */
-            updateProfileUI();
-            populateSettingsForm();
-            document.querySelectorAll('#jobFeed .post-box').forEach(applyStoredState);
-            state.posts.slice().reverse().forEach(function (job) {
-                addJobToFeed(Object.assign({}, job, { isNew: false }));
-            });
-            updateNotifBadge();
+/* ================= Sidebar: fixed on desktop, static/scrollable on mobile ================= */
 
-        })();
-    </script>
+const sidebarCol = document.getElementById('sidebarCol');
+const leftCard = document.getElementById('leftCard');
+
+
+function layoutSidebar() {
+
+    if (window.innerWidth >= 992) {
+
+        const rect = sidebarCol.getBoundingClientRect();
+
+        leftCard.style.position = 'fixed';
+        leftCard.style.top = '90px';
+        leftCard.style.left = rect.left + 'px';
+        leftCard.style.width = rect.width + 'px';
+        leftCard.style.margin = '0';
+
+        leftCard.classList.add('is-fixed');
+
+    } else {
+
+        leftCard.style.position = '';
+        leftCard.style.top = '';
+        leftCard.style.left = '';
+        leftCard.style.width = '';
+        leftCard.style.margin = '';
+
+        leftCard.classList.remove('is-fixed');
+
+    }
+
+}
+
+
+window.addEventListener('resize', layoutSidebar);
+window.addEventListener('load', layoutSidebar);
+
+layoutSidebar();
+
+
+
+/* ================= Back to top ================= */
+
+const backToTopBtn = document.getElementById('backToTop');
+
+
+window.addEventListener('scroll', function () {
+
+    backToTopBtn.classList.toggle('show', window.scrollY > 300);
+
+});
+
+
+backToTopBtn.addEventListener('click', function () {
+
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+
+});
+/* ================= AI career assistant ================= */
+
+const AI_API_ENDPOINT = '';
+
+const aiBubble = document.getElementById('aiBubble');
+const aiPanel = document.getElementById('aiPanel');
+const aiCloseBtn = document.getElementById('aiCloseBtn');
+const aiMessages = document.getElementById('aiMessages');
+const aiInput = document.getElementById('aiInput');
+const aiSendBtn = document.getElementById('aiSendBtn');
+
+let aiHistory = loadJSON(STORAGE_KEYS.aiChat, []);
+
+
+
+function renderAiMessages() {
+
+    if (!aiHistory.length) {
+
+        aiMessages.innerHTML =
+        '<div class="text-secondary small">Hi! Ask me about job search, resumes, interviews, or salary negotiation.</div>';
+
+        return;
+    }
+
+
+    aiMessages.innerHTML = aiHistory.map(function (m) {
+
+        const isMe = m.from === 'You';
+        const align = isMe ? 'text-end' : 'text-start';
+        const bg = isMe ? '#0d6efd' : '#132847';
+
+
+        return '<div class="mb-2 ' + align + '">' +
+        '<span style="display:inline-block;background:' + bg +
+        ';padding:8px 12px;border-radius:12px;max-width:85%;text-align:left;">' +
+        escapeHtml(m.text) +
+        '</span></div>';
+
+    }).join('');
+
+
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+
+}
+
+
+
+aiBubble.addEventListener('click', function () {
+
+    aiPanel.classList.toggle('d-none');
+
+    if (!aiPanel.classList.contains('d-none')) {
+
+        renderAiMessages();
+        aiInput.focus();
+
+    }
+
+});
+
+
+aiCloseBtn.addEventListener('click', function () {
+
+    aiPanel.classList.add('d-none');
+
+});
+
+
+
+[jobModalEl, chatModalEl].forEach(function (el) {
+
+    el.addEventListener('show.bs.modal', function () {
+
+        aiPanel.classList.add('d-none');
+
+    });
+
+});
+
+
+
+function localCareerReply(text) {
+
+    const t = text.toLowerCase();
+
+
+    if (t.includes('resume') || t.includes('cv')) {
+
+        return "Keep your resume clear, highlight your skills, experience and achievements.";
+
+    }
+
+
+    if (t.includes('interview')) {
+
+        return "Prepare by researching the company and practicing common interview questions.";
+
+    }
+
+
+    if (t.includes('salary') || t.includes('negotiat')) {
+
+        return "Research the normal salary range for your role before negotiating.";
+
+    }
+
+
+    if (t.includes('cover letter')) {
+
+        return "A good cover letter explains why you are suitable for the job and shows your interest.";
+
+    }
+
+
+    if (t.includes('job') || t.includes('search') || t.includes('apply')) {
+
+        return "Use the search bar to find jobs and apply for positions that match your skills.";
+
+    }
+
+
+    return "I can help with resumes, interviews, cover letters, job searching and career advice.";
+
+}
+
+
+
+function getAiReply(text) {
+
+
+    if (!AI_API_ENDPOINT) {
+
+        return Promise.resolve(localCareerReply(text));
+
+    }
+
+
+    return fetch(AI_API_ENDPOINT, {
+
+        method: 'POST',
+
+        headers: {
+            'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify({
+            message: text
+        })
+
+    })
+
+    .then(function(res){
+
+        return res.json();
+
+    })
+
+    .then(function(data){
+
+        return data.reply || localCareerReply(text);
+
+    })
+
+    .catch(function(){
+
+        return localCareerReply(text);
+
+    });
+
+
+}
+
+
+
+function sendAiMessage(){
+
+    const text = aiInput.value.trim();
+
+
+    if(!text) return;
+
+
+    aiHistory.push({
+
+        from:'You',
+
+        text:text
+
+    });
+
+
+    aiInput.value='';
+
+
+    renderAiMessages();
+
+    saveJSON(STORAGE_KEYS.aiChat, aiHistory);
+
+
+
+    getAiReply(text).then(function(reply){
+
+
+        aiHistory.push({
+
+            from:'AI',
+
+            text:reply
+
+        });
+
+
+        saveJSON(STORAGE_KEYS.aiChat, aiHistory);
+
+
+        renderAiMessages();
+
+
+    });
+
+
+}
+
+
+
+aiSendBtn.addEventListener('click', sendAiMessage);
+
+
+aiInput.addEventListener('keydown', function(e){
+
+    if(e.key === 'Enter'){
+
+        e.preventDefault();
+
+        sendAiMessage();
+
+    }
+
+});
+
+
+
+/* ================= Boot ================= */
+
+updateProfileUI();
+
+populateSettingsForm();
+
+
+document.querySelectorAll('#jobFeed .post-box')
+.forEach(applyStoredState);
+
+
+
+state.posts.slice().reverse().forEach(function(job){
+
+    addJobToFeed(
+        Object.assign({}, job, {isNew:false})
+    );
+
+});
+
+
+updateNotifBadge();
+
+
+
+})();
+</script>
 
 </body>
 
