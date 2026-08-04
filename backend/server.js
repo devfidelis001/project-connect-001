@@ -26,7 +26,7 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 
     ssl: {
-        rejectUnauthorized: false
+        rejectUnauthorized:false
     }
 
 });
@@ -36,66 +36,62 @@ const pool = new Pool({
 // Create Database Tables
 // ==========================
 
-async function createTables() {
+async function createTables(){
 
-    try {
+    try{
 
-
-        // Users table
 
         await pool.query(`
 
-            CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE IF NOT EXISTS users(
 
-                id SERIAL PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
 
-                fullname TEXT NOT NULL,
+            fullname TEXT NOT NULL,
 
-                email TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
 
-                phone TEXT,
+            phone TEXT,
 
-                password TEXT,
+            password TEXT,
 
-                accountType TEXT,
+            accountType TEXT,
 
-                location TEXT,
+            location TEXT,
 
-                profession TEXT,
+            profession TEXT,
 
-                createdAt TEXT
+            createdAt TEXT
 
-            )
+        )
 
         `);
 
 
 
-        // Jobs table
-
         await pool.query(`
 
-            CREATE TABLE IF NOT EXISTS jobs (
+        CREATE TABLE IF NOT EXISTS jobs(
 
-                id TEXT PRIMARY KEY,
+            id TEXT PRIMARY KEY,
 
-                company TEXT,
+            company TEXT,
 
-                title TEXT,
+            title TEXT,
 
-                location TEXT,
+            location TEXT,
 
-                salary TEXT,
+            salary TEXT,
 
-                description TEXT,
+            description TEXT,
 
-                attachment JSONB,
+            attachment JSONB,
 
-                createdAt TEXT,
+            createdAt TEXT,
 
-                isNew BOOLEAN
+            isNew BOOLEAN
 
-            )
+        )
 
         `);
 
@@ -104,9 +100,9 @@ async function createTables() {
         console.log("Database tables ready");
 
 
-    } catch(error) {
+    }catch(error){
 
-        console.log("Database error:", error.message);
+        console.log("Database error:",error.message);
 
     }
 
@@ -114,11 +110,8 @@ async function createTables() {
 
 
 createTables();
-
-
-
 // ==========================
-// Test Routes
+// BASIC ROUTES
 // ==========================
 
 
@@ -145,63 +138,93 @@ app.get("/api/status",(req,res)=>{
 
 
 // ==========================
+// ADMIN - GET ALL USERS
+// ==========================
+
+
+app.get("/users", async(req,res)=>{
+
+    try{
+
+        const result = await pool.query(
+            "SELECT * FROM users ORDER BY id DESC"
+        );
+
+
+        res.json(result.rows);
+
+
+    }catch(error){
+
+
+        res.status(500).json({
+
+            message:"Could not fetch users"
+
+        });
+
+
+    }
+
+});
+// ==========================
 // SIGN UP SYSTEM
 // ==========================
 
 
 app.post("/signup", async(req,res)=>{
 
-
     const user = req.body;
 
 
-    try {
+    try{
 
 
         await pool.query(
 
-            `
+        `
 
-            INSERT INTO users
+        INSERT INTO users
 
-            (
-                fullname,
-                email,
-                phone,
-                password,
-                accountType,
-                location,
-                profession,
-                createdAt
-            )
-
-
-            VALUES
-
-            ($1,$2,$3,$4,$5,$6,$7,$8)
-
-            `,
+        (
+            fullname,
+            email,
+            phone,
+            password,
+            accountType,
+            location,
+            profession,
+            createdAt
+        )
 
 
-            [
+        VALUES
 
-                user.fullname,
+        ($1,$2,$3,$4,$5,$6,$7,$8)
 
-                user.email,
+        `,
 
-                user.phone,
 
-                user.password,
+        [
 
-                user.accountType,
+            user.fullname,
 
-                user.location,
+            user.email,
 
-                user.profession,
+            user.phone,
 
-                new Date().toISOString()
+            user.password,
 
-            ]
+            user.accountType,
+
+            user.location,
+
+            user.profession,
+
+            new Date().toISOString()
+
+        ]
+
 
         );
 
@@ -215,7 +238,7 @@ app.post("/signup", async(req,res)=>{
 
 
 
-    } catch(error) {
+    }catch(error){
 
 
         console.log(error.message);
@@ -232,10 +255,6 @@ app.post("/signup", async(req,res)=>{
 
 
 });
-
-
-
-
 // ==========================
 // LOGIN SYSTEM
 // ==========================
@@ -243,8 +262,7 @@ app.post("/signup", async(req,res)=>{
 
 app.post("/login", async(req,res)=>{
 
-
-    const {email,password}=req.body;
+    const {email,password} = req.body;
 
 
     try{
@@ -252,13 +270,7 @@ app.post("/login", async(req,res)=>{
 
         const result = await pool.query(
 
-            `
-
-            SELECT * FROM users
-
-            WHERE email=$1
-
-            `,
+            "SELECT * FROM users WHERE email=$1",
 
             [email]
 
@@ -266,8 +278,7 @@ app.post("/login", async(req,res)=>{
 
 
 
-        if(result.rows.length===0){
-
+        if(result.rows.length === 0){
 
             return res.status(404).json({
 
@@ -275,24 +286,21 @@ app.post("/login", async(req,res)=>{
 
             });
 
-
         }
 
 
 
-        const user=result.rows[0];
+        const user = result.rows[0];
 
 
 
         if(user.password !== password){
-
 
             return res.status(401).json({
 
                 message:"Incorrect password"
 
             });
-
 
         }
 
@@ -322,23 +330,16 @@ app.post("/login", async(req,res)=>{
 
 
 });
-
-
-
-
 // ==========================
 // JOB SYSTEM
 // ==========================
 
 
-
-// Create job
-
+// CREATE JOB
 
 app.post("/jobs", async(req,res)=>{
 
-
-    const job=req.body;
+    const job = req.body;
 
 
     try{
@@ -346,51 +347,51 @@ app.post("/jobs", async(req,res)=>{
 
         await pool.query(
 
-            `
+        `
 
-            INSERT INTO jobs
+        INSERT INTO jobs
 
-            (
-                id,
-                company,
-                title,
-                location,
-                salary,
-                description,
-                attachment,
-                createdAt,
-                isNew
-            )
-
-
-            VALUES
-
-            ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-
-            `,
+        (
+            id,
+            company,
+            title,
+            location,
+            salary,
+            description,
+            attachment,
+            createdAt,
+            isNew
+        )
 
 
-            [
+        VALUES
 
-                job.id,
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 
-                job.company,
+        `,
 
-                job.title,
 
-                job.location,
+        [
 
-                job.salary,
+            job.id,
 
-                job.description,
+            job.company,
 
-                job.attachment,
+            job.title,
 
-                job.createdAt,
+            job.location,
 
-                job.isNew
+            job.salary,
 
-            ]
+            job.description,
+
+            job.attachment,
+
+            job.createdAt,
+
+            job.isNew
+
+        ]
 
         );
 
@@ -427,9 +428,7 @@ app.post("/jobs", async(req,res)=>{
 
 
 
-
-// Get jobs
-
+// GET ALL JOBS
 
 app.get("/jobs", async(req,res)=>{
 
@@ -439,16 +438,9 @@ app.get("/jobs", async(req,res)=>{
 
         const result = await pool.query(
 
-            `
-
-            SELECT * FROM jobs
-
-            ORDER BY createdAt DESC
-
-            `
+            "SELECT * FROM jobs ORDER BY createdAt DESC"
 
         );
-
 
 
         res.json(result.rows);
@@ -473,13 +465,12 @@ app.get("/jobs", async(req,res)=>{
 
 
 
-// Delete job
-
+// DELETE JOB
 
 app.delete("/jobs/:id", async(req,res)=>{
 
 
-    const id=req.params.id;
+    const id = req.params.id;
 
 
     await pool.query(
@@ -505,14 +496,12 @@ app.delete("/jobs/:id", async(req,res)=>{
 
 
 // ==========================
-// Start Server
+// START SERVER
 // ==========================
-
 
 app.listen(PORT,()=>{
 
-
     console.log(`Server running on port ${PORT}`);
 
-
 });
+
