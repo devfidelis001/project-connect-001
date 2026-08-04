@@ -659,12 +659,23 @@
 
                 </p>
 
-                <input type="text" id="signupName" class="form-control mb-3" placeholder="Full Name" required>
+               <input type="text" id="signupName" class="form-control mb-3" placeholder="Full Name" required>
 
-                <input type="email" id="signupEmail" class="form-control mb-3" placeholder="Email Address" required>
+<input type="email" id="signupEmail" class="form-control mb-3" placeholder="Email Address" required>
 
-                <input type="password" id="signupPassword" class="form-control mb-3" placeholder="Password (min 6 characters)" required minlength="6">
+<input type="tel" id="signupPhone" class="form-control mb-3" placeholder="Phone Number" required>
 
+<select id="signupType" class="form-control mb-3" required>
+    <option value="">Account Type</option>
+    <option value="Job Seeker">Job Seeker</option>
+    <option value="Recruiter">Recruiter</option>
+</select>
+
+<input type="text" id="signupLocation" class="form-control mb-3" placeholder="Location" required>
+
+<input type="text" id="signupProfession" class="form-control mb-3" placeholder="Profession / Industry" required>
+
+<input type="password" id="signupPassword" class="form-control mb-3" placeholder="Password (min 6 characters)" required minlength="6">
                 <div id="signupError" class="auth-error text-danger small mb-3 d-none"></div>
 
                 <button type="submit" class="btn btn-primary w-100 mb-3">
@@ -686,7 +697,22 @@
                 </div>
 
             </form>
+<style>
+    .signup-box input::placeholder {
+    color: white;
+    opacity: 0.8;
+}
 
+.signup-box select {
+    color: white;
+    background: #111827;
+}
+
+.signup-box select option {
+    color: white;
+    background: #111827;
+}
+</style>
             <!-- LOGIN FORM -->
             <form id="loginForm" class="d-none" novalidate>
 
@@ -946,16 +972,15 @@
 
         /* Auto popup after 4 seconds, same as before */
 
-        setTimeout(() => {
+       setTimeout(() => {
 
-            if (!localStorage.getItem("ylm_currentUser")) {
+    if (!localStorage.getItem("ylm_currentUser")) {
 
-                openModal("signup");
+        openModal("signup");
 
-            }
+    }
 
-        }, 4000);
-
+}, 3000);
         /* ===========================
            ACCOUNTS (localStorage)
 
@@ -966,25 +991,8 @@
            backend that hashes passwords and issues real sessions.
         =========================== */
 
-        function getAccounts() {
-
-            try {
-
-                return JSON.parse(localStorage.getItem("ylm_accounts")) || {};
-
-            } catch (err) {
-
-                return {};
-
-            }
-
-        }
-
-        function saveAccounts(accounts) {
-
-            localStorage.setItem("ylm_accounts", JSON.stringify(accounts));
-
-        }
+        
+       
 
         function goToHome() {
 
@@ -994,103 +1002,197 @@
 
         /* SIGN UP */
 
-        signupForm.addEventListener("submit", function (e) {
+        /* SIGN UP */
 
-            e.preventDefault();
+signupForm.addEventListener("submit", async function (e) {
 
-            hideErrors();
+    e.preventDefault();
 
-            const name = document.getElementById("signupName").value.trim();
-            const email = document.getElementById("signupEmail").value.trim().toLowerCase();
-            const password = document.getElementById("signupPassword").value;
+    hideErrors();
 
-            if (!name || !email || !password) {
 
-                showError(signupError, "Please fill in your name, email and password.");
+    const fullname = document.getElementById("signupName").value.trim();
+    const email = document.getElementById("signupEmail").value.trim().toLowerCase();
+    const phone = document.getElementById("signupPhone").value.trim();
+    const accountType = document.getElementById("signupType").value;
+    const location = document.getElementById("signupLocation").value.trim();
+    const profession = document.getElementById("signupProfession").value.trim();
+    const password = document.getElementById("signupPassword").value;
 
-                return;
 
-            }
+    if (!fullname || !email || !phone || !accountType || !location || !profession || !password) {
 
-            if (password.length < 6) {
+        showError(signupError, "Please fill all fields.");
 
-                showError(signupError, "Password must be at least 6 characters.");
+        return;
 
-                return;
+    }
 
-            }
 
-            const accounts = getAccounts();
+    if (password.length < 6) {
 
-            if (accounts[email]) {
+        showError(signupError, "Password must be at least 6 characters.");
 
-                showError(signupError, "An account with this email already exists. Please login instead.");
+        return;
 
-                return;
+    }
 
-            }
 
-            accounts[email] = { name: name, email: email, password: password, avatar: "" };
+    try {
 
-            saveAccounts(accounts);
+        const response = await fetch("http://localhost:3000/signup", {
 
-            /* This is the profile the home page reads (same "ylm.profile"
-               key home.html already looks for on load), so everything
-               the person just typed shows up there automatically. */
+            method: "POST",
 
-            localStorage.setItem("ylm.profile", JSON.stringify({ name: name, avatar: "" }));
+            headers: {
+
+                "Content-Type": "application/json"
+
+            },
+
+            body: JSON.stringify({
+
+                fullname: fullname,
+                email: email,
+                phone: phone,
+                password: password,
+                accountType: accountType,
+                location: location,
+                profession: profession
+
+            })
+
+        });
+
+
+        const data = await response.json();
+
+
+        if (response.ok) {
+
 
             localStorage.setItem("ylm_currentUser", email);
 
+
+            localStorage.setItem("ylm.profile", JSON.stringify({
+
+                name: fullname,
+                avatar: ""
+
+            }));
+
+
             goToHome();
 
-        });
+
+        } else {
+
+
+            showError(signupError, data.message);
+
+
+        }
+
+
+    } catch (error) {
+
+
+        console.log(error);
+
+        showError(signupError, "Cannot connect to backend server.");
+
+
+    }
+
+
+});
 
         /* LOGIN */
 
-        loginForm.addEventListener("submit", function (e) {
+      /* LOGIN */
 
-            e.preventDefault();
+loginForm.addEventListener("submit", async function (e) {
 
-            hideErrors();
+    e.preventDefault();
 
-            const email = document.getElementById("loginEmail").value.trim().toLowerCase();
-            const password = document.getElementById("loginPassword").value;
+    hideErrors();
 
-            if (!email || !password) {
+    const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+    const password = document.getElementById("loginPassword").value;
 
-                showError(loginError, "Please enter your email and password.");
 
-                return;
+    if (!email || !password) {
 
-            }
+        showError(loginError, "Please enter your email and password.");
 
-            const accounts = getAccounts();
-            const account = accounts[email];
+        return;
 
-            if (!account) {
+    }
 
-                showError(loginError, "No account found with this email. Please sign up first.");
 
-                return;
+    try {
 
-            }
+        const response = await fetch("http://localhost:3000/login", {
 
-            if (account.password !== password) {
+            method: "POST",
 
-                showError(loginError, "Incorrect password. Please try again.");
+            headers: {
 
-                return;
+                "Content-Type": "application/json"
 
-            }
+            },
 
-            localStorage.setItem("ylm.profile", JSON.stringify({ name: account.name, avatar: account.avatar || "" }));
+            body: JSON.stringify({
+
+                email: email,
+                password: password
+
+            })
+
+        });
+
+
+        const data = await response.json();
+
+
+        if (response.ok) {
+
 
             localStorage.setItem("ylm_currentUser", email);
 
+
+            localStorage.setItem("ylm.profile", JSON.stringify({
+
+                name: data.user.fullname,
+                avatar: ""
+
+            }));
+
+
             goToHome();
 
-        });
+
+        } else {
+
+
+            showError(loginError, data.message);
+
+
+        }
+
+
+    } catch (error) {
+
+
+        console.log(error);
+
+        showError(loginError, "Cannot connect to backend server.");
+
+
+    }
+
+
+});
 
     </script>
 
