@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1194,16 +1193,16 @@
                 publicProfile: true
             };
 
-            const state = {
-                posts: loadJSON(STORAGE_KEYS.posts, []),
-                saved: loadJSON(STORAGE_KEYS.saved, {}),
-                applied: loadJSON(STORAGE_KEYS.applied, {}),
-                comments: loadJSON(STORAGE_KEYS.comments, {}),
-                chats: loadJSON(STORAGE_KEYS.chats, {}),
-                profile: loadJSON(STORAGE_KEYS.profile, { name: '', avatar: '' }),
-                settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {})),
-                readMarkers: loadJSON(STORAGE_KEYS.readMarkers, {})
-            };
+         const state = {
+    posts: [],
+    saved: loadJSON(STORAGE_KEYS.saved, {}),
+    applied: loadJSON(STORAGE_KEYS.applied, {}),
+    comments: loadJSON(STORAGE_KEYS.comments, {}),
+    chats: loadJSON(STORAGE_KEYS.chats, {}),
+    profile: loadJSON(STORAGE_KEYS.profile, { name: '', avatar: '' }),
+    settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {})),
+    readMarkers: loadJSON(STORAGE_KEYS.readMarkers, {})
+};
 
             let idCounter = 1;
             function newId() { return 'job-' + Date.now() + '-' + (idCounter++); }
@@ -1901,17 +1900,26 @@
                     createdAt: new Date().toISOString(),
                     isNew: true
                 };
-                console.log("Before adding feed");
+                console.log("Sending job to backend");
 
-                addJobToFeed(job, { scroll: true });
+fetch("https://project-connect-001.onrender.com/jobs", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify(job)
+})
+.then(response => response.json())
+.then(data => {
+    console.log("Backend saved:", data);
 
-                console.log("After adding feed");
-
-                const persistable = Object.assign({}, job, {
-                    attachment: (job.attachment && job.attachment.kind === 'image') ? job.attachment : null
-                });
-                state.posts.unshift(persistable);
-                saveJSON(STORAGE_KEYS.posts, state.posts);
+    // reload jobs from backend
+    jobFeed.innerHTML = "";
+    loadJobsFromBackend();
+})
+.catch(error => {
+    console.error("Error:", error);
+});
 
                 quickPostInput.value = '';
                 clearComposerAttachment();
@@ -1989,10 +1997,8 @@
                     .catch(error => {
                         console.error("Error:", error);
                     });
-                addJobToFeed(job, { scroll: true });
 
-                state.posts.unshift(job);
-                saveJSON(STORAGE_KEYS.posts, state.posts);
+                
 
                 jobForm.reset();
                 jobModalImageDataUrl = null;
@@ -2136,15 +2142,42 @@
             aiInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendAiMessage(); } });
 
             /* ================= Boot ================= */
-           updateProfileUI();
-populateSettingsForm();
+            /* ================= Load Jobs From Backend ================= */
+function loadJobsFromBackend() {
+    fetch("https://project-connect-001.onrender.com/jobs")
+        .then(function (response) {
+            console.log("Status:", response.status);
 
-document.querySelectorAll('#jobFeed .post-box').forEach(applyStoredState);
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+            }
+
+            return response.json();
+        })
+        .then(function (jobs) {
+            console.log("Jobs received:", jobs);
+
+            if (!Array.isArray(jobs)) {
+                throw new Error("Response is not an array");
+            }
+
+            jobs.forEach(function (job) {
+                addJobToFeed(Object.assign({}, job, { isNew: false }));
+            });
+        })
+        .catch(function (error) {
+            console.error("loadJobsFromBackend failed:", error);
+        });
+}
+
+
+/* ================= Boot ================= */
+updateProfileUI();
+populateSettingsForm();
 
 loadJobsFromBackend();
 
 updateNotifBadge();
-
         })();
     </script>
 
