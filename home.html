@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -92,6 +91,7 @@
             font-weight: 600;
             margin-left: 20px;
             transition: .3s;
+            cursor: pointer;
         }
 
         .nav-link:hover {
@@ -636,7 +636,7 @@
     <!-- NAV BAR -->
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-4">
-            <a class="navbar-brand" href="index.html">
+            <a class="navbar-brand" href="#" id="brandLogoLink">
                 <img src="images/LIGHT MARKET.png" style="height:70px;" alt="Your Labour Market logo">
             </a>
 
@@ -654,19 +654,19 @@
 
                 <ul class="navbar-nav mx-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="index.html">
+                        <a class="nav-link" id="navHomeLink" href="#">
                             <i class="bi bi-house-fill"></i>
                             Home
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="jobs.html">
+                        <a class="nav-link" id="navJobsLink" href="#">
                             <i class="bi bi-briefcase-fill"></i>
                             Jobs
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" id="navChatLink" href="#">
                             <i class="bi bi-chat-dots-fill"></i>
                             Chat
                         </a>
@@ -680,13 +680,13 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end notif-dropdown" id="notifList"
                             aria-labelledby="notifBell">
-                            <li><span class="dropdown-item-text text-secondary small">No new messages.</span></li>
+                            <li><span class="dropdown-item-text text-secondary small">No new notifications.</span></li>
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-person-fill"></i>
-                            Profile
+                        <a class="nav-link" id="navAboutLink" href="#">
+                            <i class="bi bi-info-circle-fill"></i>
+                            About
                         </a>
                     </li>
                 </ul>
@@ -713,6 +713,7 @@
                         <span id="sidebarMsgBadge" class="notif-badge d-none">0</span>
                     </a>
                     <a class="left-link" data-view="profile"><i class="bi bi-person-circle"></i> My Profile</a>
+                    <a class="left-link" data-view="about"><i class="bi bi-info-circle-fill"></i> About</a>
                     <a class="left-link" data-view="settings"><i class="bi bi-gear-fill"></i> Settings</a>
                 </div>
             </div>
@@ -724,7 +725,7 @@
                 <div id="view-home" class="app-view">
 
                     <!-- POST COMPOSER -->
-                    <div class="post-box mb-4">
+                    <div class="post-box mb-4" id="composerContainer">
                         <div class="d-flex align-items-center mb-3">
                             <img id="composerAvatar"
                                 src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
@@ -992,6 +993,21 @@
                                 Profile updated successfully! Your updated profile details and picture will now show to everyone across all phones when clicked.
                             </div>
                         </form>
+                    </div>
+                </div>
+
+                <!-- ABOUT VIEW -->
+                <div id="view-about" class="app-view d-none">
+                    <div class="post-box mb-4">
+                        <h4 class="mb-3"><i class="bi bi-info-circle-fill text-primary me-2"></i>About Your Labour Market</h4>
+                        <p>Welcome to <strong>Your Labour Market</strong>, a platform designed to seamlessly connect job seekers, skilled professionals, and recruiters. Whether you are looking for new employment opportunities or searching for talent, our platform bridges the gap efficiently and transparently.</p>
+                        <h6 class="mt-4 mb-2">Key Features:</h6>
+                        <ul>
+                            <li>Discover and apply for real-time job openings in your area.</li>
+                            <li>Direct candidate-to-recruiter messaging and instant communication.</li>
+                            <li>Public user profiles showcasing skills, contacts, and portfolios.</li>
+                            <li>Interactive notifications to stay up to date with new job posts and incoming recruiter chats.</li>
+                        </ul>
                     </div>
                 </div>
 
@@ -1272,9 +1288,6 @@
                 catch (err) { }
             }
 
-            // Persistent per-device identity used to talk to the backend for
-            // likes, saves, applications and chat. This is what stands in for
-            // a "userId" until real login/session accounts are wired into this page.
             function getDeviceId() {
                 let id = localStorage.getItem(STORAGE_KEYS.deviceId);
                 if (!id) {
@@ -1297,13 +1310,11 @@
             };
 
             const state = {
-                // saved/applied/comments are in-memory caches hydrated from the backend
-                // (source of truth is PostgreSQL, not localStorage).
                 saved: {},
                 applied: {},
                 comments: {},
-                // conversations keyed by "jobId::seekerId"
                 conversations: {},
+                recentJobsNotif: [], // Array to hold new job notification items
                 profile: loadJSON(STORAGE_KEYS.profile, {
                     name: '',
                     avatar: '',
@@ -1440,25 +1451,70 @@
             /* View Switching */
             const views = document.querySelectorAll('.app-view');
             const leftLinks = document.querySelectorAll('.left-link');
+            
+            function switchView(target) {
+                views.forEach(function (v) { v.classList.add('d-none'); });
+                const targetView = document.getElementById('view-' + target);
+                if (targetView) targetView.classList.remove('d-none');
+                
+                leftLinks.forEach(function (l) { 
+                    l.classList.toggle('active-link', l.dataset.view === target); 
+                });
+                
+                if (target === 'saved') renderSavedView();
+                if (target === 'applications') renderApplicationsView();
+                if (target === 'messages') renderMessagesView();
+                if (target === 'settings') populateSettingsForm();
+            }
+
             leftLinks.forEach(function (link) {
                 link.addEventListener('click', function (e) {
                     e.preventDefault();
-                    const target = link.dataset.view;
-                    views.forEach(function (v) { v.classList.add('d-none'); });
-                    document.getElementById('view-' + target).classList.remove('d-none');
-                    leftLinks.forEach(function (l) { l.classList.remove('active-link'); });
-                    link.classList.add('active-link');
-                    if (target === 'saved') renderSavedView();
-                    if (target === 'applications') renderApplicationsView();
-                    if (target === 'messages') renderMessagesView();
-                    if (target === 'settings') populateSettingsForm();
+                    switchView(link.dataset.view);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
             });
+
             function ensureHomeView() {
-                const homeLink = document.querySelector('.left-link[data-view="home"]');
-                if (homeLink && !homeLink.classList.contains('active-link')) homeLink.click();
+                switchView('home');
             }
+
+            /* NAVBAR INTERACTION LOGIC */
+            // 1. Home Clicked -> Refresh Webpage
+            document.getElementById('navHomeLink').addEventListener('click', function (e) {
+                e.preventDefault();
+                window.location.reload();
+            });
+            document.getElementById('brandLogoLink').addEventListener('click', function (e) {
+                e.preventDefault();
+                window.location.reload();
+            });
+
+            // 2. Jobs Clicked -> Go to Home view, scroll past post box to first job
+            document.getElementById('navJobsLink').addEventListener('click', function (e) {
+                e.preventDefault();
+                ensureHomeView();
+                setTimeout(function() {
+                    const firstJob = jobFeed.querySelector('.post-box');
+                    if (firstJob) {
+                        firstJob.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 50);
+            });
+
+            // 3. Chat Clicked -> Open Messages view
+            document.getElementById('navChatLink').addEventListener('click', function (e) {
+                e.preventDefault();
+                switchView('messages');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // 4. About Clicked -> Open About view
+            document.getElementById('navAboutLink').addEventListener('click', function (e) {
+                e.preventDefault();
+                switchView('about');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
 
             /* Search Filter */
             function filterJobs(query) {
@@ -1553,12 +1609,20 @@
                 knownJobIds.add(job.id);
                 const card = buildJobCard(job);
                 jobFeed.prepend(card);
+
+                // Notification handling for new posted jobs
+                if (opts.notify) {
+                    state.recentJobsNotif.unshift(job);
+                    updateNotifBadge();
+                }
+
                 if (opts.scroll) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 return card;
             }
 
             function insertJobsAtTop(jobs) {
                 const frag = document.createDocumentFragment();
+                let hasNewJob = false;
                 jobs.forEach(function (rawJob) {
                     if (!rawJob || !rawJob.id) return;
                     const job = normalizeBackendJob(rawJob);
@@ -1569,13 +1633,16 @@
                     knownJobIds.add(rawJob.id);
                     const card = buildJobCard(job);
                     frag.appendChild(card);
+                    
+                    if (job.isNew) {
+                        state.recentJobsNotif.unshift(job);
+                        hasNewJob = true;
+                    }
                 });
                 jobFeed.insertBefore(frag, jobFeed.firstChild);
+                if (hasNewJob) updateNotifBadge();
             }
 
-            // Keep an already-rendered card's like/comment counts in sync with the
-            // backend on every poll, so activity from other users shows up without
-            // a full page refresh.
             function refreshCardEngagement(job) {
                 const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(job.id) + '"]');
                 if (!card) return;
@@ -1628,7 +1695,6 @@
                 const wasLiked = btn.classList.contains('liked');
                 const prevCount = parseInt(countEl.textContent, 10) || 0;
 
-                // Optimistic UI update
                 const optimisticCount = wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
                 btn.classList.toggle('liked', !wasLiked);
                 countEl.textContent = optimisticCount > 0 ? optimisticCount : 'Like';
@@ -1648,7 +1714,6 @@
                     })
                     .catch(function (error) {
                         console.error('Like failed:', error);
-                        // Roll back optimistic update on failure
                         btn.classList.toggle('liked', wasLiked);
                         countEl.textContent = prevCount > 0 ? prevCount : 'Like';
                     });
@@ -1664,7 +1729,7 @@
             function toggleSave(card, btn) {
                 const id = card.dataset.jobId;
                 const willSave = !btn.classList.contains('active');
-                setSaveButtonState(btn, willSave); // optimistic
+                setSaveButtonState(btn, willSave);
 
                 fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/save', {
                     method: 'POST',
@@ -1692,7 +1757,7 @@
             function toggleApply(card, btn) {
                 const id = card.dataset.jobId;
                 const willApply = !btn.classList.contains('applied');
-                setApplyButtonState(btn, willApply); // optimistic
+                setApplyButtonState(btn, willApply);
 
                 fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/apply', {
                     method: 'POST',
@@ -1917,10 +1982,7 @@
                     });
             }
 
-            /* Chat Component — real, backend-persisted, two-way chat between a
-               job seeker and the recruiter who owns the job. A conversation is
-               uniquely identified by (jobId, seekerId); either side can send
-               into it and both sides poll for new messages. */
+            /* Chat Component */
             const chatModalEl = document.getElementById('chatModal');
             const chatModal = new bootstrap.Modal(chatModalEl);
             const chatMessagesEl = document.getElementById('chatMessages');
@@ -1930,7 +1992,7 @@
 
             let activeChatJobId = null;
             let activeSeekerId = null;
-            let activeRole = null; // 'seeker' | 'recruiter'
+            let activeRole = null;
             let activeChatPollTimer = null;
             const CHAT_POLL_INTERVAL_MS = 4000;
 
@@ -1962,43 +2024,74 @@
                     });
             }
 
+            /* UPDATED NOTIFICATION BADGE LOGIC (Includes Chat Messages & Posted Jobs) */
             function updateNotifBadge() {
                 const badge = document.getElementById('notifBadge');
                 const sidebarBadge = document.getElementById('sidebarMsgBadge');
                 const list = document.getElementById('notifList');
-                if (!state.settings.notifyMessages) {
-                    badge.classList.add('d-none');
-                    sidebarBadge.classList.add('d-none');
-                    list.innerHTML = '<li><span class="dropdown-item-text text-secondary small">Message notifications are turned off in Settings.</span></li>';
-                    return;
-                }
-                const total = getTotalUnread();
-                if (total > 0) {
-                    badge.textContent = total;
+
+                const totalUnreadMsgs = getTotalUnread();
+                const totalNewJobs = state.settings.notifyJobs ? state.recentJobsNotif.length : 0;
+                const grandTotal = totalUnreadMsgs + totalNewJobs;
+
+                if (grandTotal > 0) {
+                    badge.textContent = grandTotal;
                     badge.classList.remove('d-none');
-                    sidebarBadge.textContent = total;
-                    sidebarBadge.classList.remove('d-none');
                 } else {
                     badge.classList.add('d-none');
+                }
+
+                if (totalUnreadMsgs > 0) {
+                    sidebarBadge.textContent = totalUnreadMsgs;
+                    sidebarBadge.classList.remove('d-none');
+                } else {
                     sidebarBadge.classList.add('d-none');
                 }
-                const unread = Object.keys(state.conversations)
-                    .map(function (key) { return state.conversations[key]; })
-                    .filter(function (c) { return c.unreadCount > 0; });
-                if (!unread.length) {
-                    list.innerHTML = '<li><span class="dropdown-item-text text-secondary small">No new messages.</span></li>';
+
+                let itemsHtml = '';
+
+                // Add unread messages to notifications list
+                if (state.settings.notifyMessages && totalUnreadMsgs > 0) {
+                    const unread = Object.keys(state.conversations)
+                        .map(function (key) { return state.conversations[key]; })
+                        .filter(function (c) { return c.unreadCount > 0; });
+
+                    unread.forEach(function (c) {
+                        itemsHtml += '<li><a class="dropdown-item notif-item" href="#" data-key="' + escapeHtml(conversationKey(c.jobId, c.seekerId)) + '">' +
+                            '💬 <strong>' + escapeHtml(c.counterpartName) + '</strong><br><span class="small text-secondary">' +
+                            escapeHtml(c.lastMessage || '') + '</span></a></li>';
+                    });
+                }
+
+                // Add newly posted jobs to notifications list
+                if (state.settings.notifyJobs && totalNewJobs > 0) {
+                    state.recentJobsNotif.forEach(function (j) {
+                        itemsHtml += '<li><a class="dropdown-item notif-job-item" href="#" data-job-id="' + escapeHtml(j.id) + '">' +
+                            '💼 <strong>New Job Posted: ' + escapeHtml(j.title) + '</strong><br><span class="small text-secondary">' +
+                            escapeHtml(j.company) + '</span></a></li>';
+                    });
+                }
+
+                if (!itemsHtml) {
+                    list.innerHTML = '<li><span class="dropdown-item-text text-secondary small">No new notifications.</span></li>';
                     return;
                 }
-                list.innerHTML = unread.map(function (c) {
-                    return '<li><a class="dropdown-item notif-item" href="#" data-key="' + escapeHtml(conversationKey(c.jobId, c.seekerId)) + '">' +
-                        '<strong>' + escapeHtml(c.counterpartName) + '</strong><br><span class="small text-secondary">' +
-                        escapeHtml(c.lastMessage || '') + '</span></a></li>';
-                }).join('');
+
+                list.innerHTML = itemsHtml;
+
+                // Event Listeners for Notification Clicks
                 list.querySelectorAll('.notif-item').forEach(function (item) {
                     item.addEventListener('click', function (e) {
                         e.preventDefault();
                         const c = state.conversations[item.dataset.key];
                         if (c) openChatById(c.jobId, c.seekerId, c.counterpartName, c.myRole);
+                    });
+                });
+
+                list.querySelectorAll('.notif-job-item').forEach(function (item) {
+                    item.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        viewSavedPost(item.dataset.jobId);
                     });
                 });
             }
@@ -2066,7 +2159,6 @@
                     })
                     .then(function (messages) {
                         renderChat(messages);
-                        // If the other side sent new messages while the modal is open, keep marking read.
                         if (chatModalEl.classList.contains('show')) markChatRead(activeChatJobId, activeSeekerId, activeRole);
                     })
                     .catch(function (error) {
@@ -2105,11 +2197,7 @@
                 const jobId = card.dataset.jobId;
                 const isOwner = card.dataset.userId && card.dataset.userId === DEVICE_ID;
                 if (isOwner) {
-                    // This is the recruiter's own post — take them to Messages so they
-                    // can see and reply to every applicant who has written in about it.
-                    ensureHomeView(); // no-op fallback if messages link not clicked yet
-                    const messagesLink = document.querySelector('.left-link[data-view="messages"]');
-                    if (messagesLink) messagesLink.click();
+                    switchView('messages');
                     return;
                 }
                 openChatById(jobId, DEVICE_ID, card.dataset.company, 'seeker');
@@ -2363,7 +2451,7 @@
                     authorSkills: state.profile.skills || ''
                 };
 
-                addJobToFeed(job, { scroll: true });
+                addJobToFeed(job, { scroll: true, notify: true });
 
                 quickPostInput.value = '';
                 clearComposerAttachment();
@@ -2437,7 +2525,7 @@
                     authorSkills: state.profile.skills || ''
                 };
 
-                addJobToFeed(job, { scroll: true });
+                addJobToFeed(job, { scroll: true, notify: true });
 
                 jobForm.reset();
                 jobModalImageDataUrl = null;
