@@ -403,7 +403,7 @@
 
         .placeholder-view {
             text-align: center;
-            padding: 60px 20px;
+            padding: 40px 20px;
             color: rgba(255, 255, 255, .6);
         }
 
@@ -587,6 +587,25 @@
             display: inline-block;
             margin-right: 6px;
             margin-bottom: 6px;
+        }
+
+        .job-tag-link {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 4px 10px;
+            background: rgba(13, 110, 253, 0.2);
+            border: 1px solid #0d6efd;
+            border-radius: 8px;
+            color: #4da3ff !important;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .job-tag-link:hover {
+            background: #0d6efd;
+            color: #fff !important;
         }
 
         @media (max-width: 575.98px) {
@@ -921,8 +940,23 @@
 
                 <!-- APPLICATIONS VIEW -->
                 <div id="view-applications" class="app-view d-none">
-                    <h4 class="mb-3">Your Applications</h4>
-                    <div id="applicationsList"></div>
+                    <!-- Section 1: Applied Jobs -->
+                    <div class="post-box mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                            <h5 class="mb-0 text-primary"><i class="bi bi-send-check-fill me-2"></i>Jobs You Applied For</h5>
+                            <span class="badge bg-primary rounded-pill fs-6" id="myAppliedCount">0 Applied</span>
+                        </div>
+                        <div id="myAppliedList"></div>
+                    </div>
+
+                    <!-- Section 2: Applicants on Posted Jobs -->
+                    <div class="post-box mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2" style="border-color: rgba(255,255,255,0.1) !important;">
+                            <h5 class="mb-0 text-info"><i class="bi bi-people-fill me-2"></i>Applicants on Your Posted Jobs</h5>
+                            <span class="badge bg-info text-dark rounded-pill fs-6" id="incomingApplicantsCount">0 Applications</span>
+                        </div>
+                        <div id="incomingApplicantsList"></div>
+                    </div>
                 </div>
 
                 <!-- MESSAGES VIEW -->
@@ -1314,7 +1348,7 @@
                 applied: {},
                 comments: {},
                 conversations: {},
-                recentJobsNotif: [], // Array to hold new job notification items
+                recentJobsNotif: [],
                 profile: loadJSON(STORAGE_KEYS.profile, {
                     name: '',
                     avatar: '',
@@ -1366,7 +1400,7 @@
                 const composerAvatar = document.getElementById('composerAvatar');
                 const welcomeHeading = document.getElementById('welcomeHeading');
                 const preview = document.getElementById('profileAvatarPreview');
-                
+
                 const nameInput = document.getElementById('profileName');
                 const locationInput = document.getElementById('profileLocation');
                 const skillsInput = document.getElementById('profileSkills');
@@ -1451,16 +1485,16 @@
             /* View Switching */
             const views = document.querySelectorAll('.app-view');
             const leftLinks = document.querySelectorAll('.left-link');
-            
+
             function switchView(target) {
                 views.forEach(function (v) { v.classList.add('d-none'); });
                 const targetView = document.getElementById('view-' + target);
                 if (targetView) targetView.classList.remove('d-none');
-                
-                leftLinks.forEach(function (l) { 
-                    l.classList.toggle('active-link', l.dataset.view === target); 
+
+                leftLinks.forEach(function (l) {
+                    l.classList.toggle('active-link', l.dataset.view === target);
                 });
-                
+
                 if (target === 'saved') renderSavedView();
                 if (target === 'applications') renderApplicationsView();
                 if (target === 'messages') renderMessagesView();
@@ -1480,7 +1514,6 @@
             }
 
             /* NAVBAR INTERACTION LOGIC */
-            // 1. Home Clicked -> Refresh Webpage
             document.getElementById('navHomeLink').addEventListener('click', function (e) {
                 e.preventDefault();
                 window.location.reload();
@@ -1490,11 +1523,10 @@
                 window.location.reload();
             });
 
-            // 2. Jobs Clicked -> Go to Home view, scroll past post box to first job
             document.getElementById('navJobsLink').addEventListener('click', function (e) {
                 e.preventDefault();
                 ensureHomeView();
-                setTimeout(function() {
+                setTimeout(function () {
                     const firstJob = jobFeed.querySelector('.post-box');
                     if (firstJob) {
                         firstJob.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1502,14 +1534,12 @@
                 }, 50);
             });
 
-            // 3. Chat Clicked -> Open Messages view
             document.getElementById('navChatLink').addEventListener('click', function (e) {
                 e.preventDefault();
                 switchView('messages');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
-            // 4. About Clicked -> Open About view
             document.getElementById('navAboutLink').addEventListener('click', function (e) {
                 e.preventDefault();
                 switchView('about');
@@ -1610,7 +1640,6 @@
                 const card = buildJobCard(job);
                 jobFeed.prepend(card);
 
-                // Notification handling for new posted jobs
                 if (opts.notify) {
                     state.recentJobsNotif.unshift(job);
                     updateNotifBadge();
@@ -1633,7 +1662,7 @@
                     knownJobIds.add(rawJob.id);
                     const card = buildJobCard(job);
                     frag.appendChild(card);
-                    
+
                     if (job.isNew) {
                         state.recentJobsNotif.unshift(job);
                         hasNewJob = true;
@@ -1754,6 +1783,31 @@
                 btn.classList.toggle('applied', isApplied);
                 btn.textContent = isApplied ? 'Applied ✓' : 'Apply Now';
             }
+
+            function sendAutoApplyMessage(card) {
+                const jobId = card.dataset.jobId;
+                const jobTitle = card.dataset.title;
+                const messageText = 'I am interested in this role: [JOB:' + jobId + '|' + jobTitle + ']';
+
+                fetch(API_BASE + '/chats/' + encodeURIComponent(jobId) + '/' + encodeURIComponent(DEVICE_ID) + '/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        senderId: DEVICE_ID,
+                        senderRole: 'seeker',
+                        senderName: state.profile.name || 'Applicant',
+                        senderAvatar: getAvatar(),
+                        text: messageText
+                    })
+                })
+                .then(function () {
+                    pollConversations();
+                })
+                .catch(function (err) {
+                    console.error('Auto apply message failed:', err);
+                });
+            }
+
             function toggleApply(card, btn) {
                 const id = card.dataset.jobId;
                 const willApply = !btn.classList.contains('applied');
@@ -1770,6 +1824,9 @@
                     })
                     .then(function (data) {
                         setApplyButtonState(btn, !!data.applied);
+                        if (data.applied) {
+                            sendAutoApplyMessage(card);
+                        }
                         if (!document.getElementById('view-applications').classList.contains('d-none')) renderApplicationsView();
                     })
                     .catch(function (error) {
@@ -1863,50 +1920,12 @@
                     id: job.id,
                     title: job.title,
                     company: job.company,
+                    userId: job.userId,
                     meta: timeAgo(job.createdAt) + (job.location ? (' • ' + job.location) : ''),
                     image: (job.attachment && job.attachment.kind === 'image') ? job.attachment.url : DEFAULT_AVATAR
                 };
             }
-            function renderMiniList(container, entries, emptyMsg, removeHandler, opts) {
-                opts = opts || {};
-                if (!entries.length) {
-                    container.innerHTML = '<div class="placeholder-view"><i class="bi bi-inbox" style="font-size:2.5rem;"></i>' +
-                        '<p class="mt-3 mb-0">' + emptyMsg + '</p></div>';
-                    return;
-                }
-                container.innerHTML = entries.map(function (job) {
-                    const extraBtns = opts.showViewChat
-                        ? '<button class="mini-view"><i class="bi bi-eye-fill"></i> View Post</button>' +
-                        '<button class="mini-chat"><i class="bi bi-chat-dots-fill"></i> Chat with Recruiter</button>'
-                        : '';
-                    return '<div class="mini-card" data-job-id="' + escapeHtml(job.id) + '">' +
-                        '<img src="' + (job.image || DEFAULT_AVATAR) + '" alt="">' +
-                        '<div class="mini-info"><h6>' + escapeHtml(job.title) + '</h6>' +
-                        '<small>' + escapeHtml(job.company) + ' • ' + escapeHtml(job.meta || '') + '</small></div>' +
-                        '<div class="mini-actions">' + extraBtns + '<button class="mini-remove">Remove</button></div></div>';
-                }).join('');
-                container.querySelectorAll('.mini-remove').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        const id = btn.closest('.mini-card').dataset.jobId;
-                        removeHandler(id);
-                    });
-                });
-                if (opts.showViewChat) {
-                    container.querySelectorAll('.mini-view').forEach(function (btn) {
-                        btn.addEventListener('click', function () {
-                            const id = btn.closest('.mini-card').dataset.jobId;
-                            viewSavedPost(id);
-                        });
-                    });
-                    container.querySelectorAll('.mini-chat').forEach(function (btn) {
-                        btn.addEventListener('click', function () {
-                            const id = btn.closest('.mini-card').dataset.jobId;
-                            const job = entries.filter(function (j) { return j.id === id; })[0];
-                            if (job) openChatById(id, DEVICE_ID, job.company, 'seeker');
-                        });
-                    });
-                }
-            }
+
             function viewSavedPost(id) {
                 ensureHomeView();
                 if (searchDesktop) searchDesktop.value = '';
@@ -1923,6 +1942,7 @@
                     }, 1600);
                 }
             }
+
             function renderSavedView() {
                 const container = document.getElementById('savedList');
                 container.innerHTML = '<div class="text-secondary small">Loading...</div>';
@@ -1933,9 +1953,37 @@
                     })
                     .then(function (jobs) {
                         const entries = jobs.map(jobSnapshot);
-                        renderMiniList(container, entries,
-                            "You haven't saved any jobs yet. Tap Save on a post to keep it here.",
-                            function (id) {
+                        if (!entries.length) {
+                            container.innerHTML = '<div class="placeholder-view"><i class="bi bi-inbox" style="font-size:2.5rem;"></i><p class="mt-3 mb-0">You haven\'t saved any jobs yet.</p></div>';
+                            return;
+                        }
+                        container.innerHTML = entries.map(function (job) {
+                            return '<div class="mini-card" data-job-id="' + escapeHtml(job.id) + '">' +
+                                '<img src="' + (job.image || DEFAULT_AVATAR) + '" alt="">' +
+                                '<div class="mini-info"><h6>' + escapeHtml(job.title) + '</h6>' +
+                                '<small>' + escapeHtml(job.company) + ' • ' + escapeHtml(job.meta || '') + '</small></div>' +
+                                '<div class="mini-actions">' +
+                                '<button class="mini-view"><i class="bi bi-eye-fill"></i> View Job</button>' +
+                                '<button class="mini-chat"><i class="bi bi-chat-dots-fill"></i> Message Recruiter</button>' +
+                                '<button class="mini-remove">Delete</button>' +
+                                '</div></div>';
+                        }).join('');
+
+                        container.querySelectorAll('.mini-view').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                viewSavedPost(btn.closest('.mini-card').dataset.jobId);
+                            });
+                        });
+                        container.querySelectorAll('.mini-chat').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const id = btn.closest('.mini-card').dataset.jobId;
+                                const job = entries.find(j => j.id === id);
+                                openChatById(id, DEVICE_ID, job ? job.company : 'Recruiter', 'seeker');
+                            });
+                        });
+                        container.querySelectorAll('.mini-remove').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const id = btn.closest('.mini-card').dataset.jobId;
                                 fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/save', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -1945,26 +1993,55 @@
                                     if (card) setSaveButtonState(card.querySelector('.btn-save'), false);
                                     renderSavedView();
                                 });
-                            }, { showViewChat: true });
+                            });
+                        });
                     })
                     .catch(function (error) {
                         console.error('Load saved failed:', error);
                         container.innerHTML = '<div class="text-danger small">Could not load saved jobs.</div>';
                     });
             }
+
+            /* Applications View: Section 1 (Applied) & Section 2 (Applicants on Posted Jobs) */
             function renderApplicationsView() {
-                const container = document.getElementById('applicationsList');
-                container.innerHTML = '<div class="text-secondary small">Loading...</div>';
+                const appliedContainer = document.getElementById('myAppliedList');
+                const applicantsContainer = document.getElementById('incomingApplicantsList');
+                const appliedCountEl = document.getElementById('myAppliedCount');
+                const applicantsCountEl = document.getElementById('incomingApplicantsCount');
+
+                appliedContainer.innerHTML = '<div class="text-secondary small">Loading applied jobs...</div>';
+                applicantsContainer.innerHTML = '<div class="text-secondary small">Loading applicants...</div>';
+
+                // Fetch Jobs I Applied For
                 fetch(API_BASE + '/users/' + encodeURIComponent(DEVICE_ID) + '/applications')
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
+                    .then(function (res) { return res.ok ? res.json() : []; })
                     .then(function (jobs) {
                         const entries = jobs.map(jobSnapshot);
-                        renderMiniList(container, entries,
-                            "You haven't applied to any jobs yet. Tap Apply Now on a post to track it here.",
-                            function (id) {
+                        appliedCountEl.textContent = entries.length + (entries.length === 1 ? ' Applied' : ' Applied');
+                        if (!entries.length) {
+                            appliedContainer.innerHTML = '<div class="placeholder-view"><i class="bi bi-file-earmark-check" style="font-size:2rem;"></i><p class="mt-2 mb-0">You have not applied for any jobs yet.</p></div>';
+                            return;
+                        }
+                        appliedContainer.innerHTML = entries.map(function (job) {
+                            return '<div class="mini-card" data-job-id="' + escapeHtml(job.id) + '">' +
+                                '<img src="' + (job.image || DEFAULT_AVATAR) + '" alt="">' +
+                                '<div class="mini-info"><h6>' + escapeHtml(job.title) + '</h6>' +
+                                '<small>' + escapeHtml(job.company) + ' • ' + escapeHtml(job.meta || '') + '</small></div>' +
+                                '<div class="mini-actions">' +
+                                '<button class="mini-view"><i class="bi bi-eye-fill"></i> View Job</button>' +
+                                '<button class="mini-remove"><i class="bi bi-trash"></i> Delete</button>' +
+                                '<button class="mini-chat"><i class="bi bi-chat-dots-fill"></i> Message Recruiter</button>' +
+                                '</div></div>';
+                        }).join('');
+
+                        appliedContainer.querySelectorAll('.mini-view').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                viewSavedPost(btn.closest('.mini-card').dataset.jobId);
+                            });
+                        });
+                        appliedContainer.querySelectorAll('.mini-remove').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const id = btn.closest('.mini-card').dataset.jobId;
                                 fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/apply', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -1975,10 +2052,75 @@
                                     renderApplicationsView();
                                 });
                             });
+                        });
+                        appliedContainer.querySelectorAll('.mini-chat').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const id = btn.closest('.mini-card').dataset.jobId;
+                                const job = entries.find(j => j.id === id);
+                                openChatById(id, DEVICE_ID, job ? job.company : 'Recruiter', 'seeker');
+                            });
+                        });
                     })
-                    .catch(function (error) {
-                        console.error('Load applications failed:', error);
-                        container.innerHTML = '<div class="text-danger small">Could not load applications.</div>';
+                    .catch(function () {
+                        appliedContainer.innerHTML = '<div class="text-danger small">Error loading applied jobs.</div>';
+                    });
+
+                // Fetch Applicants on My Posted Jobs
+                fetch(API_BASE + '/users/' + encodeURIComponent(DEVICE_ID) + '/conversations')
+                    .then(function (res) { return res.ok ? res.json() : []; })
+                    .then(function (conversations) {
+                        const applicantChats = conversations.filter(c => c.myRole === 'recruiter');
+                        applicantsCountEl.textContent = applicantChats.length + (applicantChats.length === 1 ? ' Application' : ' Applications');
+
+                        if (!applicantChats.length) {
+                            applicantsContainer.innerHTML = '<div class="placeholder-view"><i class="bi bi-person-lines-fill" style="font-size:2rem;"></i><p class="mt-2 mb-0">No one has applied on your posted jobs yet.</p></div>';
+                            return;
+                        }
+
+                        applicantsContainer.innerHTML = applicantChats.map(function (c) {
+                            return '<div class="mini-card" data-job-id="' + escapeHtml(c.jobId) + '" data-seeker-id="' + escapeHtml(c.seekerId) + '">' +
+                                '<img src="' + (c.counterpartAvatar || DEFAULT_AVATAR) + '" alt="">' +
+                                '<div class="mini-info"><h6>' + escapeHtml(c.counterpartName) + '</h6>' +
+                                '<small>Applied for: <strong>' + escapeHtml(c.jobTitle || 'Posted Job') + '</strong></small></div>' +
+                                '<div class="mini-actions">' +
+                                '<button class="mini-view"><i class="bi bi-eye-fill"></i> View Job</button>' +
+                                '<button class="mini-remove"><i class="bi bi-trash"></i> Delete Application</button>' +
+                                '<button class="mini-chat"><i class="bi bi-chat-dots-fill"></i> Message Job Seeker</button>' +
+                                '</div></div>';
+                        }).join('');
+
+                        applicantsContainer.querySelectorAll('.mini-view').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                viewSavedPost(btn.closest('.mini-card').dataset.jobId);
+                            });
+                        });
+                        applicantsContainer.querySelectorAll('.mini-remove').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const card = btn.closest('.mini-card');
+                                const jobId = card.dataset.jobId;
+                                const seekerId = card.dataset.seekerId;
+                                fetch(API_BASE + '/chats/' + encodeURIComponent(jobId) + '/' + encodeURIComponent(seekerId), {
+                                    method: 'DELETE'
+                                }).then(function () {
+                                    renderApplicationsView();
+                                    pollConversations();
+                                }).catch(function () {
+                                    card.remove();
+                                });
+                            });
+                        });
+                        applicantsContainer.querySelectorAll('.mini-chat').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const card = btn.closest('.mini-card');
+                                const jobId = card.dataset.jobId;
+                                const seekerId = card.dataset.seekerId;
+                                const chat = applicantChats.find(c => c.jobId === jobId && c.seekerId === seekerId);
+                                openChatById(jobId, seekerId, chat ? chat.counterpartName : 'Job Seeker', 'recruiter');
+                            });
+                        });
+                    })
+                    .catch(function () {
+                        applicantsContainer.innerHTML = '<div class="text-danger small">Error loading applicants.</div>';
                     });
             }
 
@@ -2024,7 +2166,6 @@
                     });
             }
 
-            /* UPDATED NOTIFICATION BADGE LOGIC (Includes Chat Messages & Posted Jobs) */
             function updateNotifBadge() {
                 const badge = document.getElementById('notifBadge');
                 const sidebarBadge = document.getElementById('sidebarMsgBadge');
@@ -2050,7 +2191,6 @@
 
                 let itemsHtml = '';
 
-                // Add unread messages to notifications list
                 if (state.settings.notifyMessages && totalUnreadMsgs > 0) {
                     const unread = Object.keys(state.conversations)
                         .map(function (key) { return state.conversations[key]; })
@@ -2063,7 +2203,6 @@
                     });
                 }
 
-                // Add newly posted jobs to notifications list
                 if (state.settings.notifyJobs && totalNewJobs > 0) {
                     state.recentJobsNotif.forEach(function (j) {
                         itemsHtml += '<li><a class="dropdown-item notif-job-item" href="#" data-job-id="' + escapeHtml(j.id) + '">' +
@@ -2079,7 +2218,6 @@
 
                 list.innerHTML = itemsHtml;
 
-                // Event Listeners for Notification Clicks
                 list.querySelectorAll('.notif-item').forEach(function (item) {
                     item.addEventListener('click', function (e) {
                         e.preventDefault();
@@ -2133,6 +2271,16 @@
                 });
             }
 
+            function formatChatMessageText(text) {
+                const tagRegex = /\[JOB:([^\|]+)\|([^\]]+)\]/g;
+                if (!tagRegex.test(text)) {
+                    return escapeHtml(text);
+                }
+                return text.replace(/\[JOB:([^\|]+)\|([^\]]+)\]/g, function (match, jId, jTitle) {
+                    return '<br><a class="job-tag-link" data-tag-job-id="' + escapeHtml(jId) + '"><i class="bi bi-briefcase-fill me-1"></i> View Tagged Job: ' + escapeHtml(jTitle) + '</a>';
+                });
+            }
+
             function renderChat(messages) {
                 if (!messages.length) {
                     chatMessagesEl.innerHTML = '<div class="text-secondary small">No messages yet. Say hello!</div>';
@@ -2145,9 +2293,19 @@
                     const bubbleBg = isMe ? '#0d6efd' : '#132847';
                     return '<div class="mb-2 ' + align + '"><span style="display:inline-block;background:' + bubbleBg +
                         ';padding:8px 14px;border-radius:14px;max-width:80%;text-align:left;"><strong>' +
-                        escapeHtml(label) + ':</strong> ' + escapeHtml(m.text) + '</span></div>';
+                        escapeHtml(label) + ':</strong> ' + formatChatMessageText(m.text) + '</span></div>';
                 }).join('');
+                
                 chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+
+                chatMessagesEl.querySelectorAll('.job-tag-link').forEach(function (link) {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const targetJobId = link.dataset.tagJobId;
+                        chatModal.hide();
+                        viewSavedPost(targetJobId);
+                    });
+                });
             }
 
             function loadActiveChatMessages() {
@@ -2264,7 +2422,7 @@
                     const skillsContainer = document.getElementById('userModalSkillsContainer');
                     if (authorSkills.trim()) {
                         const skillsArray = authorSkills.split(',');
-                        skillsContainer.innerHTML = skillsArray.map(function(s) {
+                        skillsContainer.innerHTML = skillsArray.map(function (s) {
                             return '<span class="skill-badge">' + escapeHtml(s.trim()) + '</span>';
                         }).join('');
                     } else {
@@ -2280,7 +2438,7 @@
                     allCards.forEach(function (singleCard) {
                         if (singleCard.dataset.authorName === authorName || singleCard.dataset.company === authorName) {
                             const clonedCard = singleCard.cloneNode(true);
-                            clonedCard.querySelectorAll('.clickable-profile').forEach(function(el) {
+                            clonedCard.querySelectorAll('.clickable-profile').forEach(function (el) {
                                 el.classList.remove('clickable-profile');
                             });
                             postsContainer.appendChild(clonedCard);
@@ -2669,33 +2827,24 @@
                         return response.json();
                     })
                     .then(function (jobs) {
-                        if (!Array.isArray(jobs)) throw new Error('Response is not an array');
-                        jobs.forEach(function (job) {
-                            job.isNew = opts.markAsNew === true;
-                        });
                         insertJobsAtTop(jobs);
                     })
                     .catch(function (error) {
-                        console.error('loadJobsFromBackend failed:', error);
+                        console.error('Load jobs failed:', error);
                     });
             }
 
-            /* Initialization */
+            // Initializations
             updateProfileUI();
-            populateSettingsForm();
+            pollConversations();
+            loadJobsFromBackend();
+            setInterval(function () {
+                loadJobsFromBackend();
+                pollConversations();
+            }, POLL_INTERVAL_MS);
 
-            loadJobsFromBackend({ markAsNew: false }).then(function () {
-                setInterval(function () {
-                    loadJobsFromBackend({ markAsNew: true });
-                }, POLL_INTERVAL_MS);
-            });
-
-            pollConversations().then(function () {
-                setInterval(pollConversations, POLL_INTERVAL_MS);
-            });
         })();
     </script>
-
 </body>
 
 </html>
