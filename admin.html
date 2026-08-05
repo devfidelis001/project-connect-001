@@ -1142,6 +1142,7 @@
                                         <option>Education</option>
                                         <option>Sales</option>
                                         <option>Admin</option>
+                                        <option>Other</option>
                                     </select>
                                     <select class="form-select glass-input" id="jobsStatusFilter">
                                         <option value="">All statuses</option>
@@ -1455,7 +1456,9 @@
                 users: 'ylmAdmin.users',
                 jobs: 'ylmAdmin.jobs',
                 recruiters: 'ylmAdmin.recruiters',
-                reports: 'ylmAdmin.reports'
+                reports: 'ylmAdmin.reports',
+                jobOverrides: 'ylmAdmin.jobOverrides',
+                userOverrides: 'ylmAdmin.userOverrides'
             };
             function loadJSON(key, fallback) {
                 try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
@@ -1498,65 +1501,100 @@
             }
 
             /* =========================================================
-               Seed data (only created the first time the app runs)
+               Backend record normalization + local moderation overrides
+               ---------------------------------------------------------
+               The Postgres backend only stores the fields the public
+               posting form collects (title, company, location, salary,
+               description, attachment, createdAt). It has no concept of
+               "status", "category" or "applicants" - those are admin-side
+               moderation concerns. So every record fetched from the API
+               is normalized here to have sane defaults, and any
+               moderation action the admin takes (approve, suspend, flag,
+               remove...) is stored locally by record id and re-applied
+               on top of the freshest API data every time we refetch.
+            ========================================================= */
+            function saveOverride(key, id, patch) {
+                const overrides = loadJSON(key, {});
+                overrides[id] = Object.assign({}, overrides[id], patch);
+                saveJSON(key, overrides);
+            }
+            function applyOverrides(list, overrides) {
+                return list.map(function (item) {
+                    return overrides[item.id] ? Object.assign({}, item, overrides[item.id]) : item;
+                });
+            }
+            function normalizeJob(j) {
+                return {
+                    id: j.id,
+                    title: j.title || 'Untitled listing',
+                    company: j.company || 'Unknown company',
+                    category: j.category || 'Other',
+                    location: j.location || 'Not specified',
+                    salary: j.salary || 'N/A',
+                    // The backend has no moderation status yet - treat every
+                    // synced listing as live/Active unless an admin action
+                    // (stored in the jobOverrides key) says otherwise.
+                    status: j.status || 'Active',
+                    applicants: typeof j.applicants === 'number' ? j.applicants : 0,
+                    postedAt: j.postedAt || j.createdAt || new Date().toISOString(),
+                    hidden: false
+                };
+            }
+            function normalizeUser(u) {
+                return {
+                    id: u.id,
+                    name: u.name || u.fullName || 'Unnamed user',
+                    email: u.email || 'unknown@mail.com',
+                    avatar: u.avatar || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg',
+                    role: u.role || 'Job seeker',
+                    location: u.location || 'Not specified',
+                    status: u.status || 'Active',
+                    joinedAt: u.joinedAt || u.createdAt || new Date().toISOString(),
+                    hidden: false
+                };
+            }
+
+            const state = {
+                profile: Object.assign(
+                    {
+                        name: 'Ada Nwachukwu',
+                        email: 'admin@ylm.com',
+                        avatar: ''
+                    },
+                    loadJSON(KEYS.profile, {})
+                ),
+
+                platform: Object.assign({
+                    notifSignups: true,
+                    notifJobs: true,
+                    notifReports: true,
+                    notifVerify: true,
+                    requireVerify: true,
+                    autoFlag: true,
+                    publicProfiles: true
+                }, loadJSON(KEYS.platform, {})),
+
+                users: [],
+
+                jobs: [],
+
+                recruiters: loadJSON(KEYS.recruiters, null) || seedRecruiters(),
+
+                reports: loadJSON(KEYS.reports, null) || seedReports()
+            };
+
+            function persist(key) {
+                const map = { users: KEYS.users, jobs: KEYS.jobs, recruiters: KEYS.recruiters, reports: KEYS.reports, profile: KEYS.profile, platform: KEYS.platform };
+                saveJSON(map[key], state[key]);
+            }
+
+            /* =========================================================
+               Seed data (recruiters + reports only - users/jobs come
+               from the live backend, see boot())
             ========================================================= */
             const NIGERIAN_LOCATIONS = ['Uyo, Akwa Ibom', 'Eket, Akwa Ibom', 'Lagos', 'Port Harcourt, Rivers', 'Abuja', 'Calabar, Cross River', 'Ikot Ekpene'];
-            const CATEGORIES = ['Tech', 'Engineering', 'Healthcare', 'Education', 'Sales', 'Admin'];
-            const AVATAR_POOL = [
-                'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg',
-                'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg',
-                'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg',
-                'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg',
-                'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg',
-                'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg',
-                'https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg',
-                'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'
-            ];
             function daysAgoISO(n) { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString(); }
             function pick(arr, i) { return arr[i % arr.length]; }
-
-            function seedUsers() {
-                const names = ['Ekaette Umoh', 'Chidi Okafor', 'Blessing Etuk', 'Tunde Bakare', 'Grace Effiong',
-                    'Ifeoma Nwosu', 'Samuel Akpan', 'Ngozi Chukwu', 'Emmanuel Udo', 'Fatima Bello',
-                    'David Essien', 'Rita Obi', 'Kelvin Ubong', 'Aisha Yusuf', 'Victor Eze', 'Mercy Inyang'];
-                const roles = ['Job seeker', 'Recruiter'];
-                const statuses = ['Active', 'Active', 'Active', 'Pending', 'Suspended'];
-                return names.map(function (name, i) {
-                    return {
-                        id: 'u' + (i + 1),
-                        name: name,
-                        email: name.toLowerCase().replace(/\s+/g, '.') + '@mail.com',
-                        avatar: pick(AVATAR_POOL, i),
-                        role: pick(roles, i % 5 === 0 ? 1 : 0),
-                        location: pick(NIGERIAN_LOCATIONS, i),
-                        status: pick(statuses, i),
-                        joinedAt: daysAgoISO(2 + i * 4)
-                    };
-                });
-            }
-            function seedJobs() {
-                const titles = ['Frontend Developer', 'Civil Engineer', 'Registered Nurse', 'Mathematics Teacher',
-                    'Sales Executive', 'Office Administrator', 'Backend Developer', 'Electrical Engineer',
-                    'Lab Technician', 'Content Writer', 'Accountant', 'Customer Support Rep'];
-                const companies = ['AK Tech Solutions', 'Ibom Engineering Ltd', 'Divine Hospital', 'Royal Schools',
-                    'Coastal Retail Group', 'Fintrust Ltd', 'Nimbus Systems', 'Delta Power Co',
-                    'Wellness Diagnostics', 'BrightPen Media', 'Ledger & Co', 'HelpDesk NG'];
-                const cats = ['Tech', 'Engineering', 'Healthcare', 'Education', 'Sales', 'Admin', 'Tech', 'Engineering', 'Healthcare', 'Tech', 'Admin', 'Admin'];
-                const statuses = ['Active', 'Active', 'Active', 'Pending', 'Flagged'];
-                return titles.map(function (title, i) {
-                    return {
-                        id: 'j' + (i + 1),
-                        title: title,
-                        company: companies[i],
-                        category: cats[i],
-                        location: pick(NIGERIAN_LOCATIONS, i),
-                        salary: (150 + i * 15) + ',000',
-                        status: pick(statuses, i),
-                        applicants: 4 + (i * 7) % 63,
-                        postedAt: daysAgoISO(1 + i * 3)
-                    };
-                });
-            }
             function seedRecruiters() {
                 const companies = ['Coastal Retail Group', 'Fintrust Ltd', 'Nimbus Systems', 'Delta Power Co',
                     'Wellness Diagnostics', 'BrightPen Media', 'Ledger & Co', 'HelpDesk NG'];
@@ -1597,43 +1635,8 @@
                 });
             }
 
-           const state = {
-    profile: Object.assign(
-        {
-            name: 'Ada Nwachukwu',
-            email: 'admin@ylm.com',
-            avatar: ''
-        },
-        loadJSON(KEYS.profile, {})
-    ),
-
-    platform: Object.assign({
-        notifSignups: true,
-        notifJobs: true,
-        notifReports: true,
-        notifVerify: true,
-        requireVerify: true,
-        autoFlag: true,
-        publicProfiles: true
-    }, loadJSON(KEYS.platform, {})),
-
-    users: [],
-
-    jobs: [],
-
-    recruiters: loadJSON(KEYS.recruiters, null) || seedRecruiters(),
-
-    reports: loadJSON(KEYS.reports, null) || seedReports()
-};
-            if (!loadJSON(KEYS.users, null)) saveJSON(KEYS.users, state.users);
-            if (!loadJSON(KEYS.jobs, null)) saveJSON(KEYS.jobs, state.jobs);
             if (!loadJSON(KEYS.recruiters, null)) saveJSON(KEYS.recruiters, state.recruiters);
             if (!loadJSON(KEYS.reports, null)) saveJSON(KEYS.reports, state.reports);
-
-            function persist(key) {
-                const map = { users: KEYS.users, jobs: KEYS.jobs, recruiters: KEYS.recruiters, reports: KEYS.reports, profile: KEYS.profile, platform: KEYS.platform };
-                saveJSON(map[key], state[key]);
-            }
 
             /* =========================================================
                LOGIN
@@ -1991,11 +1994,13 @@
                     tr.querySelector('.act-view').addEventListener('click', function () { openUserModal(user); });
                     tr.querySelector('.act-toggle').addEventListener('click', function () {
                         user.status = user.status === 'Suspended' ? 'Active' : 'Suspended';
+                        saveOverride(KEYS.userOverrides, user.id, { status: user.status });
                         persist('users'); renderUsersTable(); renderStatCards();
                         toast(user.status === 'Suspended' ? 'User suspended' : 'User activated', user.status === 'Suspended' ? 'bi-slash-circle-fill' : 'bi-check-circle-fill');
                     });
                     tr.querySelector('.act-delete').addEventListener('click', function () {
                         if (!confirm('Remove ' + user.name + ' from the platform?')) return;
+                        saveOverride(KEYS.userOverrides, user.id, { hidden: true });
                         state.users = state.users.filter(function (u) { return u.id !== id; });
                         persist('users'); renderUsersTable(); renderStatCards();
                         toast('User removed', 'bi-trash-fill');
@@ -2037,7 +2042,7 @@
                 const tbody = document.getElementById('jobsTableBody');
                 tbody.innerHTML = rows.map(function (j) {
                     return '<tr data-id="' + j.id + '">' +
-                        '<td><div class="name">' + escapeHtml(j.title) + '</div><div class="sub">₦' + j.salary + '/month • ' + j.applicants + ' applicants</div></td>' +
+                        '<td><div class="name">' + escapeHtml(j.title) + '</div><div class="sub">' + escapeHtml(j.salary) + ' • ' + j.applicants + ' applicants</div></td>' +
                         '<td>' + escapeHtml(j.company) + '</td>' +
                         '<td>' + escapeHtml(j.category) + '</td>' +
                         '<td>' + fmtDate(j.postedAt) + '</td>' +
@@ -2057,11 +2062,14 @@
                     tr.querySelector('.act-view').addEventListener('click', function () { openJobModal(job); });
                     const approveBtn = tr.querySelector('.act-approve');
                     if (approveBtn) approveBtn.addEventListener('click', function () {
-                        job.status = 'Active'; persist('jobs'); renderJobsTable(); renderStatCards();
+                        job.status = 'Active';
+                        saveOverride(KEYS.jobOverrides, job.id, { status: job.status });
+                        persist('jobs'); renderJobsTable(); renderStatCards();
                         toast('Job approved', 'bi-check-circle-fill');
                     });
                     tr.querySelector('.act-remove').addEventListener('click', function () {
                         if (!confirm('Remove "' + job.title + '"?')) return;
+                        saveOverride(KEYS.jobOverrides, job.id, { hidden: true });
                         state.jobs = state.jobs.filter(function (j) { return j.id !== id; });
                         persist('jobs'); renderJobsTable(); renderStatCards();
                         toast('Job removed', 'bi-trash-fill');
@@ -2075,7 +2083,7 @@
                     '<div class="row g-2 small">' +
                     '<div class="col-6"><div class="text-dim">Category</div><div>' + escapeHtml(job.category) + '</div></div>' +
                     '<div class="col-6"><div class="text-dim">Status</div><span class="pill ' + statusPillClass(job.status) + '">' + job.status + '</span></div>' +
-                    '<div class="col-6"><div class="text-dim">Salary</div><div>₦' + job.salary + '/month</div></div>' +
+                    '<div class="col-6"><div class="text-dim">Salary</div><div>' + escapeHtml(job.salary) + '</div></div>' +
                     '<div class="col-6"><div class="text-dim">Applicants</div><div>' + job.applicants + '</div></div>' +
                     '<div class="col-6"><div class="text-dim">Posted</div><div>' + fmtDate(job.postedAt) + '</div></div>' +
                     '</div>';
@@ -2240,56 +2248,55 @@
                Refresh + boot
             ========================================================= */
             document.getElementById('refreshHomeBtn').addEventListener('click', function () {
-                renderStatCards(); renderActivityFeed(); renderAttentionList(); renderHomeCharts();
-                toast('Dashboard refreshed', 'bi-arrow-clockwise');
+                boot();
             });
 
-          async function boot() {
+            async function boot() {
+                try {
+                    const API_URL = "https://project-connect-001.onrender.com";
 
-    try {
+                    // Get real users from backend, normalize their shape, then
+                    // re-apply any local moderation decisions (suspend/delete)
+                    const usersResponse = await fetch(API_URL + "/users");
+                    const rawUsers = await usersResponse.json();
+                    const userOverrides = loadJSON(KEYS.userOverrides, {});
+                    state.users = applyOverrides(rawUsers.map(normalizeUser), userOverrides)
+                        .filter(function (u) { return !u.hidden; });
 
-        const API_URL = "https://project-connect-001.onrender.com";
+                    // Get real jobs from backend, normalize their shape (the
+                    // Postgres table has no status/category columns, so every
+                    // synced job defaults to "Active" unless overridden), then
+                    // re-apply any local moderation decisions (approve/remove)
+                    const jobsResponse = await fetch(API_URL + "/jobs");
+                    const rawJobs = await jobsResponse.json();
+                    const jobOverrides = loadJSON(KEYS.jobOverrides, {});
+                    state.jobs = applyOverrides(rawJobs.map(normalizeJob), jobOverrides)
+                        .filter(function (j) { return !j.hidden; });
 
+                    persist('users');
+                    persist('jobs');
 
-        // Get real users from backend
-        const usersResponse = await fetch(API_URL + "/users");
-        state.users = await usersResponse.json();
+                    // Continue loading dashboard
+                    populateSettingsToggles();
+                    renderStatCards();
+                    renderActivityFeed();
+                    renderAttentionList();
+                    renderHomeCharts();
+                    renderUsersTable();
+                    renderJobsTable();
+                    renderRecruiters();
+                    renderVerifyBadges();
+                    renderReportsTable();
+                    renderReportBadges();
+                    renderTopNotifications();
 
+                    toast('Dashboard refreshed', 'bi-arrow-clockwise');
 
-        // Get real jobs from backend
-        const jobsResponse = await fetch(API_URL + "/jobs");
-        state.jobs = await jobsResponse.json();
-
-        // Continue loading dashboard
-        populateSettingsToggles();
-        renderStatCards();
-        renderActivityFeed();
-        renderAttentionList();
-        renderHomeCharts();
-        renderUsersTable();
-        renderJobsTable();
-        renderRecruiters();
-        renderVerifyBadges();
-        renderReportsTable();
-        renderReportBadges();
-        renderTopNotifications();
-
-
-    } catch(error) {
-
-        console.log("Backend loading error:", error);
-
-        toast("Could not connect to server", "bi-x-circle");
-
-    }
-
-}
-
-            /* =========================================================
-               Persist-on-change wrapper (keep users/jobs/recruiters/reports in sync)
-            ========================================================= */
-            const origPersist = persist;
-            persist = function (key) { origPersist(key); };
+                } catch (error) {
+                    console.log("Backend loading error:", error);
+                    toast("Could not connect to server", "bi-x-circle");
+                }
+            }
 
             /* =========================================================
                Session check on load
