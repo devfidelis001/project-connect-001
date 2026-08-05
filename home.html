@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1193,16 +1194,16 @@
                 publicProfile: true
             };
 
-         const state = {
-    posts: [],
-    saved: loadJSON(STORAGE_KEYS.saved, {}),
-    applied: loadJSON(STORAGE_KEYS.applied, {}),
-    comments: loadJSON(STORAGE_KEYS.comments, {}),
-    chats: loadJSON(STORAGE_KEYS.chats, {}),
-    profile: loadJSON(STORAGE_KEYS.profile, { name: '', avatar: '' }),
-    settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {})),
-    readMarkers: loadJSON(STORAGE_KEYS.readMarkers, {})
-};
+            const state = {
+                posts: loadJSON(STORAGE_KEYS.posts, []),
+                saved: loadJSON(STORAGE_KEYS.saved, {}),
+                applied: loadJSON(STORAGE_KEYS.applied, {}),
+                comments: loadJSON(STORAGE_KEYS.comments, {}),
+                chats: loadJSON(STORAGE_KEYS.chats, {}),
+                profile: loadJSON(STORAGE_KEYS.profile, { name: '', avatar: '' }),
+                settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {})),
+                readMarkers: loadJSON(STORAGE_KEYS.readMarkers, {})
+            };
 
             let idCounter = 1;
             function newId() { return 'job-' + Date.now() + '-' + (idCounter++); }
@@ -1990,11 +1991,8 @@
                     });
                 addJobToFeed(job, { scroll: true });
 
-               
-
-
-
-                
+                state.posts.unshift(job);
+                saveJSON(STORAGE_KEYS.posts, state.posts);
 
                 jobForm.reset();
                 jobModalImageDataUrl = null;
@@ -2138,30 +2136,14 @@
             aiInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendAiMessage(); } });
 
             /* ================= Boot ================= */
-            /* ================= Load Jobs From Backend ================= */
-function loadJobsFromBackend() {
-    fetch("https://project-connect-001.onrender.com/jobs")
-        .then(response => response.json())
-        .then(jobs => {
-            jobs.forEach(function (job) {
+            updateProfileUI();
+            populateSettingsForm();
+            document.querySelectorAll('#jobFeed .post-box').forEach(applyStoredState);
+            state.posts.slice().reverse().forEach(function (job) {
                 addJobToFeed(Object.assign({}, job, { isNew: false }));
             });
+            updateNotifBadge();
 
-            console.log("Jobs loaded from backend:", jobs);
-        })
-        .catch(error => {
-            console.error("Failed to load jobs:", error);
-        });
-}
-
-
-/* ================= Boot ================= */
-updateProfileUI();
-populateSettingsForm();
-
-loadJobsFromBackend();
-
-updateNotifBadge();
         })();
     </script>
 
