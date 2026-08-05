@@ -106,14 +106,19 @@
             border: 2px solid #4da3ff;
         }
 
+        .clickable-profile {
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .clickable-profile:hover {
+            opacity: 0.8;
+        }
+
         .dashboard-row {
             align-items: flex-start;
         }
 
-        /* LEFT MENU -- static (scrolls with the page) on mobile.
-           On desktop (>=992px) JS switches this to position:fixed and
-           computes left/width from the column so it stays perfectly
-           aligned and genuinely stays put while the page scrolls. */
         .left-card {
             background: rgba(255, 255, 255, .05);
             border-radius: 20px;
@@ -418,7 +423,6 @@
             color: rgba(255, 255, 255, .6);
         }
 
-        /* Notification badge (navbar bell + messages list + sidebar) */
         .notif-badge {
             display: inline-flex;
             align-items: center;
@@ -465,7 +469,6 @@
             color: #fff;
         }
 
-        /* Back to top */
         .back-to-top {
             position: fixed;
             bottom: 24px;
@@ -497,7 +500,6 @@
             background: #18355d;
         }
 
-        /* AI assistant bubble + panel */
         .ai-bubble {
             position: fixed;
             bottom: 24px;
@@ -565,7 +567,6 @@
             border-radius: 20px;
         }
 
-        /* Sync status pill under the composer */
         .sync-status {
             font-size: .8rem;
             margin-top: 10px;
@@ -576,7 +577,18 @@
             margin-right: 4px;
         }
 
-        /* Responsive tweaks */
+        .skill-badge {
+            background: #132847;
+            border: 1px solid rgba(255, 255, 255, .15);
+            color: #4da3ff;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+
         @media (max-width: 575.98px) {
             .navbar-brand img {
                 height: 46px !important;
@@ -621,9 +633,7 @@
 
 <body>
 
-    <!-- =======================
-    NAVBAR
-    ======================= -->
+    <!-- NAV BAR -->
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container-fluid px-4">
             <a class="navbar-brand" href="index.html">
@@ -687,9 +697,7 @@
         </div>
     </nav>
 
-    <!-- =======================
-    BODY
-    ======================= -->
+    <!-- MAIN BODY -->
     <div class="container-fluid mt-4">
         <div class="row dashboard-row">
 
@@ -709,10 +717,10 @@
                 </div>
             </div>
 
-            <!-- CENTER -->
+            <!-- CENTER FEED / VIEWS -->
             <div class="col-12 col-lg-6">
 
-                <!-- ===================== HOME VIEW ===================== -->
+                <!-- HOME VIEW -->
                 <div id="view-home" class="app-view">
 
                     <!-- POST COMPOSER -->
@@ -754,19 +762,20 @@
                         <div id="composerSyncStatus" class="sync-status d-none"></div>
                     </div>
 
-                    <!-- Job feed starts here -->
+                    <!-- JOB FEED -->
                     <div id="jobFeed">
 
-                        <!-- ===========================
-                        FIRST JOB POST
-                        =========================== -->
+                        <!-- JOB 1 -->
                         <div class="post-box mb-4" data-job-id="sample-1" data-title="Frontend Developer Needed"
-                            data-company="AK Tech Solutions">
+                            data-company="AK Tech Solutions" data-author-name="AK Tech Solutions"
+                            data-author-phone="+234 803 123 4567" data-author-location="Uyo, Akwa Ibom"
+                            data-author-role="Job Poster" data-author-skills="HTML, CSS, Bootstrap, JavaScript"
+                            data-author-avatar="https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg">
                             <div class="d-flex align-items-center mb-3">
                                 <img src="https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg"
-                                    class="profile-img me-3" alt="AK Tech Solutions">
+                                    class="profile-img me-3 clickable-profile" alt="AK Tech Solutions">
                                 <div>
-                                    <h5 class="mb-0">AK Tech Solutions</h5>
+                                    <h5 class="mb-0 clickable-profile">AK Tech Solutions</h5>
                                     <small class="text-secondary">2 hours ago • Uyo, Akwa Ibom</small>
                                 </div>
                             </div>
@@ -790,16 +799,17 @@
                             </div>
                         </div>
 
-                        <!-- ===========================
-                        SECOND JOB POST
-                        =========================== -->
+                        <!-- JOB 2 -->
                         <div class="post-box mb-4" data-job-id="sample-2" data-title="Civil Engineer Wanted"
-                            data-company="Ibom Engineering Ltd">
+                            data-company="Ibom Engineering Ltd" data-author-name="Ibom Engineering Ltd"
+                            data-author-phone="+234 802 987 6543" data-author-location="Eket, Akwa Ibom"
+                            data-author-role="Job Poster" data-author-skills="Structural Design, AutoCAD, Site Management"
+                            data-author-avatar="https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg">
                             <div class="d-flex align-items-center mb-3">
                                 <img src="https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg"
-                                    class="profile-img me-3" alt="Ibom Engineering Ltd">
+                                    class="profile-img me-3 clickable-profile" alt="Ibom Engineering Ltd">
                                 <div>
-                                    <h5 class="mb-0">Ibom Engineering Ltd</h5>
+                                    <h5 class="mb-0 clickable-profile">Ibom Engineering Ltd</h5>
                                     <small class="text-secondary">Today • Eket</small>
                                 </div>
                             </div>
@@ -826,16 +836,17 @@
                             </div>
                         </div>
 
-                        <!-- ===========================
-                        THIRD JOB POST
-                        =========================== -->
+                        <!-- JOB 3 -->
                         <div class="post-box mb-4" data-job-id="sample-3" data-title="Registered Nurse Needed"
-                            data-company="Divine Hospital">
+                            data-company="Divine Hospital" data-author-name="Divine Hospital"
+                            data-author-phone="+234 805 555 0192" data-author-location="Uyo, Akwa Ibom"
+                            data-author-role="Job Poster" data-author-skills="Patient Care, ICU, Clinical Procedures"
+                            data-author-avatar="https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg">
                             <div class="d-flex align-items-center mb-3">
                                 <img src="https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg"
-                                    class="profile-img me-3" alt="Divine Hospital">
+                                    class="profile-img me-3 clickable-profile" alt="Divine Hospital">
                                 <div>
-                                    <h5 class="mb-0">Divine Hospital</h5>
+                                    <h5 class="mb-0 clickable-profile">Divine Hospital</h5>
                                     <small class="text-secondary">Yesterday</small>
                                 </div>
                             </div>
@@ -860,16 +871,17 @@
                             </div>
                         </div>
 
-                        <!-- ===========================
-                        FOURTH JOB POST
-                        =========================== -->
+                        <!-- JOB 4 -->
                         <div class="post-box mb-4" data-job-id="sample-4" data-title="Mathematics Teacher Needed"
-                            data-company="Royal Schools">
+                            data-company="Royal Schools" data-author-name="Royal Schools"
+                            data-author-phone="+234 807 444 8811" data-author-location="Ikot Ekpene, Akwa Ibom"
+                            data-author-role="Job Poster" data-author-skills="Mathematics, Curriculum Planning, Classroom Management"
+                            data-author-avatar="https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg">
                             <div class="d-flex align-items-center mb-3">
                                 <img src="https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg"
-                                    class="profile-img me-3" alt="Royal Schools">
+                                    class="profile-img me-3 clickable-profile" alt="Royal Schools">
                                 <div>
-                                    <h5 class="mb-0">Royal Schools</h5>
+                                    <h5 class="mb-0 clickable-profile">Royal Schools</h5>
                                     <small class="text-secondary">3 days ago</small>
                                 </div>
                             </div>
@@ -893,37 +905,42 @@
                         </div>
 
                     </div>
-                    <!-- /jobFeed -->
 
                     <div id="noResultsMsg" class="post-box no-results d-none">
                         <i class="bi bi-search" style="font-size:2rem;"></i>
                         <p class="mt-3 mb-0">No jobs match your search.</p>
                     </div>
                 </div>
-                <!-- /view-home -->
 
-                <!-- ===================== SAVED JOBS VIEW ===================== -->
+                <!-- SAVED JOBS VIEW -->
                 <div id="view-saved" class="app-view d-none">
                     <h4 class="mb-3">Saved Jobs</h4>
                     <div id="savedList"></div>
                 </div>
 
-                <!-- ===================== APPLICATIONS VIEW ===================== -->
+                <!-- APPLICATIONS VIEW -->
                 <div id="view-applications" class="app-view d-none">
                     <h4 class="mb-3">Your Applications</h4>
                     <div id="applicationsList"></div>
                 </div>
 
-                <!-- ===================== MESSAGES VIEW ===================== -->
+                <!-- MESSAGES VIEW -->
                 <div id="view-messages" class="app-view d-none">
                     <h4 class="mb-3">Messages</h4>
                     <div id="messagesList"></div>
                 </div>
 
-                <!-- ===================== PROFILE VIEW ===================== -->
+                <!-- PROFILE VIEW -->
                 <div id="view-profile" class="app-view d-none">
                     <div class="post-box mb-4">
-                        <h4 class="mb-4">My Profile</h4>
+                        <h4 class="mb-3">My Profile</h4>
+                        
+                        <!-- PUBLIC NOTICE -->
+                        <div class="alert alert-info border-0 rounded-4 mb-4 small text-light" style="background: rgba(13, 110, 253, 0.2);">
+                            <i class="bi bi-globe-americas me-2 text-info fs-6"></i>
+                            <strong>Public Profile Notice:</strong> The information filled here will show publicly to all other users in their different phones when they tap on your profile image or name on any of your posts.
+                        </div>
+
                         <form id="profileForm">
                             <div class="d-flex align-items-center mb-4 gap-3 flex-wrap">
                                 <img id="profileAvatarPreview"
@@ -934,19 +951,51 @@
                                     <input type="file" class="form-control" id="profileAvatarInput" accept="image/*">
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="profileName">Full name</label>
-                                <input type="text" class="form-control" id="profileName" maxlength="60"
-                                    placeholder="Your name">
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="profileName">Full Name / Business Name</label>
+                                    <input type="text" class="form-control" id="profileName" maxlength="60"
+                                        placeholder="e.g. John Doe">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="profileRole">Select Account Classification</label>
+                                    <select class="form-select" id="profileRole">
+                                        <option value="Jobseeker">Job Seeker</option>
+                                        <option value="Job Poster">Job Poster / Employer</option>
+                                    </select>
+                                </div>
                             </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="profilePhone">Phone Number</label>
+                                    <input type="tel" class="form-control" id="profilePhone" maxlength="30"
+                                        placeholder="e.g. +234 800 000 0000">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="profileLocation">Location</label>
+                                    <input type="text" class="form-control" id="profileLocation" maxlength="80"
+                                        placeholder="e.g. Uyo, Akwa Ibom">
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" for="profileSkills">Skills / Specialisations</label>
+                                <input type="text" class="form-control" id="profileSkills" maxlength="150"
+                                    placeholder="e.g. HTML, JavaScript, Graphics Design, Teaching">
+                                <small class="text-secondary">Separate skills with commas</small>
+                            </div>
+
                             <button type="submit" class="btn-post">Save Profile</button>
-                            <div id="profileSavedMsg" class="text-success small mt-3 d-none">Profile saved. Your photo
-                                now shows in the navbar and on anything you post.</div>
+                            <div id="profileSavedMsg" class="text-success small mt-3 d-none">
+                                Profile updated successfully! Your updated profile details and picture will now show to everyone across all phones when clicked.
+                            </div>
                         </form>
                     </div>
                 </div>
 
-                <!-- ===================== SETTINGS VIEW ===================== -->
+                <!-- SETTINGS VIEW -->
                 <div id="view-settings" class="app-view d-none">
                     <div class="post-box mb-4">
                         <h4 class="mb-4">Job Preferences &amp; Settings</h4>
@@ -1046,14 +1095,11 @@
                 </div>
 
             </div>
-            <!-- /col-lg-6 -->
 
         </div>
     </div>
 
-    <!-- =======================
-    NEW JOB MODAL
-    ======================= -->
+    <!-- NEW JOB MODAL -->
     <div class="modal fade" id="jobModal" tabindex="-1" aria-labelledby="jobModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -1120,9 +1166,7 @@
         </div>
     </div>
 
-    <!-- =======================
-    CHAT MODAL
-    ======================= -->
+    <!-- CHAT MODAL -->
     <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -1142,9 +1186,44 @@
         </div>
     </div>
 
-    <!-- =======================
-    BACK TO TOP + AI ASSISTANT
-    ======================= -->
+    <!-- PUBLIC USER PROFILE PREVIEW MODAL -->
+    <div class="modal fade" id="userProfileModal" tabindex="-1" aria-labelledby="userProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userProfileModalLabel">Public Profile</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex align-items-center gap-3 p-3 mb-4 rounded-4" style="background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08);">
+                        <img id="userModalAvatar" src="" class="profile-img" style="width: 85px; height: 85px; border-width: 3px;" alt="User Profile Picture">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h4 id="userModalName" class="mb-0">Name</h4>
+                                <span id="userModalRole" class="badge bg-primary rounded-pill">Jobseeker</span>
+                            </div>
+                            <p class="mb-1 text-secondary small"><i class="bi bi-geo-alt-fill text-danger me-1"></i><span id="userModalLocation">Location</span></p>
+                            <p class="mb-0 text-secondary small"><i class="bi bi-telephone-fill text-success me-1"></i><span id="userModalPhone">Phone</span></p>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="mb-2">Skills & Specialisations</h6>
+                        <div id="userModalSkillsContainer">
+                            <span class="text-secondary small">No skills listed.</span>
+                        </div>
+                    </div>
+
+                    <h6 class="mb-3">Posts by this user</h6>
+                    <div id="userModalPostsContainer">
+                        <!-- Dynamic user posts -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BACK TO TOP + AI ASSISTANT -->
     <button id="backToTop" class="back-to-top" aria-label="Back to top">
         <i class="bi bi-arrow-up"></i>
     </button>
@@ -1170,21 +1249,14 @@
         (function () {
             'use strict';
 
-            // Point this at your backend. Change ONLY this if your Render URL changes.
             const API_BASE = 'https://project-connect-001.onrender.com';
-
-            // How often (ms) to check the backend for jobs posted by other people/devices.
             const POLL_INTERVAL_MS = 15000;
 
             const STORAGE_KEYS = {
-                saved: 'ylm.saved',
-                applied: 'ylm.applied',
-                comments: 'ylm.comments',
-                chats: 'ylm.chats',
                 profile: 'ylm.profile',
                 settings: 'ylm.settings',
-                readMarkers: 'ylm.readMarkers',
-                aiChat: 'ylm.aiChat'
+                aiChat: 'ylm.aiChat',
+                deviceId: 'ylm.deviceId'
             };
 
             function loadJSON(key, fallback) {
@@ -1197,8 +1269,21 @@
             }
             function saveJSON(key, value) {
                 try { localStorage.setItem(key, JSON.stringify(value)); }
-                catch (err) { /* storage full/unavailable - fail silently, app still works this session */ }
+                catch (err) { }
             }
+
+            // Persistent per-device identity used to talk to the backend for
+            // likes, saves, applications and chat. This is what stands in for
+            // a "userId" until real login/session accounts are wired into this page.
+            function getDeviceId() {
+                let id = localStorage.getItem(STORAGE_KEYS.deviceId);
+                if (!id) {
+                    id = 'u-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+                    localStorage.setItem(STORAGE_KEYS.deviceId, id);
+                }
+                return id;
+            }
+            const DEVICE_ID = getDeviceId();
 
             const DEFAULT_SETTINGS = {
                 categories: [],
@@ -1212,20 +1297,27 @@
             };
 
             const state = {
-                saved: loadJSON(STORAGE_KEYS.saved, {}),
-                applied: loadJSON(STORAGE_KEYS.applied, {}),
-                comments: loadJSON(STORAGE_KEYS.comments, {}),
-                chats: loadJSON(STORAGE_KEYS.chats, {}),
-                profile: loadJSON(STORAGE_KEYS.profile, { name: '', avatar: '' }),
-                settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {})),
-                readMarkers: loadJSON(STORAGE_KEYS.readMarkers, {})
+                // saved/applied/comments are in-memory caches hydrated from the backend
+                // (source of truth is PostgreSQL, not localStorage).
+                saved: {},
+                applied: {},
+                comments: {},
+                // conversations keyed by "jobId::seekerId"
+                conversations: {},
+                profile: loadJSON(STORAGE_KEYS.profile, {
+                    name: '',
+                    avatar: '',
+                    location: '',
+                    skills: '',
+                    role: 'Jobseeker',
+                    phone: ''
+                }),
+                settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {}))
             };
 
             let idCounter = 1;
             function newId() { return 'job-' + Date.now() + '-' + (idCounter++); }
 
-            // Every job id we've already rendered, whether from this device or
-            // pulled from the backend, so we never draw the same job twice.
             const knownJobIds = new Set(['sample-1', 'sample-2', 'sample-3', 'sample-4']);
 
             function timeAgo(iso) {
@@ -1254,7 +1346,7 @@
                 return div.innerHTML;
             }
 
-            /* ================= Profile ================= */
+            /* Profile Helper & Controls */
             function getAvatar() { return state.profile.avatar || DEFAULT_AVATAR; }
 
             function updateProfileUI() {
@@ -1263,7 +1355,13 @@
                 const composerAvatar = document.getElementById('composerAvatar');
                 const welcomeHeading = document.getElementById('welcomeHeading');
                 const preview = document.getElementById('profileAvatarPreview');
+                
                 const nameInput = document.getElementById('profileName');
+                const locationInput = document.getElementById('profileLocation');
+                const skillsInput = document.getElementById('profileSkills');
+                const roleInput = document.getElementById('profileRole');
+                const phoneInput = document.getElementById('profilePhone');
+
                 if (navAvatar) navAvatar.src = avatarUrl;
                 if (composerAvatar) composerAvatar.src = avatarUrl;
                 if (preview) preview.src = avatarUrl;
@@ -1272,14 +1370,16 @@
                         ? ('Welcome, ' + state.profile.name + ' 👋')
                         : 'Welcome 👋';
                 }
-                if (nameInput && document.activeElement !== nameInput) {
-                    nameInput.value = state.profile.name || '';
-                }
+
+                if (nameInput && document.activeElement !== nameInput) nameInput.value = state.profile.name || '';
+                if (locationInput && document.activeElement !== locationInput) locationInput.value = state.profile.location || '';
+                if (skillsInput && document.activeElement !== skillsInput) skillsInput.value = state.profile.skills || '';
+                if (roleInput && document.activeElement !== roleInput) roleInput.value = state.profile.role || 'Jobseeker';
+                if (phoneInput && document.activeElement !== phoneInput) phoneInput.value = state.profile.phone || '';
             }
 
             const profileAvatarInput = document.getElementById('profileAvatarInput');
             const profileForm = document.getElementById('profileForm');
-            const profileNameInput = document.getElementById('profileName');
             const profileSavedMsg = document.getElementById('profileSavedMsg');
 
             profileAvatarInput.addEventListener('change', function (e) {
@@ -1295,14 +1395,20 @@
 
             profileForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                state.profile.name = profileNameInput.value.trim();
+                state.profile.name = document.getElementById('profileName').value.trim();
+                state.profile.location = document.getElementById('profileLocation').value.trim();
+                state.profile.skills = document.getElementById('profileSkills').value.trim();
+                state.profile.role = document.getElementById('profileRole').value;
+                state.profile.phone = document.getElementById('profilePhone').value.trim();
+
                 saveJSON(STORAGE_KEYS.profile, state.profile);
                 updateProfileUI();
+
                 profileSavedMsg.classList.remove('d-none');
-                setTimeout(function () { profileSavedMsg.classList.add('d-none'); }, 2500);
+                setTimeout(function () { profileSavedMsg.classList.add('d-none'); }, 3500);
             });
 
-            /* ================= Settings ================= */
+            /* Settings */
             function populateSettingsForm() {
                 document.querySelectorAll('.settings-category').forEach(function (cb) {
                     cb.checked = state.settings.categories.indexOf(cb.value) !== -1;
@@ -1331,7 +1437,7 @@
                 setTimeout(function () { document.getElementById('settingsSavedMsg').classList.add('d-none'); }, 2500);
             });
 
-            /* ================= View switching ================= */
+            /* View Switching */
             const views = document.querySelectorAll('.app-view');
             const leftLinks = document.querySelectorAll('.left-link');
             leftLinks.forEach(function (link) {
@@ -1354,7 +1460,7 @@
                 if (homeLink && !homeLink.classList.contains('active-link')) homeLink.click();
             }
 
-            /* ================= Search / filter ================= */
+            /* Search Filter */
             function filterJobs(query) {
                 const q = query.trim().toLowerCase();
                 const cards = jobFeed.querySelectorAll(':scope > .post-box');
@@ -1378,7 +1484,7 @@
             searchDesktop.addEventListener('input', handleSearchInput);
             searchMobile.addEventListener('input', handleSearchInput);
 
-            /* ================= Attachment markup for a job card ================= */
+            /* Attachments */
             function attachmentMarkup(attachment) {
                 if (!attachment) return '';
                 if (attachment.kind === 'image') {
@@ -1395,13 +1501,21 @@
                 return '';
             }
 
-            /* ================= Build a job card element ================= */
+            /* Build Job Card Element */
             function buildJobCard(job) {
                 const card = document.createElement('div');
                 card.className = 'post-box mb-4';
                 card.dataset.jobId = job.id;
                 card.dataset.title = job.title;
                 card.dataset.company = job.company;
+                card.dataset.userId = job.userId || '';
+
+                card.dataset.authorName = job.authorName || job.company || 'Anonymous';
+                card.dataset.authorPhone = job.authorPhone || job.phone || 'Not provided';
+                card.dataset.authorLocation = job.authorLocation || job.location || 'Not specified';
+                card.dataset.authorAvatar = job.authorAvatar || job.avatar || getAvatar();
+                card.dataset.authorRole = job.authorRole || 'Jobseeker';
+                card.dataset.authorSkills = job.authorSkills || '';
 
                 const metaParts = [job.meta || timeAgo(job.createdAt)];
                 if (job.location) metaParts.push(job.location);
@@ -1409,56 +1523,72 @@
                 const descLine = job.description ? escapeHtml(job.description).replace(/\n/g, '<br>') : '';
                 const badge = job.isNew ? '<span class="badge rounded-pill badge-new">New</span>' : '';
 
+                const likeCount = job.likeCount || 0;
+                const likeLabel = likeCount > 0 ? likeCount : 'Like';
+                const commentCount = job.commentCount || 0;
+                const commentLabel = commentCount > 0 ? commentCount : 'Comment';
+                const isOwnJob = job.userId && job.userId === DEVICE_ID;
+                const chatBtnLabel = isOwnJob ? 'View Messages' : 'Chat Recruiter';
+
                 card.innerHTML =
                     '<div class="d-flex align-items-center mb-3">' +
-                    '<img src="' + getAvatar() + '" class="profile-img me-3" alt="' + escapeHtml(job.company) + '">' +
-                    '<div><h5 class="mb-0">' + escapeHtml(job.company) + badge + '</h5>' +
+                    '<img src="' + escapeHtml(card.dataset.authorAvatar) + '" class="profile-img me-3 clickable-profile" alt="' + escapeHtml(job.company) + '">' +
+                    '<div><h5 class="mb-0 clickable-profile">' + escapeHtml(job.company) + badge + '</h5>' +
                     '<small class="text-secondary">' + metaParts.map(escapeHtml).join(' • ') + '</small></div></div>' +
                     '<p class="mb-3">📢 <strong>' + escapeHtml(job.title) + '</strong><br><br>' + descLine + salaryLine + '</p>' +
                     attachmentMarkup(job.attachment) +
                     '<div class="d-flex flex-wrap gap-2 justify-content-between">' +
-                    '<button class="btn btn-outline-light btn-like">❤️ <span class="like-count">Like</span></button>' +
-                    '<button class="btn btn-outline-light btn-comment">💬 <span class="comment-count">Comment</span></button>' +
-                    '<button class="btn btn-outline-light btn-save"><i class="bi bi-bookmark"></i> Save</button>' +
-                    '<button class="btn btn-success btn-apply">Apply Now</button>' +
-                    '<button class="btn btn-primary btn-chat">Chat Recruiter</button>' +
+                    '<button class="btn btn-outline-light btn-like' + (job.likedByMe ? ' liked' : '') + '">❤️ <span class="like-count">' + likeLabel + '</span></button>' +
+                    '<button class="btn btn-outline-light btn-comment">💬 <span class="comment-count">' + commentLabel + '</span></button>' +
+                    '<button class="btn btn-outline-light btn-save' + (job.savedByMe ? ' active' : '') + '"><i class="bi bi-bookmark' + (job.savedByMe ? '-fill' : '') + '"></i> ' + (job.savedByMe ? 'Saved' : 'Save') + '</button>' +
+                    '<button class="btn btn-success btn-apply' + (job.appliedByMe ? ' applied' : '') + '">' + (job.appliedByMe ? 'Applied ✓' : 'Apply Now') + '</button>' +
+                    '<button class="btn btn-primary btn-chat">' + chatBtnLabel + '</button>' +
                     '</div>';
                 return card;
             }
 
-            // Adds ONE job to the very top of the feed right away (used for the
-            // person's own new post, so it shows instantly without waiting on
-            // the network).
             function addJobToFeed(job, opts) {
                 opts = opts || {};
                 if (knownJobIds.has(job.id)) return null;
                 knownJobIds.add(job.id);
                 const card = buildJobCard(job);
                 jobFeed.prepend(card);
-                applyStoredState(card);
                 if (opts.scroll) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 return card;
             }
 
-            // Adds a BATCH of jobs (already sorted newest-first by the backend)
-            // to the top of the feed, preserving that order, and skipping any
-            // job id already on screen.
             function insertJobsAtTop(jobs) {
                 const frag = document.createDocumentFragment();
                 jobs.forEach(function (rawJob) {
-                    if (!rawJob || !rawJob.id || knownJobIds.has(rawJob.id)) return;
-                    knownJobIds.add(rawJob.id);
+                    if (!rawJob || !rawJob.id) return;
                     const job = normalizeBackendJob(rawJob);
+                    if (knownJobIds.has(rawJob.id)) {
+                        refreshCardEngagement(job);
+                        return;
+                    }
+                    knownJobIds.add(rawJob.id);
                     const card = buildJobCard(job);
-                    applyStoredState(card);
                     frag.appendChild(card);
                 });
                 jobFeed.insertBefore(frag, jobFeed.firstChild);
             }
 
-            // The backend folds column names to lowercase (createdat, isnew)
-            // and stores attachment as JSON - normalize it back to what the
-            // rest of the UI expects.
+            // Keep an already-rendered card's like/comment counts in sync with the
+            // backend on every poll, so activity from other users shows up without
+            // a full page refresh.
+            function refreshCardEngagement(job) {
+                const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(job.id) + '"]');
+                if (!card) return;
+                const likeBtn = card.querySelector('.btn-like');
+                const likeCountEl = likeBtn && likeBtn.querySelector('.like-count');
+                if (likeCountEl) {
+                    likeCountEl.textContent = job.likeCount > 0 ? job.likeCount : 'Like';
+                    likeBtn.classList.toggle('liked', !!job.likedByMe);
+                }
+                const commentCountEl = card.querySelector('.comment-count');
+                if (commentCountEl) commentCountEl.textContent = job.commentCount > 0 ? job.commentCount : 'Comment';
+            }
+
             function normalizeBackendJob(row) {
                 let attachment = row.attachment;
                 if (typeof attachment === 'string') {
@@ -1466,6 +1596,7 @@
                 }
                 return {
                     id: row.id,
+                    userId: row.userId,
                     company: row.company,
                     title: row.title,
                     location: row.location,
@@ -1473,87 +1604,151 @@
                     description: row.description,
                     attachment: attachment,
                     createdAt: row.createdAt || row.createdat,
-                    isNew: !!(row.isNew || row.isnew)
+                    isNew: !!(row.isNew || row.isnew),
+                    phone: row.phone,
+                    avatar: row.avatar,
+                    authorName: row.authorName,
+                    authorPhone: row.authorPhone,
+                    authorLocation: row.authorLocation,
+                    authorAvatar: row.authorAvatar,
+                    authorRole: row.authorRole,
+                    authorSkills: row.authorSkills,
+                    likeCount: row.likeCount || 0,
+                    likedByMe: !!row.likedByMe,
+                    commentCount: row.commentCount || 0,
+                    savedByMe: !!row.savedByMe,
+                    appliedByMe: !!row.appliedByMe
                 };
             }
 
-            function applyStoredState(card) {
+            /* Like */
+            function toggleLike(card, btn) {
                 const id = card.dataset.jobId;
-                if (state.saved[id]) setSaveButtonState(card.querySelector('.btn-save'), true);
-                if (state.applied[id]) setApplyButtonState(card.querySelector('.btn-apply'), true);
-                updateCommentCount(card);
+                const countEl = btn.querySelector('.like-count');
+                const wasLiked = btn.classList.contains('liked');
+                const prevCount = parseInt(countEl.textContent, 10) || 0;
+
+                // Optimistic UI update
+                const optimisticCount = wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1;
+                btn.classList.toggle('liked', !wasLiked);
+                countEl.textContent = optimisticCount > 0 ? optimisticCount : 'Like';
+
+                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/like', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: DEVICE_ID })
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        btn.classList.toggle('liked', !!data.liked);
+                        countEl.textContent = data.likeCount > 0 ? data.likeCount : 'Like';
+                    })
+                    .catch(function (error) {
+                        console.error('Like failed:', error);
+                        // Roll back optimistic update on failure
+                        btn.classList.toggle('liked', wasLiked);
+                        countEl.textContent = prevCount > 0 ? prevCount : 'Like';
+                    });
             }
 
-            /* ================= Save ================= */
+            /* Save & Apply */
             function setSaveButtonState(btn, isSaved) {
                 btn.classList.toggle('active', isSaved);
                 btn.innerHTML = isSaved
                     ? '<i class="bi bi-bookmark-fill"></i> Saved'
                     : '<i class="bi bi-bookmark"></i> Save';
             }
-            function snapshotFromCard(card) {
-                const img = card.querySelector('.job-image');
-                const smallEl = card.querySelector('small');
-                return {
-                    id: card.dataset.jobId,
-                    title: card.dataset.title,
-                    company: card.dataset.company,
-                    meta: smallEl ? smallEl.textContent.trim() : '',
-                    image: img ? img.src : ''
-                };
-            }
             function toggleSave(card, btn) {
                 const id = card.dataset.jobId;
-                if (state.saved[id]) {
-                    delete state.saved[id];
-                    setSaveButtonState(btn, false);
-                } else {
-                    state.saved[id] = snapshotFromCard(card);
-                    setSaveButtonState(btn, true);
-                }
-                saveJSON(STORAGE_KEYS.saved, state.saved);
-                if (!document.getElementById('view-saved').classList.contains('d-none')) renderSavedView();
+                const willSave = !btn.classList.contains('active');
+                setSaveButtonState(btn, willSave); // optimistic
+
+                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: DEVICE_ID })
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        setSaveButtonState(btn, !!data.saved);
+                        if (!document.getElementById('view-saved').classList.contains('d-none')) renderSavedView();
+                    })
+                    .catch(function (error) {
+                        console.error('Save failed:', error);
+                        setSaveButtonState(btn, !willSave);
+                    });
             }
 
-            /* ================= Apply ================= */
             function setApplyButtonState(btn, isApplied) {
                 btn.classList.toggle('applied', isApplied);
                 btn.textContent = isApplied ? 'Applied ✓' : 'Apply Now';
             }
             function toggleApply(card, btn) {
                 const id = card.dataset.jobId;
-                if (state.applied[id]) {
-                    delete state.applied[id];
-                    setApplyButtonState(btn, false);
-                } else {
-                    const snap = snapshotFromCard(card);
-                    snap.appliedAt = new Date().toISOString();
-                    state.applied[id] = snap;
-                    setApplyButtonState(btn, true);
-                }
-                saveJSON(STORAGE_KEYS.applied, state.applied);
-                if (!document.getElementById('view-applications').classList.contains('d-none')) renderApplicationsView();
+                const willApply = !btn.classList.contains('applied');
+                setApplyButtonState(btn, willApply); // optimistic
+
+                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: DEVICE_ID })
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        setApplyButtonState(btn, !!data.applied);
+                        if (!document.getElementById('view-applications').classList.contains('d-none')) renderApplicationsView();
+                    })
+                    .catch(function (error) {
+                        console.error('Apply failed:', error);
+                        setApplyButtonState(btn, !willApply);
+                    });
             }
 
-            /* ================= Comments ================= */
+            /* Comments */
             function ensureCommentsPanel(card) {
                 let panel = card.querySelector('.comments-panel');
                 if (panel) return panel;
                 panel = document.createElement('div');
                 panel.className = 'comments-panel d-none';
                 panel.innerHTML =
-                    '<div class="comments-list mb-3"></div>' +
+                    '<div class="comments-list mb-3"><div class="text-secondary small">Loading comments...</div></div>' +
                     '<div class="d-flex gap-2">' +
                     '<input type="text" class="form-control comment-input" placeholder="Write a comment...">' +
                     '<button class="btn-post comment-send">Send</button>' +
                     '</div>';
                 card.appendChild(panel);
-                renderComments(card);
+                loadComments(card);
                 return panel;
+            }
+            function loadComments(card) {
+                const id = card.dataset.jobId;
+                return fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/comments')
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (comments) {
+                        state.comments[id] = comments;
+                        renderComments(card);
+                        updateCommentCount(card);
+                    })
+                    .catch(function (error) {
+                        console.error('Load comments failed:', error);
+                    });
             }
             function renderComments(card) {
                 const id = card.dataset.jobId;
                 const list = card.querySelector('.comments-list');
+                if (!list) return;
                 const comments = state.comments[id] || [];
                 if (!comments.length) {
                     list.innerHTML = '<div class="text-secondary small">No comments yet. Be the first to comment.</div>';
@@ -1562,18 +1757,53 @@
                 list.innerHTML = comments.map(function (c) {
                     return '<div class="mb-2 small"><strong>' + escapeHtml(c.author) + ':</strong> ' + escapeHtml(c.text) + '</div>';
                 }).join('');
+                list.scrollTop = list.scrollHeight;
             }
             function updateCommentCount(card) {
                 const id = card.dataset.jobId;
                 const count = (state.comments[id] || []).length;
                 const span = card.querySelector('.comment-count');
-                if (span && count > 0) span.textContent = count;
+                if (span) span.textContent = count > 0 ? count : 'Comment';
+            }
+            function postComment(card, text) {
+                const id = card.dataset.jobId;
+                return fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/comments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: DEVICE_ID,
+                        author: state.profile.name || 'You',
+                        authorAvatar: getAvatar(),
+                        text: text
+                    })
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (comment) {
+                        if (!state.comments[id]) state.comments[id] = [];
+                        state.comments[id].push(comment);
+                        renderComments(card);
+                        updateCommentCount(card);
+                    })
+                    .catch(function (error) {
+                        console.error('Post comment failed:', error);
+                    });
             }
 
-            /* ================= Mini list rendering (Saved / Applications) ================= */
-            function renderMiniList(container, dict, emptyMsg, removeHandler, opts) {
+            /* Mini List Rendering */
+            function jobSnapshot(job) {
+                return {
+                    id: job.id,
+                    title: job.title,
+                    company: job.company,
+                    meta: timeAgo(job.createdAt) + (job.location ? (' • ' + job.location) : ''),
+                    image: (job.attachment && job.attachment.kind === 'image') ? job.attachment.url : DEFAULT_AVATAR
+                };
+            }
+            function renderMiniList(container, entries, emptyMsg, removeHandler, opts) {
                 opts = opts || {};
-                const entries = Object.keys(dict).map(function (k) { return dict[k]; });
                 if (!entries.length) {
                     container.innerHTML = '<div class="placeholder-view"><i class="bi bi-inbox" style="font-size:2.5rem;"></i>' +
                         '<p class="mt-3 mb-0">' + emptyMsg + '</p></div>';
@@ -1606,8 +1836,8 @@
                     container.querySelectorAll('.mini-chat').forEach(function (btn) {
                         btn.addEventListener('click', function () {
                             const id = btn.closest('.mini-card').dataset.jobId;
-                            const job = dict[id];
-                            if (job) openChatById(id, job.company);
+                            const job = entries.filter(function (j) { return j.id === id; })[0];
+                            if (job) openChatById(id, DEVICE_ID, job.company, 'seeker');
                         });
                     });
                 }
@@ -1629,46 +1859,109 @@
                 }
             }
             function renderSavedView() {
-                renderMiniList(document.getElementById('savedList'), state.saved,
-                    "You haven't saved any jobs yet. Tap Save on a post to keep it here.",
-                    function (id) {
-                        delete state.saved[id];
-                        saveJSON(STORAGE_KEYS.saved, state.saved);
-                        const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
-                        if (card) setSaveButtonState(card.querySelector('.btn-save'), false);
-                        renderSavedView();
-                    }, { showViewChat: true });
+                const container = document.getElementById('savedList');
+                container.innerHTML = '<div class="text-secondary small">Loading...</div>';
+                fetch(API_BASE + '/users/' + encodeURIComponent(DEVICE_ID) + '/saved')
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (jobs) {
+                        const entries = jobs.map(jobSnapshot);
+                        renderMiniList(container, entries,
+                            "You haven't saved any jobs yet. Tap Save on a post to keep it here.",
+                            function (id) {
+                                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/save', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ userId: DEVICE_ID })
+                                }).then(function () {
+                                    const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
+                                    if (card) setSaveButtonState(card.querySelector('.btn-save'), false);
+                                    renderSavedView();
+                                });
+                            }, { showViewChat: true });
+                    })
+                    .catch(function (error) {
+                        console.error('Load saved failed:', error);
+                        container.innerHTML = '<div class="text-danger small">Could not load saved jobs.</div>';
+                    });
             }
             function renderApplicationsView() {
-                renderMiniList(document.getElementById('applicationsList'), state.applied,
-                    "You haven't applied to any jobs yet. Tap Apply Now on a post to track it here.",
-                    function (id) {
-                        delete state.applied[id];
-                        saveJSON(STORAGE_KEYS.applied, state.applied);
-                        const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
-                        if (card) setApplyButtonState(card.querySelector('.btn-apply'), false);
-                        renderApplicationsView();
+                const container = document.getElementById('applicationsList');
+                container.innerHTML = '<div class="text-secondary small">Loading...</div>';
+                fetch(API_BASE + '/users/' + encodeURIComponent(DEVICE_ID) + '/applications')
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (jobs) {
+                        const entries = jobs.map(jobSnapshot);
+                        renderMiniList(container, entries,
+                            "You haven't applied to any jobs yet. Tap Apply Now on a post to track it here.",
+                            function (id) {
+                                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/apply', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ userId: DEVICE_ID })
+                                }).then(function () {
+                                    const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
+                                    if (card) setApplyButtonState(card.querySelector('.btn-apply'), false);
+                                    renderApplicationsView();
+                                });
+                            });
+                    })
+                    .catch(function (error) {
+                        console.error('Load applications failed:', error);
+                        container.innerHTML = '<div class="text-danger small">Could not load applications.</div>';
                     });
             }
 
-            /* ================= Chat (Messages + Notifications) ================= */
+            /* Chat Component — real, backend-persisted, two-way chat between a
+               job seeker and the recruiter who owns the job. A conversation is
+               uniquely identified by (jobId, seekerId); either side can send
+               into it and both sides poll for new messages. */
             const chatModalEl = document.getElementById('chatModal');
             const chatModal = new bootstrap.Modal(chatModalEl);
             const chatMessagesEl = document.getElementById('chatMessages');
             const chatInput = document.getElementById('chatInput');
             const chatSendBtn = document.getElementById('chatSendBtn');
             const chatModalTitle = document.getElementById('chatModalTitle');
-            let activeChatJobId = null;
 
-            function getUnread(jobId) {
-                const thread = state.chats[jobId];
-                if (!thread) return 0;
-                const marker = state.readMarkers[jobId] || '1970-01-01T00:00:00.000Z';
-                return (thread.messages || []).filter(function (m) { return m.from === 'Recruiter' && m.at > marker; }).length;
-            }
+            let activeChatJobId = null;
+            let activeSeekerId = null;
+            let activeRole = null; // 'seeker' | 'recruiter'
+            let activeChatPollTimer = null;
+            const CHAT_POLL_INTERVAL_MS = 4000;
+
+            function conversationKey(jobId, seekerId) { return jobId + '::' + seekerId; }
+
             function getTotalUnread() {
-                return Object.keys(state.chats).reduce(function (sum, id) { return sum + getUnread(id); }, 0);
+                return Object.keys(state.conversations).reduce(function (sum, key) {
+                    return sum + (state.conversations[key].unreadCount || 0);
+                }, 0);
             }
+
+            function pollConversations() {
+                return fetch(API_BASE + '/users/' + encodeURIComponent(DEVICE_ID) + '/conversations')
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (conversations) {
+                        const fresh = {};
+                        conversations.forEach(function (c) {
+                            fresh[conversationKey(c.jobId, c.seekerId)] = c;
+                        });
+                        state.conversations = fresh;
+                        updateNotifBadge();
+                        if (!document.getElementById('view-messages').classList.contains('d-none')) renderMessagesView();
+                    })
+                    .catch(function (error) {
+                        console.error('Load conversations failed:', error);
+                    });
+            }
+
             function updateNotifBadge() {
                 const badge = document.getElementById('notifBadge');
                 const sidebarBadge = document.getElementById('sidebarMsgBadge');
@@ -1689,155 +1982,234 @@
                     badge.classList.add('d-none');
                     sidebarBadge.classList.add('d-none');
                 }
-                const unreadIds = Object.keys(state.chats).filter(function (id) { return getUnread(id) > 0; });
-                if (!unreadIds.length) {
+                const unread = Object.keys(state.conversations)
+                    .map(function (key) { return state.conversations[key]; })
+                    .filter(function (c) { return c.unreadCount > 0; });
+                if (!unread.length) {
                     list.innerHTML = '<li><span class="dropdown-item-text text-secondary small">No new messages.</span></li>';
                     return;
                 }
-                list.innerHTML = unreadIds.map(function (id) {
-                    const thread = state.chats[id];
-                    const msgs = thread.messages || [];
-                    const last = msgs[msgs.length - 1];
-                    return '<li><a class="dropdown-item notif-item" href="#" data-job-id="' + escapeHtml(id) + '">' +
-                        '<strong>' + escapeHtml(thread.company) + '</strong><br><span class="small text-secondary">' +
-                        escapeHtml(last ? last.text : '') + '</span></a></li>';
+                list.innerHTML = unread.map(function (c) {
+                    return '<li><a class="dropdown-item notif-item" href="#" data-key="' + escapeHtml(conversationKey(c.jobId, c.seekerId)) + '">' +
+                        '<strong>' + escapeHtml(c.counterpartName) + '</strong><br><span class="small text-secondary">' +
+                        escapeHtml(c.lastMessage || '') + '</span></a></li>';
                 }).join('');
                 list.querySelectorAll('.notif-item').forEach(function (item) {
                     item.addEventListener('click', function (e) {
                         e.preventDefault();
-                        const id = item.dataset.jobId;
-                        openChatById(id, state.chats[id].company);
+                        const c = state.conversations[item.dataset.key];
+                        if (c) openChatById(c.jobId, c.seekerId, c.counterpartName, c.myRole);
                     });
                 });
             }
-            function markChatRead(jobId) {
-                state.readMarkers[jobId] = new Date().toISOString();
-                saveJSON(STORAGE_KEYS.readMarkers, state.readMarkers);
-                updateNotifBadge();
-                if (!document.getElementById('view-messages').classList.contains('d-none')) renderMessagesView();
+
+            function markChatRead(jobId, seekerId, role) {
+                return fetch(API_BASE + '/chats/' + encodeURIComponent(jobId) + '/' + encodeURIComponent(seekerId) + '/read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: role })
+                })
+                    .then(function () { return pollConversations(); })
+                    .catch(function (error) { console.error('Mark read failed:', error); });
             }
 
             function renderMessagesView() {
                 const container = document.getElementById('messagesList');
-                const ids = Object.keys(state.chats);
-                if (!ids.length) {
+                const entries = Object.keys(state.conversations).map(function (key) { return state.conversations[key]; });
+                if (!entries.length) {
                     container.innerHTML = '<div class="placeholder-view"><i class="bi bi-chat-dots" style="font-size:2.5rem;"></i>' +
                         '<p class="mt-3 mb-0">No messages yet. Open a job\'s Chat Recruiter button to start a conversation.</p></div>';
                     return;
                 }
-                container.innerHTML = ids.map(function (id) {
-                    const thread = state.chats[id];
-                    const msgs = thread.messages || [];
-                    const last = msgs[msgs.length - 1];
-                    const unread = getUnread(id);
-                    const preview = last ? (escapeHtml(last.from) + ': ' + escapeHtml(last.text)) : 'No messages yet';
-                    const badge = unread > 0 ? '<span class="notif-badge">' + unread + '</span>' : '';
-                    return '<div class="mini-card message-row" data-job-id="' + escapeHtml(id) + '" style="cursor:pointer;">' +
-                        '<img src="' + DEFAULT_AVATAR + '" alt="">' +
-                        '<div class="mini-info"><h6>' + escapeHtml(thread.company) + badge + '</h6>' +
-                        '<small>' + preview + '</small></div></div>';
+                container.innerHTML = entries.map(function (c) {
+                    const key = conversationKey(c.jobId, c.seekerId);
+                    const you = c.lastSenderRole === c.myRole ? 'You: ' : '';
+                    const preview = c.lastMessage ? (you + c.lastMessage) : 'No messages yet';
+                    const badge = c.unreadCount > 0 ? '<span class="notif-badge">' + c.unreadCount + '</span>' : '';
+                    const roleTag = c.myRole === 'recruiter' ? ' (as recruiter)' : '';
+                    return '<div class="mini-card message-row" data-key="' + escapeHtml(key) + '" style="cursor:pointer;">' +
+                        '<img src="' + (c.counterpartAvatar || DEFAULT_AVATAR) + '" alt="">' +
+                        '<div class="mini-info"><h6>' + escapeHtml(c.counterpartName) + badge + '</h6>' +
+                        '<small>' + escapeHtml(c.jobTitle || c.company) + roleTag + '<br>' + escapeHtml(preview) + '</small></div></div>';
                 }).join('');
                 container.querySelectorAll('.message-row').forEach(function (row) {
                     row.addEventListener('click', function () {
-                        const id = row.dataset.jobId;
-                        openChatById(id, state.chats[id].company);
+                        const c = state.conversations[row.dataset.key];
+                        if (c) openChatById(c.jobId, c.seekerId, c.counterpartName, c.myRole);
                     });
                 });
             }
 
-            function renderChat(jobId) {
-                const thread = state.chats[jobId];
-                const msgs = (thread && thread.messages) || [];
-                if (!msgs.length) {
+            function renderChat(messages) {
+                if (!messages.length) {
                     chatMessagesEl.innerHTML = '<div class="text-secondary small">No messages yet. Say hello!</div>';
                     return;
                 }
-                chatMessagesEl.innerHTML = msgs.map(function (m) {
-                    const isMe = m.from !== 'Recruiter';
+                chatMessagesEl.innerHTML = messages.map(function (m) {
+                    const isMe = m.senderId === DEVICE_ID;
+                    const label = m.senderRole === 'recruiter' ? 'Recruiter' : (isMe ? (state.profile.name || 'You') : (m.senderName || 'Applicant'));
                     const align = isMe ? 'text-end' : 'text-start';
                     const bubbleBg = isMe ? '#0d6efd' : '#132847';
                     return '<div class="mb-2 ' + align + '"><span style="display:inline-block;background:' + bubbleBg +
                         ';padding:8px 14px;border-radius:14px;max-width:80%;text-align:left;"><strong>' +
-                        escapeHtml(m.from) + ':</strong> ' + escapeHtml(m.text) + '</span></div>';
+                        escapeHtml(label) + ':</strong> ' + escapeHtml(m.text) + '</span></div>';
                 }).join('');
                 chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
             }
-            function openChatById(jobId, company) {
+
+            function loadActiveChatMessages() {
+                if (!activeChatJobId || !activeSeekerId) return Promise.resolve();
+                return fetch(API_BASE + '/chats/' + encodeURIComponent(activeChatJobId) + '/' + encodeURIComponent(activeSeekerId) + '/messages')
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (messages) {
+                        renderChat(messages);
+                        // If the other side sent new messages while the modal is open, keep marking read.
+                        if (chatModalEl.classList.contains('show')) markChatRead(activeChatJobId, activeSeekerId, activeRole);
+                    })
+                    .catch(function (error) {
+                        console.error('Load chat messages failed:', error);
+                    });
+            }
+
+            function stopActiveChatPolling() {
+                if (activeChatPollTimer) {
+                    clearInterval(activeChatPollTimer);
+                    activeChatPollTimer = null;
+                }
+            }
+
+            function openChatById(jobId, seekerId, title, role) {
                 activeChatJobId = jobId;
-                chatModalTitle.textContent = 'Chat with ' + company;
-                if (!state.chats[jobId]) state.chats[jobId] = { company: company, title: '', messages: [] };
-                renderChat(jobId);
+                activeSeekerId = seekerId;
+                activeRole = role;
+                chatModalTitle.textContent = 'Chat with ' + title;
+                chatMessagesEl.innerHTML = '<div class="text-secondary small">Loading messages...</div>';
                 chatModal.show();
-                markChatRead(jobId);
+                loadActiveChatMessages().then(function () {
+                    markChatRead(jobId, seekerId, role);
+                });
+                stopActiveChatPolling();
+                activeChatPollTimer = setInterval(loadActiveChatMessages, CHAT_POLL_INTERVAL_MS);
             }
+            chatModalEl.addEventListener('hidden.bs.modal', function () {
+                stopActiveChatPolling();
+                activeChatJobId = null;
+                activeSeekerId = null;
+                activeRole = null;
+            });
+
             function openChat(card) {
-                const id = card.dataset.jobId;
-                if (!state.chats[id]) state.chats[id] = { company: card.dataset.company, title: card.dataset.title, messages: [] };
-                openChatById(id, card.dataset.company);
+                const jobId = card.dataset.jobId;
+                const isOwner = card.dataset.userId && card.dataset.userId === DEVICE_ID;
+                if (isOwner) {
+                    // This is the recruiter's own post — take them to Messages so they
+                    // can see and reply to every applicant who has written in about it.
+                    ensureHomeView(); // no-op fallback if messages link not clicked yet
+                    const messagesLink = document.querySelector('.left-link[data-view="messages"]');
+                    if (messagesLink) messagesLink.click();
+                    return;
+                }
+                openChatById(jobId, DEVICE_ID, card.dataset.company, 'seeker');
             }
+
             function sendChatMessage() {
                 const text = chatInput.value.trim();
-                if (!text || !activeChatJobId) return;
-                if (!state.chats[activeChatJobId]) state.chats[activeChatJobId] = { company: chatModalTitle.textContent.replace('Chat with ', ''), title: '', messages: [] };
-                state.chats[activeChatJobId].messages.push({ from: (state.profile.name || 'You'), text: text, at: new Date().toISOString() });
-                saveJSON(STORAGE_KEYS.chats, state.chats);
+                if (!text || !activeChatJobId || !activeSeekerId) return;
                 chatInput.value = '';
-                renderChat(activeChatJobId);
 
-                // Demo auto-reply so the thread feels alive. This is NOT a real
-                // recruiter -- chat has no backend behind it yet, so it only
-                // simulates a reply on THIS device/browser.
-                const jobId = activeChatJobId;
-                setTimeout(function () {
-                    if (!state.chats[jobId]) state.chats[jobId] = { company: '', title: '', messages: [] };
-                    state.chats[jobId].messages.push({
-                        from: 'Recruiter',
-                        text: "Thanks for reaching out — we'll review your message and get back to you soon.",
-                        at: new Date().toISOString()
+                fetch(API_BASE + '/chats/' + encodeURIComponent(activeChatJobId) + '/' + encodeURIComponent(activeSeekerId) + '/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        senderId: DEVICE_ID,
+                        senderRole: activeRole,
+                        senderName: state.profile.name || 'You',
+                        senderAvatar: getAvatar(),
+                        text: text
+                    })
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function () {
+                        loadActiveChatMessages();
+                        pollConversations();
+                    })
+                    .catch(function (error) {
+                        console.error('Send message failed:', error);
+                        chatInput.value = text;
                     });
-                    saveJSON(STORAGE_KEYS.chats, state.chats);
-                    const modalOpenOnThisJob = chatModalEl.classList.contains('show') && activeChatJobId === jobId;
-                    if (modalOpenOnThisJob) {
-                        renderChat(jobId);
-                        markChatRead(jobId);
-                    } else {
-                        updateNotifBadge();
-                        if (!document.getElementById('view-messages').classList.contains('d-none')) renderMessagesView();
-                    }
-                }, 900);
             }
             chatSendBtn.addEventListener('click', sendChatMessage);
             chatInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
             });
 
-            // Same-browser sync: if this site is open in another tab, new
-            // chat messages appear there as soon as they're sent.
-            window.addEventListener('storage', function (e) {
-                if (e.key === STORAGE_KEYS.chats) {
-                    state.chats = loadJSON(STORAGE_KEYS.chats, {});
-                    if (activeChatJobId && chatModalEl.classList.contains('show')) renderChat(activeChatJobId);
-                    updateNotifBadge();
-                    if (!document.getElementById('view-messages').classList.contains('d-none')) renderMessagesView();
-                }
-            });
+            /* User Public Profile Preview Modal */
+            const userProfileModalEl = document.getElementById('userProfileModal');
+            const userProfileModal = new bootstrap.Modal(userProfileModalEl);
 
-            /* ================= Delegated clicks/keys on the feed ================= */
+            /* Delegated Events */
             jobFeed.addEventListener('click', function (e) {
                 const card = e.target.closest('.post-box');
                 if (!card) return;
 
-                const likeBtn = e.target.closest('.btn-like');
-                if (likeBtn) {
-                    const countEl = likeBtn.querySelector('.like-count');
-                    let count = parseInt(countEl.textContent, 10);
-                    const wasLiked = likeBtn.classList.contains('liked');
-                    if (isNaN(count)) { countEl.textContent = '1'; likeBtn.classList.add('liked'); return; }
-                    count += wasLiked ? -1 : 1;
-                    likeBtn.classList.toggle('liked', !wasLiked);
-                    countEl.textContent = count;
+                const clickedProfile = e.target.closest('.clickable-profile');
+                if (clickedProfile) {
+                    const authorName = card.dataset.authorName || card.dataset.company;
+                    const authorPhone = card.dataset.authorPhone || 'Not provided';
+                    const authorLocation = card.dataset.authorLocation || 'Not specified';
+                    const authorAvatar = card.dataset.authorAvatar || getAvatar();
+                    const authorRole = card.dataset.authorRole || 'Jobseeker';
+                    const authorSkills = card.dataset.authorSkills || '';
+
+                    document.getElementById('userModalAvatar').src = authorAvatar;
+                    document.getElementById('userModalName').textContent = authorName;
+                    document.getElementById('userModalPhone').textContent = authorPhone;
+                    document.getElementById('userModalLocation').textContent = authorLocation;
+                    document.getElementById('userModalRole').textContent = authorRole;
+
+                    const skillsContainer = document.getElementById('userModalSkillsContainer');
+                    if (authorSkills.trim()) {
+                        const skillsArray = authorSkills.split(',');
+                        skillsContainer.innerHTML = skillsArray.map(function(s) {
+                            return '<span class="skill-badge">' + escapeHtml(s.trim()) + '</span>';
+                        }).join('');
+                    } else {
+                        skillsContainer.innerHTML = '<span class="text-secondary small">No skills listed.</span>';
+                    }
+
+                    const postsContainer = document.getElementById('userModalPostsContainer');
+                    postsContainer.innerHTML = '';
+
+                    const allCards = jobFeed.querySelectorAll('.post-box');
+                    let userPostCount = 0;
+
+                    allCards.forEach(function (singleCard) {
+                        if (singleCard.dataset.authorName === authorName || singleCard.dataset.company === authorName) {
+                            const clonedCard = singleCard.cloneNode(true);
+                            clonedCard.querySelectorAll('.clickable-profile').forEach(function(el) {
+                                el.classList.remove('clickable-profile');
+                            });
+                            postsContainer.appendChild(clonedCard);
+                            userPostCount++;
+                        }
+                    });
+
+                    if (userPostCount === 0) {
+                        postsContainer.innerHTML = '<p class="text-secondary small text-center">No posts found for this user.</p>';
+                    }
+
+                    userProfileModal.show();
                     return;
                 }
+
+                const likeBtn = e.target.closest('.btn-like');
+                if (likeBtn) { toggleLike(card, likeBtn); return; }
 
                 const saveBtn = e.target.closest('.btn-save');
                 if (saveBtn) { toggleSave(card, saveBtn); return; }
@@ -1861,13 +2233,8 @@
                     const input = card.querySelector('.comment-input');
                     const text = input.value.trim();
                     if (!text) return;
-                    const id = card.dataset.jobId;
-                    if (!state.comments[id]) state.comments[id] = [];
-                    state.comments[id].push({ author: (state.profile.name || 'You'), text: text, at: new Date().toISOString() });
-                    saveJSON(STORAGE_KEYS.comments, state.comments);
                     input.value = '';
-                    renderComments(card);
-                    updateCommentCount(card);
+                    postComment(card, text);
                     return;
                 }
             });
@@ -1880,7 +2247,7 @@
                 }
             });
 
-            /* ================= Composer attachments (Photo / Video / Document) ================= */
+            /* Attachments logic */
             const photoOption = document.getElementById('photoOption');
             const videoOption = document.getElementById('videoOption');
             const documentOption = document.getElementById('documentOption');
@@ -1908,11 +2275,6 @@
             videoInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                // NOTE: object URLs only work in THIS browser tab/session, so a
-                // video attached this way won't be visible to other people once
-                // it's synced to the backend and reloaded elsewhere. Fine for a
-                // same-device preview; swap in real file hosting before relying
-                // on video sharing across devices.
                 setComposerAttachment({ kind: 'video', url: URL.createObjectURL(file), name: file.name });
                 e.target.value = '';
             });
@@ -1937,16 +2299,12 @@
                 composerAttachmentBox.innerHTML = '';
             }
 
-            /* ================= Syncing a job to the backend ================= */
-            // Posts to the server in the background. The job is already shown
-            // on screen before this even runs (see submitQuickPost / jobForm
-            // submit below) -- this just makes sure it's saved so OTHER
-            // people/devices can see it too, and quietly reports if that failed.
+            /* Sync Backend */
             function syncJobToBackend(job, statusEl) {
                 if (statusEl) {
                     statusEl.classList.remove('d-none', 'text-danger', 'text-success');
                     statusEl.classList.add('text-warning');
-                    statusEl.innerHTML = '<i class="bi bi-arrow-repeat"></i> Syncing to server (this can take up to a minute on first post)...';
+                    statusEl.innerHTML = '<i class="bi bi-arrow-repeat"></i> Syncing to server...';
                 }
                 fetch(API_BASE + '/jobs', {
                     method: 'POST',
@@ -1970,12 +2328,12 @@
                         if (statusEl) {
                             statusEl.classList.remove('text-warning');
                             statusEl.classList.add('text-danger');
-                            statusEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Saved on this device, but couldn\'t reach the server -- other people won\'t see it yet. Check your connection and try again.';
+                            statusEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Saved locally only.';
                         }
                     });
             }
 
-            /* ================= Quick composer post ================= */
+            /* Quick Composer */
             const quickPostInput = document.getElementById('quickPostInput');
             const quickPostBtn = document.getElementById('quickPostBtn');
             const composerSyncStatus = document.getElementById('composerSyncStatus');
@@ -1986,17 +2344,25 @@
 
                 const job = {
                     id: newId(),
+                    userId: DEVICE_ID,
                     company: state.profile.name || 'You',
                     title: 'Announcement',
-                    location: '',
+                    location: state.profile.location || '',
                     salary: '',
                     description: text,
                     attachment: composerAttachment,
                     createdAt: new Date().toISOString(),
-                    isNew: true
+                    isNew: true,
+                    phone: state.profile.phone || 'Not provided',
+                    avatar: getAvatar(),
+                    authorName: state.profile.name || 'You',
+                    authorPhone: state.profile.phone || 'Not provided',
+                    authorLocation: state.profile.location || 'Not specified',
+                    authorAvatar: getAvatar(),
+                    authorRole: state.profile.role || 'Jobseeker',
+                    authorSkills: state.profile.skills || ''
                 };
 
-                // Show it immediately -- don't wait for the network.
                 addJobToFeed(job, { scroll: true });
 
                 quickPostInput.value = '';
@@ -2009,7 +2375,7 @@
                 if (e.key === 'Enter') { e.preventDefault(); submitQuickPost(); }
             });
 
-            /* ================= Job modal (full job post form) ================= */
+            /* Job Modal */
             const jobModalEl = document.getElementById('jobModal');
             const jobModal = new bootstrap.Modal(jobModalEl);
             const jobForm = document.getElementById('jobForm');
@@ -2052,6 +2418,7 @@
 
                 const job = {
                     id: newId(),
+                    userId: DEVICE_ID,
                     company: company,
                     title: title,
                     location: location,
@@ -2059,10 +2426,17 @@
                     description: description,
                     attachment: { kind: 'image', url: finalImage, name: 'job-image' },
                     createdAt: new Date().toISOString(),
-                    isNew: true
+                    isNew: true,
+                    phone: state.profile.phone || '+234 800 000 0000',
+                    avatar: getAvatar(),
+                    authorName: state.profile.name || company,
+                    authorPhone: state.profile.phone || '+234 800 000 0000',
+                    authorLocation: location || state.profile.location || 'Not specified',
+                    authorAvatar: getAvatar(),
+                    authorRole: state.profile.role || 'Job Poster',
+                    authorSkills: state.profile.skills || ''
                 };
 
-                // Show it immediately on the home feed, then close the modal.
                 addJobToFeed(job, { scroll: true });
 
                 jobForm.reset();
@@ -2081,7 +2455,7 @@
                 jobImagePreview.classList.add('d-none');
             });
 
-            /* ================= Sidebar: fixed on desktop, static/scrollable on mobile ================= */
+            /* Sidebar */
             const sidebarCol = document.getElementById('sidebarCol');
             const leftCard = document.getElementById('leftCard');
             function layoutSidebar() {
@@ -2106,7 +2480,7 @@
             window.addEventListener('load', layoutSidebar);
             layoutSidebar();
 
-            /* ================= Back to top ================= */
+            /* Scroll & Back To Top */
             const backToTopBtn = document.getElementById('backToTop');
             window.addEventListener('scroll', function () {
                 backToTopBtn.classList.toggle('show', window.scrollY > 300);
@@ -2115,14 +2489,7 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
-            /* ================= AI career assistant =================
-               AI_API_ENDPOINT is intentionally empty: a real API key must
-               never be shipped inside client-side HTML/JS, since anyone can
-               view-source and steal it. To connect a real employment/jobs AI
-               API, set up your own small backend that holds the key and proxies
-               requests to it, then point AI_API_ENDPOINT at that backend.
-               Until then, this uses a small built-in rule-based assistant so
-               it still works out of the box. */
+            /* AI Career Assistant */
             const AI_API_ENDPOINT = '';
 
             const aiBubble = document.getElementById('aiBubble');
@@ -2152,28 +2519,25 @@
                 if (!aiPanel.classList.contains('d-none')) { renderAiMessages(); aiInput.focus(); }
             });
             aiCloseBtn.addEventListener('click', function () { aiPanel.classList.add('d-none'); });
-            [jobModalEl, chatModalEl].forEach(function (el) {
+            [jobModalEl, chatModalEl, userProfileModalEl].forEach(function (el) {
                 el.addEventListener('show.bs.modal', function () { aiPanel.classList.add('d-none'); });
             });
 
             function localCareerReply(text) {
                 const t = text.toLowerCase();
                 if (t.indexOf('resume') !== -1 || t.indexOf('cv') !== -1) {
-                    return "Keep your resume to one page if you have under 10 years experience, lead bullet points with strong action verbs, and quantify results wherever you can (e.g. 'reduced costs by 20%').";
+                    return "Keep your resume to one page if you have under 10 years experience, lead bullet points with strong action verbs, and quantify results wherever you can.";
                 }
                 if (t.indexOf('interview') !== -1) {
-                    return "Research the company, prepare 2-3 STAR-format stories (Situation, Task, Action, Result), and have 2-3 thoughtful questions ready for the interviewer.";
+                    return "Research the company, prepare STAR-format stories, and have thoughtful questions ready for the interviewer.";
                 }
                 if (t.indexOf('salary') !== -1 || t.indexOf('negotiat') !== -1) {
-                    return "Research the market rate for the role and location first, let the employer name a number first if possible, and negotiate the whole package -- not just base salary.";
+                    return "Research market rates first, let the employer name a number first if possible, and negotiate the total package.";
                 }
                 if (t.indexOf('cover letter') !== -1) {
-                    return "Keep a cover letter to 3-4 short paragraphs: why this company, why this role, your relevant strengths with a specific example, and a confident close.";
+                    return "Keep a cover letter to 3-4 short paragraphs detailing your relevant experience and specific fit.";
                 }
-                if (t.indexOf('apply') !== -1 || t.indexOf('search') !== -1 || t.indexOf('find a job') !== -1) {
-                    return "Try the search bar at the top to filter open roles by title, company or location, or use the Job button in the composer if you're posting a role instead.";
-                }
-                return "I can help with resumes, cover letters, interview prep, and salary negotiation -- ask me about any of those, or use the search bar above to browse open roles.";
+                return "I can help with resumes, cover letters, interview prep, and salary negotiation. Let me know what you need help with!";
             }
 
             function getAiReply(text) {
@@ -2208,24 +2572,16 @@
             aiSendBtn.addEventListener('click', sendAiMessage);
             aiInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendAiMessage(); } });
 
-            /* ================= Loading & polling jobs from the backend =================
-               This is what lets a DIFFERENT phone/account see a job someone
-               else posted: on load we pull everything, then every
-               POLL_INTERVAL_MS we quietly check again and drop in anything
-               new (marked with a "New" badge), without disturbing the
-               composer, an open comment box, or anything you've scrolled to. */
+            /* Load & Poll Backend */
             function loadJobsFromBackend(opts) {
                 opts = opts || {};
-                return fetch(API_BASE + '/jobs')
+                return fetch(API_BASE + '/jobs?userId=' + encodeURIComponent(DEVICE_ID))
                     .then(function (response) {
                         if (!response.ok) throw new Error('HTTP ' + response.status);
                         return response.json();
                     })
                     .then(function (jobs) {
                         if (!Array.isArray(jobs)) throw new Error('Response is not an array');
-                        // Backend returns newest-first; force isNew off for the
-                        // very first load so the feed doesn't open covered in
-                        // "New" badges, but keep it on for later polls.
                         jobs.forEach(function (job) {
                             job.isNew = opts.markAsNew === true;
                         });
@@ -2236,7 +2592,7 @@
                     });
             }
 
-            /* ================= Boot ================= */
+            /* Initialization */
             updateProfileUI();
             populateSettingsForm();
 
@@ -2246,7 +2602,9 @@
                 }, POLL_INTERVAL_MS);
             });
 
-            updateNotifBadge();
+            pollConversations().then(function () {
+                setInterval(pollConversations, POLL_INTERVAL_MS);
+            });
         })();
     </script>
 
