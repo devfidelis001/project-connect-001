@@ -2136,13 +2136,14 @@
             aiInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendAiMessage(); } });
 
             /* ================= Boot ================= */
-            updateProfileUI();
-            populateSettingsForm();
-            document.querySelectorAll('#jobFeed .post-box').forEach(applyStoredState);
-            state.posts.slice().reverse().forEach(function (job) {
-                addJobToFeed(Object.assign({}, job, { isNew: false }));
-            });
-            updateNotifBadge();
+           updateProfileUI();
+populateSettingsForm();
+
+document.querySelectorAll('#jobFeed .post-box').forEach(applyStoredState);
+
+loadJobsFromBackend();
+
+updateNotifBadge();
 
         })();
     </script>
