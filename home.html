@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -564,6 +565,17 @@
             border-radius: 20px;
         }
 
+        /* Sync status pill under the composer */
+        .sync-status {
+            font-size: .8rem;
+            margin-top: 10px;
+        }
+
+        .sync-status.text-warning i,
+        .sync-status.text-danger i {
+            margin-right: 4px;
+        }
+
         /* Responsive tweaks */
         @media (max-width: 575.98px) {
             .navbar-brand img {
@@ -739,6 +751,7 @@
                         <input type="file" id="documentInput" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.csv"
                             hidden>
                         <div id="composerAttachment"></div>
+                        <div id="composerSyncStatus" class="sync-status d-none"></div>
                     </div>
 
                     <!-- Job feed starts here -->
@@ -1157,8 +1170,13 @@
         (function () {
             'use strict';
 
+            // Point this at your backend. Change ONLY this if your Render URL changes.
+            const API_BASE = 'https://project-connect-001.onrender.com';
+
+            // How often (ms) to check the backend for jobs posted by other people/devices.
+            const POLL_INTERVAL_MS = 15000;
+
             const STORAGE_KEYS = {
-                posts: 'ylm.posts',
                 saved: 'ylm.saved',
                 applied: 'ylm.applied',
                 comments: 'ylm.comments',
@@ -1193,19 +1211,22 @@
                 publicProfile: true
             };
 
-         const state = {
-    posts: [],
-    saved: loadJSON(STORAGE_KEYS.saved, {}),
-    applied: loadJSON(STORAGE_KEYS.applied, {}),
-    comments: loadJSON(STORAGE_KEYS.comments, {}),
-    chats: loadJSON(STORAGE_KEYS.chats, {}),
-    profile: loadJSON(STORAGE_KEYS.profile, { name: '', avatar: '' }),
-    settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {})),
-    readMarkers: loadJSON(STORAGE_KEYS.readMarkers, {})
-};
+            const state = {
+                saved: loadJSON(STORAGE_KEYS.saved, {}),
+                applied: loadJSON(STORAGE_KEYS.applied, {}),
+                comments: loadJSON(STORAGE_KEYS.comments, {}),
+                chats: loadJSON(STORAGE_KEYS.chats, {}),
+                profile: loadJSON(STORAGE_KEYS.profile, { name: '', avatar: '' }),
+                settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {})),
+                readMarkers: loadJSON(STORAGE_KEYS.readMarkers, {})
+            };
 
             let idCounter = 1;
             function newId() { return 'job-' + Date.now() + '-' + (idCounter++); }
+
+            // Every job id we've already rendered, whether from this device or
+            // pulled from the backend, so we never draw the same job twice.
+            const knownJobIds = new Set(['sample-1', 'sample-2', 'sample-3', 'sample-4']);
 
             function timeAgo(iso) {
                 if (!iso) return 'Just now';
@@ -1374,7 +1395,7 @@
                 return '';
             }
 
-            /* ================= Build & insert a job card ================= */
+            /* ================= Build a job card element ================= */
             function buildJobCard(job) {
                 const card = document.createElement('div');
                 card.className = 'post-box mb-4';
@@ -1405,13 +1426,55 @@
                 return card;
             }
 
+            // Adds ONE job to the very top of the feed right away (used for the
+            // person's own new post, so it shows instantly without waiting on
+            // the network).
             function addJobToFeed(job, opts) {
                 opts = opts || {};
+                if (knownJobIds.has(job.id)) return null;
+                knownJobIds.add(job.id);
                 const card = buildJobCard(job);
                 jobFeed.prepend(card);
                 applyStoredState(card);
                 if (opts.scroll) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 return card;
+            }
+
+            // Adds a BATCH of jobs (already sorted newest-first by the backend)
+            // to the top of the feed, preserving that order, and skipping any
+            // job id already on screen.
+            function insertJobsAtTop(jobs) {
+                const frag = document.createDocumentFragment();
+                jobs.forEach(function (rawJob) {
+                    if (!rawJob || !rawJob.id || knownJobIds.has(rawJob.id)) return;
+                    knownJobIds.add(rawJob.id);
+                    const job = normalizeBackendJob(rawJob);
+                    const card = buildJobCard(job);
+                    applyStoredState(card);
+                    frag.appendChild(card);
+                });
+                jobFeed.insertBefore(frag, jobFeed.firstChild);
+            }
+
+            // The backend folds column names to lowercase (createdat, isnew)
+            // and stores attachment as JSON - normalize it back to what the
+            // rest of the UI expects.
+            function normalizeBackendJob(row) {
+                let attachment = row.attachment;
+                if (typeof attachment === 'string') {
+                    try { attachment = JSON.parse(attachment); } catch (err) { attachment = null; }
+                }
+                return {
+                    id: row.id,
+                    company: row.company,
+                    title: row.title,
+                    location: row.location,
+                    salary: row.salary,
+                    description: row.description,
+                    attachment: attachment,
+                    createdAt: row.createdAt || row.createdat,
+                    isNew: !!(row.isNew || row.isnew)
+                };
             }
 
             function applyStoredState(card) {
@@ -1507,11 +1570,7 @@
                 if (span && count > 0) span.textContent = count;
             }
 
-            /* ================= Mini list rendering (Saved / Applications) =================
-               extraButtonsHtml(job) is optional and, when supplied, is called per row
-               to render additional action buttons (used by Saved Jobs for "View Post"
-               and "Chat with Recruiter"). Their click handlers are wired up afterwards
-               via delegation-free direct binding, matched by class name. */
+            /* ================= Mini list rendering (Saved / Applications) ================= */
             function renderMiniList(container, dict, emptyMsg, removeHandler, opts) {
                 opts = opts || {};
                 const entries = Object.keys(dict).map(function (k) { return dict[k]; });
@@ -1726,13 +1785,8 @@
                 renderChat(activeChatJobId);
 
                 // Demo auto-reply so the thread feels alive. This is NOT a real
-                // recruiter -- there's no backend behind this app. The recruiter
-                // is simulated as "not active": whether or not you have the chat
-                // modal open on this job when the reply lands, it always gets
-                // pushed into notifications (bell badge, sidebar Messages badge,
-                // and the Messages list) so you never miss it. If the modal for
-                // THIS job happens to be open, it's shown live instead and marked
-                // read immediately.
+                // recruiter -- chat has no backend behind it yet, so it only
+                // simulates a reply on THIS device/browser.
                 const jobId = activeChatJobId;
                 setTimeout(function () {
                     if (!state.chats[jobId]) state.chats[jobId] = { company: '', title: '', messages: [] };
@@ -1747,8 +1801,6 @@
                         renderChat(jobId);
                         markChatRead(jobId);
                     } else {
-                        // Recruiter is "not active" (chat window not open on this
-                        // job right now) -- surface it as a notification instead.
                         updateNotifBadge();
                         if (!document.getElementById('view-messages').classList.contains('d-none')) renderMessagesView();
                     }
@@ -1759,9 +1811,8 @@
                 if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
             });
 
-            // Same-browser "real-time" sync: if this site is open in another tab
-            // (e.g. simulating a recruiter view), new messages appear there as
-            // soon as they're sent, via the storage event.
+            // Same-browser sync: if this site is open in another tab, new
+            // chat messages appear there as soon as they're sent.
             window.addEventListener('storage', function (e) {
                 if (e.key === STORAGE_KEYS.chats) {
                     state.chats = loadJSON(STORAGE_KEYS.chats, {});
@@ -1857,6 +1908,11 @@
             videoInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
+                // NOTE: object URLs only work in THIS browser tab/session, so a
+                // video attached this way won't be visible to other people once
+                // it's synced to the backend and reloaded elsewhere. Fine for a
+                // same-device preview; swap in real file hosting before relying
+                // on video sharing across devices.
                 setComposerAttachment({ kind: 'video', url: URL.createObjectURL(file), name: file.name });
                 e.target.value = '';
             });
@@ -1881,9 +1937,48 @@
                 composerAttachmentBox.innerHTML = '';
             }
 
+            /* ================= Syncing a job to the backend ================= */
+            // Posts to the server in the background. The job is already shown
+            // on screen before this even runs (see submitQuickPost / jobForm
+            // submit below) -- this just makes sure it's saved so OTHER
+            // people/devices can see it too, and quietly reports if that failed.
+            function syncJobToBackend(job, statusEl) {
+                if (statusEl) {
+                    statusEl.classList.remove('d-none', 'text-danger', 'text-success');
+                    statusEl.classList.add('text-warning');
+                    statusEl.innerHTML = '<i class="bi bi-arrow-repeat"></i> Syncing to server (this can take up to a minute on first post)...';
+                }
+                fetch(API_BASE + '/jobs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(job)
+                })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function () {
+                        if (statusEl) {
+                            statusEl.classList.remove('text-warning');
+                            statusEl.classList.add('text-success');
+                            statusEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Posted and visible to everyone.';
+                            setTimeout(function () { statusEl.classList.add('d-none'); }, 3000);
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error('Job sync failed:', error);
+                        if (statusEl) {
+                            statusEl.classList.remove('text-warning');
+                            statusEl.classList.add('text-danger');
+                            statusEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Saved on this device, but couldn\'t reach the server -- other people won\'t see it yet. Check your connection and try again.';
+                        }
+                    });
+            }
+
             /* ================= Quick composer post ================= */
             const quickPostInput = document.getElementById('quickPostInput');
             const quickPostBtn = document.getElementById('quickPostBtn');
+            const composerSyncStatus = document.getElementById('composerSyncStatus');
 
             function submitQuickPost() {
                 const text = quickPostInput.value.trim();
@@ -1891,7 +1986,7 @@
 
                 const job = {
                     id: newId(),
-                    company: 'You',
+                    company: state.profile.name || 'You',
                     title: 'Announcement',
                     location: '',
                     salary: '',
@@ -1900,29 +1995,14 @@
                     createdAt: new Date().toISOString(),
                     isNew: true
                 };
-                console.log("Sending job to backend");
 
-fetch("https://project-connect-001.onrender.com/jobs", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify(job)
-})
-.then(response => response.json())
-.then(data => {
-    console.log("Backend saved:", data);
-
-    // reload jobs from backend
-    jobFeed.innerHTML = "";
-    loadJobsFromBackend();
-})
-.catch(error => {
-    console.error("Error:", error);
-});
+                // Show it immediately -- don't wait for the network.
+                addJobToFeed(job, { scroll: true });
 
                 quickPostInput.value = '';
                 clearComposerAttachment();
+
+                syncJobToBackend(job, composerSyncStatus);
             }
             quickPostBtn.addEventListener('click', submitQuickPost);
             quickPostInput.addEventListener('keydown', function (e) {
@@ -1982,29 +2062,16 @@ fetch("https://project-connect-001.onrender.com/jobs", {
                     isNew: true
                 };
 
-
-                fetch("https://project-connect-001.onrender.com/jobs", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(job)
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Backend:", data);
-                    })
-                    .catch(error => {
-                        console.error("Error:", error);
-                    });
-
-                
+                // Show it immediately on the home feed, then close the modal.
+                addJobToFeed(job, { scroll: true });
 
                 jobForm.reset();
                 jobModalImageDataUrl = null;
                 jobImagePreview.src = '';
                 jobImagePreview.classList.add('d-none');
                 jobModal.hide();
+
+                syncJobToBackend(job, composerSyncStatus);
             });
             jobModalEl.addEventListener('show.bs.modal', function () { jobFormError.classList.add('d-none'); });
             jobModalEl.addEventListener('hidden.bs.modal', function () {
@@ -2141,51 +2208,48 @@ fetch("https://project-connect-001.onrender.com/jobs", {
             aiSendBtn.addEventListener('click', sendAiMessage);
             aiInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendAiMessage(); } });
 
+            /* ================= Loading & polling jobs from the backend =================
+               This is what lets a DIFFERENT phone/account see a job someone
+               else posted: on load we pull everything, then every
+               POLL_INTERVAL_MS we quietly check again and drop in anything
+               new (marked with a "New" badge), without disturbing the
+               composer, an open comment box, or anything you've scrolled to. */
+            function loadJobsFromBackend(opts) {
+                opts = opts || {};
+                return fetch(API_BASE + '/jobs')
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (jobs) {
+                        if (!Array.isArray(jobs)) throw new Error('Response is not an array');
+                        // Backend returns newest-first; force isNew off for the
+                        // very first load so the feed doesn't open covered in
+                        // "New" badges, but keep it on for later polls.
+                        jobs.forEach(function (job) {
+                            job.isNew = opts.markAsNew === true;
+                        });
+                        insertJobsAtTop(jobs);
+                    })
+                    .catch(function (error) {
+                        console.error('loadJobsFromBackend failed:', error);
+                    });
+            }
+
             /* ================= Boot ================= */
-            /* ================= Load Jobs From Backend ================= */
-function loadJobsFromBackend() {
-    fetch("https://project-connect-001.onrender.com/jobs")
-        .then(function (response) {
-            console.log("Status:", response.status);
+            updateProfileUI();
+            populateSettingsForm();
 
-            if (!response.ok) {
-                throw new Error("HTTP " + response.status);
-            }
-
-            return response.json();
-        })
-        .then(function (jobs) {
-            console.log("Jobs received:", jobs);
-
-            if (!Array.isArray(jobs)) {
-                throw new Error("Response is not an array");
-            }
-
-            jobs.forEach(function (job) {
-                addJobToFeed(Object.assign({}, job, { isNew: false }));
+            loadJobsFromBackend({ markAsNew: false }).then(function () {
+                setInterval(function () {
+                    loadJobsFromBackend({ markAsNew: true });
+                }, POLL_INTERVAL_MS);
             });
-        })
-        .catch(function (error) {
-            console.error("loadJobsFromBackend failed:", error);
-        });
-}
 
-
-/* ================= Boot ================= */
-updateProfileUI();
-populateSettingsForm();
-
-loadJobsFromBackend();
-
-updateNotifBadge();
+            updateNotifBadge();
         })();
     </script>
 
 </body>
-
-</html>
-
-
-
 
 </html>
