@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -228,6 +227,19 @@
             return div.innerHTML;
         }
 
+        // UPDATE DASHBOARD STATS INDEPENDENTLY FROM SEARCH FILTERS
+        function updateDashboardStats() {
+            document.getElementById('totalUsersCount').textContent = cachedUsers.length;
+            
+            const posterCount = cachedUsers.filter(u => {
+                const role = u.role || u.accounttype || u.accountType || '';
+                return role.toLowerCase().includes('poster');
+            }).length;
+
+            document.getElementById('totalPostersCount').textContent = posterCount;
+            document.getElementById('totalJobsCount').textContent = cachedJobs.length;
+        }
+
         // FETCH & RENDER USERS
         function loadUsers() {
             const tbody = document.getElementById('usersTableBody');
@@ -235,6 +247,7 @@
                 .then(res => res.json())
                 .then(users => {
                     cachedUsers = Array.isArray(users) ? users : [];
+                    updateDashboardStats();
                     renderUsersTable(cachedUsers);
                 })
                 .catch(err => {
@@ -247,30 +260,26 @@
             const tbody = document.getElementById('usersTableBody');
             if (users.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="text-center text-secondary py-4">No registered users found.</td></tr>`;
-                document.getElementById('totalUsersCount').textContent = '0';
-                document.getElementById('totalPostersCount').textContent = '0';
                 return;
             }
 
-            document.getElementById('totalUsersCount').textContent = users.length;
-            
-            const posterCount = users.filter(u => u.role && u.role.toLowerCase().includes('poster')).length;
-            document.getElementById('totalPostersCount').textContent = posterCount;
-
             tbody.innerHTML = users.map(user => {
                 const avatar = user.avatar || DEFAULT_AVATAR;
-                const role = user.role || 'Jobseeker';
+                const role = user.role || user.accounttype || user.accountType || 'Jobseeker';
+                const userName = user.name || user.fullname || user.fullName || 'Anonymous User';
+                const createdAt = user.createdAt || user.createdat;
+                
                 const badgeClass = role.toLowerCase().includes('poster') ? 'bg-warning text-dark' : 'bg-primary';
-                const dateStr = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recent';
+                const dateStr = createdAt && !isNaN(new Date(createdAt)) ? new Date(createdAt).toLocaleDateString() : 'Recent';
                 const userId = user.id || user._id || user.email;
 
                 return `
-                    <tr id="admin-user-${escapeHtml(userId)}">
+                    <tr id="admin-user-${escapeHtml(String(userId))}">
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <img src="${escapeHtml(avatar)}" class="profile-img-sm" alt="User">
                                 <div>
-                                    <div class="fw-semibold">${escapeHtml(user.name || 'Anonymous User')}</div>
+                                    <div class="fw-semibold">${escapeHtml(userName)}</div>
                                     <small class="text-secondary">${escapeHtml(user.email || 'No email provided')}</small>
                                 </div>
                             </div>
@@ -280,7 +289,7 @@
                         <td>${escapeHtml(user.location || 'N/A')}</td>
                         <td><small class="text-secondary">${dateStr}</small></td>
                         <td class="text-end">
-                            <button class="btn-delete-user" onclick="deleteUser('${escapeHtml(userId)}')">
+                            <button class="btn-delete-user" onclick="deleteUser('${escapeHtml(String(userId))}')">
                                 <i class="bi bi-person-x-fill me-1"></i> Delete User
                             </button>
                         </td>
@@ -291,11 +300,14 @@
 
         function filterUsers() {
             const term = document.getElementById('userSearchInput').value.toLowerCase();
-            const filtered = cachedUsers.filter(u => 
-                (u.name && u.name.toLowerCase().includes(term)) ||
-                (u.email && u.email.toLowerCase().includes(term)) ||
-                (u.role && u.role.toLowerCase().includes(term))
-            );
+            const filtered = cachedUsers.filter(u => {
+                const name = u.name || u.fullname || u.fullName || '';
+                const email = u.email || '';
+                const role = u.role || u.accounttype || u.accountType || '';
+                return name.toLowerCase().includes(term) ||
+                       email.toLowerCase().includes(term) ||
+                       role.toLowerCase().includes(term);
+            });
             renderUsersTable(filtered);
         }
 
@@ -311,6 +323,7 @@
             .then(res => {
                 if (!res.ok) throw new Error('User deletion failed');
                 cachedUsers = cachedUsers.filter(u => String(u.id || u._id || u.email) !== String(userId));
+                updateDashboardStats();
                 renderUsersTable(cachedUsers);
             })
             .catch(err => {
@@ -326,6 +339,7 @@
                 .then(res => res.json())
                 .then(jobs => {
                     cachedJobs = Array.isArray(jobs) ? jobs : [];
+                    updateDashboardStats();
                     renderJobsList(cachedJobs);
                 })
                 .catch(err => {
@@ -338,11 +352,9 @@
             const container = document.getElementById('jobsContainer');
             if (jobs.length === 0) {
                 container.innerHTML = `<div class="text-center text-secondary py-4">No posted jobs found.</div>`;
-                document.getElementById('totalJobsCount').textContent = '0';
                 return;
             }
 
-            document.getElementById('totalJobsCount').textContent = jobs.length;
             container.innerHTML = jobs.map(job => {
                 return `
                     <div class="job-item" id="admin-job-${job.id}">
@@ -351,10 +363,10 @@
                             <p class="mb-0 text-secondary small">
                                 <strong>Company:</strong> ${escapeHtml(job.company)} | 
                                 <strong>Location:</strong> ${escapeHtml(job.location || 'N/A')} | 
-                                <strong>ID:</strong> ${escapeHtml(job.id)}
+                                <strong>ID:</strong> ${escapeHtml(String(job.id))}
                             </p>
                         </div>
-                        <button class="btn-delete-job" onclick="deleteJob('${job.id}')">
+                        <button class="btn-delete-job" onclick="deleteJob('${escapeHtml(String(job.id))}')">
                             <i class="bi bi-trash-fill me-1"></i> Delete Job
                         </button>
                     </div>
@@ -383,6 +395,7 @@
             .then(res => {
                 if (!res.ok) throw new Error('Deletion failed');
                 cachedJobs = cachedJobs.filter(j => String(j.id) !== String(jobId));
+                updateDashboardStats();
                 renderJobsList(cachedJobs);
             })
             .catch(err => {
