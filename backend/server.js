@@ -229,10 +229,65 @@ app.post("/users/profile", async (req, res) => {
 // ==========================
 app.get("/users", async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM users ORDER BY id DESC");
-        res.json(result.rows);
+        const result = await pool.query(
+            "SELECT id, fullname, email, phone, accounttype, location, profession, skills, avatar, createdat FROM users ORDER BY id DESC"
+        );
+        // Map raw DB columns to the field names the admin dashboard expects,
+        // and never send the password column back to the client.
+        const users = result.rows.map((row) => ({
+            id: row.id,
+            name: row.fullname,
+            email: row.email,
+            phone: row.phone,
+            role: row.accounttype,
+            location: row.location,
+            profession: row.profession,
+            skills: row.skills,
+            avatar: row.avatar,
+            createdAt: row.createdat
+        }));
+        res.json(users);
     } catch (error) {
         res.status(500).json({ message: "Could not fetch users" });
+    }
+});
+
+// ==========================
+// ADMIN - DELETE USER (cascades related data + owned jobs)
+// ==========================
+app.delete("/users/:id", async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        // Remove this user's own engagement + chat records
+        await pool.query("DELETE FROM job_likes WHERE user_id=$1", [userId]);
+        await pool.query("DELETE FROM job_saves WHERE user_id=$1", [userId]);
+        await pool.query("DELETE FROM job_applications WHERE user_id=$1", [userId]);
+        await pool.query("DELETE FROM job_comments WHERE user_id=$1", [userId]);
+        await pool.query("DELETE FROM chat_messages WHERE seeker_id=$1 OR sender_id=$1", [userId]);
+
+        // Remove any jobs this user posted, along with engagement/chat tied to those jobs
+        const ownedJobs = await pool.query("SELECT id FROM jobs WHERE user_id=$1", [userId]);
+        for (const row of ownedJobs.rows) {
+            const jobId = row.id;
+            await pool.query("DELETE FROM job_likes WHERE job_id=$1", [jobId]);
+            await pool.query("DELETE FROM job_saves WHERE job_id=$1", [jobId]);
+            await pool.query("DELETE FROM job_applications WHERE job_id=$1", [jobId]);
+            await pool.query("DELETE FROM job_comments WHERE job_id=$1", [jobId]);
+            await pool.query("DELETE FROM chat_messages WHERE job_id=$1", [jobId]);
+        }
+        await pool.query("DELETE FROM jobs WHERE user_id=$1", [userId]);
+
+        // Finally remove the user record itself
+        const result = await pool.query("DELETE FROM users WHERE id=$1 RETURNING id", [userId]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({ message: "User deleted successfully" });
+    } catch (error) {
+        console.log("Delete user error:", error.message);
+        res.status(500).json({ message: "Could not delete user" });
     }
 });
 
