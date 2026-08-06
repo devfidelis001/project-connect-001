@@ -1,16 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Labour Market | Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Your Labour Market | Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
         * {
             margin: 0;
@@ -19,195 +17,46 @@
             font-family: 'Poppins', sans-serif;
         }
 
-        html {
-            overflow-x: hidden;
-        }
-
         body {
             background: linear-gradient(135deg, #031633, #05285a, #0b5ed7, #04162c);
-            background-attachment: fixed;
             min-height: 100vh;
-            color: white;
+            color: #fff;
+            padding-bottom: 50px;
         }
 
-        body::before {
-            content: "";
-            position: fixed;
-            width: 450px;
-            height: 450px;
-            top: -200px;
-            right: -200px;
-            background: #0d6efd;
-            filter: blur(170px);
-            opacity: .18;
-            z-index: -1;
-        }
-
-        body::after {
-            content: "";
-            position: fixed;
-            width: 400px;
-            height: 400px;
-            bottom: -200px;
-            left: -200px;
-            background: #4da3ff;
-            filter: blur(170px);
-            opacity: .15;
-            z-index: -1;
-        }
-
-        a {
-            text-decoration: none;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #18355d;
-            border-radius: 10px;
-        }
-
-        /* ===== Glass building blocks ===== */
-        .glass-card {
-            background: rgba(255, 255, 255, .05);
-            border-radius: 20px;
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, .08);
-        }
-
-        .glass-input {
-            background: #132847;
-            border: none;
-            color: white;
-            border-radius: 12px;
-        }
-
-        .glass-input:focus {
-            outline: none;
-            box-shadow: none;
-            background: #18355d;
-            color: white;
-        }
-
-        .glass-input::placeholder {
-            color: rgba(255, 255, 255, .45);
-        }
-
-        .btn-primary-glow {
-            background: #0d6efd;
-            color: white;
-            border-radius: 30px;
-            font-weight: 600;
-            border: none;
-        }
-
-        .btn-primary-glow:hover {
-            background: #3d8bfd;
-            color: white;
-        }
-
-        .text-dim {
-            color: rgba(255, 255, 255, .6);
-        }
-
-        /* ===== LOGIN PAGE ===== */
-        #loginScreen {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 420px;
-            padding: 40px 36px;
-        }
-
-        .login-logo {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            background: #0d6efd;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.6rem;
-            margin: 0 auto 18px;
-        }
-
-        .form-label-admin {
-            font-weight: 500;
-            font-size: .85rem;
-            color: rgba(255, 255, 255, .75);
-            margin-bottom: 6px;
-        }
-
-        .login-input-wrap {
-            position: relative;
-        }
-
-        .login-input-wrap i {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255, 255, 255, .4);
-        }
-
-        .login-input-wrap input {
-            padding-left: 44px;
-        }
-
-        /* ===== APP SHELL ===== */
-        #appShell {
-            display: none;
-        }
-
-        .topbar {
-            background: rgba(7, 14, 30, .85);
+        .navbar {
+            background: rgba(7, 14, 30, 0.85);
             backdrop-filter: blur(18px);
-            border-bottom: 1px solid rgba(255, 255, 255, .08);
-            position: sticky;
-            top: 0;
-            z-index: 1030;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .search-box {
-            background: #132847;
-            border: none;
-            color: white;
-            border-radius: 30px;
-            padding: 10px 18px 10px 40px;
-            width: 300px;
-            font-size: .9rem;
+        .admin-card {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 30px;
         }
 
-        .search-wrap {
-            position: relative;
+        .table-custom {
+            color: #fff;
+            background: transparent;
         }
 
-        .search-wrap i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255, 255, 255, .4);
-            font-size: .9rem;
+        .table-custom th {
+            background: rgba(13, 110, 253, 0.2);
+            color: #4da3ff;
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
-        .search-box:focus {
-            outline: none;
-            box-shadow: none;
-            background: #18355d;
-            color: white;
+        .table-custom td {
+            background: transparent;
+            border-color: rgba(255, 255, 255, 0.08);
+            vertical-align: middle;
         }
 
-        .profile-img {
+        .profile-img-sm {
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -215,2100 +64,347 @@
             border: 2px solid #4da3ff;
         }
 
-        .notif-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 18px;
-            height: 18px;
-            padding: 0 5px;
-            background: #dc3545;
-            color: #fff;
-            font-size: .68rem;
-            font-weight: 700;
-            border-radius: 10px;
-        }
-
-        .notif-bell-wrap {
-            position: relative;
-        }
-
-        .notif-badge-bell {
-            position: absolute;
-            top: -4px;
-            right: -8px;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            padding: 20px 16px;
-            height: calc(100vh - 74px);
-            position: sticky;
-            top: 74px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .side-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 10px 22px;
-        }
-
-        .side-brand .mark {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            background: #0d6efd;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .side-eyebrow {
-            font-size: .68rem;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, .35);
-            padding: 0 10px;
-            margin: 18px 0 6px;
-        }
-
-        .side-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 11px 12px;
-            color: rgba(255, 255, 255, .8);
+        .badge-role {
+            font-size: 0.75rem;
+            padding: 4px 8px;
             border-radius: 12px;
-            margin-bottom: 4px;
-            font-weight: 500;
-            font-size: .92rem;
-            transition: .2s;
-            cursor: pointer;
         }
 
-        .side-link i {
-            font-size: 1.05rem;
-            width: 20px;
-            text-align: center;
-        }
-
-        .side-link:hover {
-            background: rgba(255, 255, 255, .06);
-            color: #fff;
-        }
-
-        .side-link.active {
-            background: #0d6efd;
-            color: #fff;
-        }
-
-        .side-link .notif-badge {
-            margin-left: auto;
-        }
-
-        .sidebar-foot {
-            margin-top: auto;
-            padding-top: 14px;
-            border-top: 1px solid rgba(255, 255, 255, .08);
-        }
-
-        .main-content {
-            padding: 26px 26px 60px;
-            min-height: calc(100vh - 74px);
-        }
-
-        .app-view {
-            display: none;
-        }
-
-        .app-view.active {
-            display: block;
-            animation: fadeIn .25s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .view-header {
+        .job-item {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 14px;
-            margin-bottom: 24px;
-        }
-
-        .view-title {
-            font-weight: 700;
-            font-size: 1.5rem;
-            margin-bottom: 2px;
-        }
-
-        /* Stat cards */
-        .stat-card {
-            padding: 22px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-icon {
-            width: 44px;
-            height: 44px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
             border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.15rem;
-            margin-bottom: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 12px;
         }
 
-        .stat-value {
-            font-size: 1.7rem;
-            font-weight: 700;
-            line-height: 1.1;
+        .job-item:hover {
+            background: rgba(255, 255, 255, 0.07);
         }
 
-        .stat-label {
-            font-size: .82rem;
-            color: rgba(255, 255, 255, .6);
-            margin-top: 2px;
-        }
-
-        .stat-delta {
-            font-size: .78rem;
-            font-weight: 600;
-            margin-top: 10px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .stat-delta.up {
-            color: #3ddc84;
-        }
-
-        .stat-delta.down {
-            color: #ff6b6b;
-        }
-
-        /* Panels */
-        .panel {
-            padding: 22px;
-        }
-
-        .panel-title {
-            font-weight: 600;
-            font-size: 1.02rem;
-            margin-bottom: 2px;
-        }
-
-        .chart-wrap {
-            position: relative;
-            height: 260px;
-        }
-
-        .chart-wrap.small {
-            height: 220px;
-        }
-
-        /* Tables */
-        .table-admin {
-            color: #fff;
-            margin-bottom: 0;
-        }
-
-        .table-admin thead th {
-            color: rgba(255, 255, 255, .5);
-            font-size: .72rem;
-            text-transform: uppercase;
-            letter-spacing: .06em;
-            font-weight: 600;
-            border-bottom: 1px solid rgba(255, 255, 255, .08);
-            padding: 12px 14px;
-            white-space: nowrap;
-        }
-
-        .table-admin tbody td {
-            padding: 14px;
-            border-bottom: 1px solid rgba(255, 255, 255, .06);
-            vertical-align: middle;
-            font-size: .88rem;
-        }
-
-        .table-admin tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .table-admin tbody tr:hover {
-            background: rgba(255, 255, 255, .03);
-        }
-
-        .row-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            object-fit: cover;
-            flex-shrink: 0;
-        }
-
-        .cell-user {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .cell-user .name {
-            font-weight: 500;
-        }
-
-        .cell-user .sub {
-            font-size: .76rem;
-            color: rgba(255, 255, 255, .5);
-        }
-
-        /* Status pills */
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 30px;
-            font-size: .74rem;
-            font-weight: 600;
-        }
-
-        .pill::before {
-            content: "";
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        .pill-active {
-            background: rgba(61, 220, 132, .14);
-            color: #3ddc84;
-        }
-
-        .pill-pending {
-            background: rgba(255, 193, 7, .14);
-            color: #ffc107;
-        }
-
-        .pill-suspended,
-        .pill-flagged,
-        .pill-rejected {
-            background: rgba(255, 107, 107, .14);
-            color: #ff6b6b;
-        }
-
-        .pill-verified {
-            background: rgba(13, 110, 253, .16);
-            color: #6ea8ff;
-        }
-
-        .pill-resolved {
-            background: rgba(255, 255, 255, .1);
-            color: rgba(255, 255, 255, .6);
-        }
-
-        /* Toolbar */
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 18px;
-        }
-
-        .toolbar .glass-input,
-        .toolbar .form-select {
-            padding: 9px 16px;
-            font-size: .86rem;
-        }
-
-        .toolbar .search-wrap .glass-input {
-            padding-left: 38px;
-        }
-
-        .form-select.glass-input {
-            width: auto;
-        }
-
-        /* Icon buttons */
-        .icon-btn {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, .12);
-            background: transparent;
-            color: #fff;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: .9rem;
-            transition: .2s;
-        }
-
-        .icon-btn:hover {
-            background: rgba(255, 255, 255, .1);
-        }
-
-        .icon-btn.danger:hover {
+        .btn-delete-job,
+        .btn-delete-user {
             background: #dc3545;
-            border-color: #dc3545;
-        }
-
-        .icon-btn.success:hover {
-            background: #146c2e;
-            border-color: #146c2e;
-        }
-
-        .btn-chip {
-            border: 1px solid rgba(255, 255, 255, .15);
-            background: transparent;
-            color: #fff;
+            color: white;
+            border: none;
             border-radius: 30px;
             padding: 6px 14px;
-            font-size: .78rem;
-            font-weight: 500;
+            font-size: 0.85rem;
+            transition: 0.2s;
         }
 
-        .btn-chip.approve:hover {
-            background: #146c2e;
-            border-color: #146c2e;
+        .btn-delete-job:hover,
+        .btn-delete-user:hover {
+            background: #bb2d3b;
         }
 
-        .btn-chip.reject:hover {
-            background: #dc3545;
-            border-color: #dc3545;
-        }
-
-        .btn-chip.view:hover {
-            background: #0d6efd;
-            border-color: #0d6efd;
-        }
-
-        /* Recruiter verification cards */
-        .verify-card {
-            padding: 18px;
-            margin-bottom: 14px;
-        }
-
-        .verify-card .doc-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        .search-admin {
             background: #132847;
-            padding: 8px 14px;
-            border-radius: 12px;
-            font-size: .82rem;
-            color: #fff;
-        }
-
-        /* Activity feed */
-        .activity-item {
-            display: flex;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, .06);
-        }
-
-        .activity-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .activity-dot {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: .85rem;
-            flex-shrink: 0;
-        }
-
-        .activity-text {
-            font-size: .86rem;
-        }
-
-        .activity-time {
-            font-size: .74rem;
-            color: rgba(255, 255, 255, .45);
-        }
-
-        /* Settings toggles */
-        .settings-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, .06);
-            gap: 20px;
-        }
-
-        .settings-row:last-child {
-            border-bottom: none;
-        }
-
-        .settings-row .label {
-            font-weight: 500;
-            font-size: .92rem;
-        }
-
-        .settings-row .desc {
-            font-size: .78rem;
-            color: rgba(255, 255, 255, .5);
-        }
-
-        .form-check-input:checked {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-        }
-
-        /* Modal reuse */
-        .modal-content {
-            background: #0b2244;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, .08);
+            padding: 8px 16px;
         }
 
-        .modal-header,
-        .modal-footer {
-            border-color: rgba(255, 255, 255, .08);
-        }
-
-        /* Pagination-ish footer */
-        .table-footnote {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 14px 4px 0;
-            font-size: .78rem;
-            color: rgba(255, 255, 255, .5);
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 50px 20px;
-            color: rgba(255, 255, 255, .5);
-        }
-
-        .toast-stack {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .mini-toast {
-            background: #0b2244;
-            border: 1px solid rgba(255, 255, 255, .1);
-            border-radius: 14px;
-            padding: 12px 18px;
-            font-size: .86rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, .4);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: fadeIn .2s ease;
-        }
-
-        /* Mobile sidebar off-canvas */
-        @media (max-width: 991.98px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                height: 100vh;
-                width: 260px;
-                z-index: 1050;
-                transform: translateX(-100%);
-                transition: transform .25s ease;
-                background: #04122b;
-                border-right: 1px solid rgba(255, 255, 255, .08);
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .sidebar-backdrop {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0, 0, 0, .5);
-                z-index: 1045;
-            }
-
-            .sidebar-backdrop.show {
-                display: block;
-            }
-
-            .search-box {
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 575.98px) {
-            .main-content {
-                padding: 18px 14px 50px;
-            }
-
-            .login-card {
-                padding: 30px 22px;
-            }
+        .search-admin:focus {
+            background: #18355d;
+            color: white;
+            box-shadow: none;
+            border-color: #4da3ff;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- =======================================================
-    LOGIN SCREEN
-    ======================================================== -->
-    <div id="loginScreen">
-        <div class="glass-card login-card">
-            <div class="text-center mb-4">
-                <div class="login-logo mx-auto"><i class="bi bi-shield-lock-fill"></i></div>
-                <h4 class="fw-bold mb-1">Your Labour Market</h4>
-                <div class="text-dim small">Admin console</div>
-            </div>
-
-            <form id="loginForm" novalidate>
-                <div class="mb-3">
-                    <div class="form-label-admin">Email address</div>
-                    <div class="login-input-wrap">
-                        <i class="bi bi-envelope-fill"></i>
-                        <input type="email" class="form-control glass-input" id="loginEmail"
-                            placeholder="admin@ylm.com" required autocomplete="username">
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="form-label-admin">Password</div>
-                    <div class="login-input-wrap">
-                        <i class="bi bi-lock-fill"></i>
-                        <input type="password" class="form-control glass-input" id="loginPassword"
-                            placeholder="••••••••" required autocomplete="current-password">
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="rememberMe" checked>
-                        <label class="form-check-label small text-dim" for="rememberMe">Keep me signed in</label>
-                    </div>
-                    <a href="#" class="small" style="color:#6ea8ff;">Forgot password?</a>
-                </div>
-                <div id="loginError" class="alert d-none py-2 small mb-3"
-                    style="background:rgba(255,107,107,.12);color:#ff8080;border:1px solid rgba(255,107,107,.25);border-radius:12px;">
-                    Invalid email or password.
-                </div>
-                <button type="submit" class="btn btn-primary-glow w-100 py-2">Sign in</button>
-                <div class="text-center text-dim small mt-4">
-                    Demo credentials: <strong class="text-white">admin@ylm.com</strong> /
-                    <strong class="text-white">admin123</strong>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- =======================================================
-    APP SHELL
-    ======================================================== -->
-    <div id="appShell">
-
-        <!-- TOPBAR -->
-        <nav class="topbar">
-            <div class="container-fluid px-3 px-lg-4">
-                <div class="d-flex align-items-center py-2 gap-3">
-                    <button class="icon-btn d-lg-none" id="sidebarToggle" aria-label="Open menu">
-                        <i class="bi bi-list"></i>
-                    </button>
-                    <a href="#" class="d-flex align-items-center gap-2 text-white" style="min-width:0;">
-                        <div class="login-logo" style="width:36px;height:36px;font-size:1.05rem;flex-shrink:0;">
-                            <i class="bi bi-shield-lock-fill"></i>
-                        </div>
-                        <span class="fw-bold d-none d-sm-inline">YLM Admin</span>
-                    </a>
-
-                    <div class="search-wrap d-none d-md-block ms-2">
-                        <i class="bi bi-search"></i>
-                        <input type="search" id="globalSearch" class="search-box"
-                            placeholder="Search users, jobs, recruiters...">
-                    </div>
-
-                    <div class="ms-auto d-flex align-items-center gap-2 gap-lg-3">
-                        <div class="dropdown notif-bell-wrap">
-                            <button class="icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-bell-fill"></i>
-                            </button>
-                            <span id="topNotifBadge" class="notif-badge notif-badge-bell d-none">0</span>
-                            <ul class="dropdown-menu dropdown-menu-end p-2" id="topNotifList"
-                                style="background:#0b2244;border:1px solid rgba(255,255,255,.08);min-width:300px;max-height:340px;overflow-y:auto;">
-                            </ul>
-                        </div>
-                        <div class="dropdown">
-                            <a class="d-flex align-items-center gap-2 dropdown-toggle" href="#" role="button"
-                                data-bs-toggle="dropdown" style="color:#fff;">
-                                <img src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
-                                    class="profile-img" alt="Admin avatar">
-                                <span class="d-none d-lg-inline small fw-medium" id="topAdminName">Admin</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end"
-                                style="background:#0b2244;border:1px solid rgba(255,255,255,.08);">
-                                <li><a class="dropdown-item text-white side-link-inline" data-view="settings"
-                                        href="#" style="border-radius:0;background:transparent;"><i
-                                            class="bi bi-gear-fill me-2"></i>Settings</a></li>
-                                <li>
-                                    <hr class="dropdown-divider" style="border-color:rgba(255,255,255,.08);">
-                                </li>
-                                <li><a class="dropdown-item text-white" href="#" id="logoutBtn"
-                                        style="border-radius:0;background:transparent;"><i
-                                            class="bi bi-box-arrow-right me-2"></i>Log out</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-        <div class="container-fluid px-0">
-            <div class="row g-0">
-
-                <!-- SIDEBAR -->
-                <div class="col-lg-2" style="max-width:250px;">
-                    <div class="sidebar" id="sidebar">
-                        <div>
-                            <div class="side-eyebrow">Overview</div>
-                            <a class="side-link active" data-view="home"><i class="bi bi-grid-1x2-fill"></i>
-                                Dashboard</a>
-                            <a class="side-link" data-view="analytics"><i class="bi bi-bar-chart-fill"></i>
-                                Analytics</a>
-
-                            <div class="side-eyebrow">Manage</div>
-                            <a class="side-link" data-view="users"><i class="bi bi-people-fill"></i> Users</a>
-                            <a class="side-link" data-view="jobs"><i class="bi bi-briefcase-fill"></i> Jobs</a>
-                            <a class="side-link" data-view="recruiters"><i
-                                    class="bi bi-patch-check-fill"></i> Recruiter verification
-                                <span id="sideVerifyBadge" class="notif-badge d-none">0</span>
-                            </a>
-                            <a class="side-link" data-view="reports"><i class="bi bi-flag-fill"></i> Reports
-                                <span id="sideReportBadge" class="notif-badge d-none">0</span>
-                            </a>
-
-                            <div class="side-eyebrow">System</div>
-                            <a class="side-link" data-view="settings"><i class="bi bi-gear-fill"></i> Settings</a>
-                        </div>
-                        <div class="sidebar-foot">
-                            <div class="d-flex align-items-center gap-2 px-2">
-                                <img src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
-                                    class="profile-img" style="width:34px;height:34px;" alt="Admin avatar">
-                                <div style="min-width:0;">
-                                    <div class="small fw-medium text-truncate" id="sideAdminName">Admin</div>
-                                    <div class="small text-dim text-truncate">Super admin</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MAIN CONTENT -->
-                <div class="col-lg-10">
-                    <div class="main-content">
-
-                        <!-- ============ DASHBOARD HOME ============ -->
-                        <div id="view-home" class="app-view active">
-                            <div class="view-header">
-                                <div>
-                                    <div class="view-title" id="homeGreeting">Welcome back 👋</div>
-                                    <div class="text-dim small">Here's what's happening on Your Labour Market today.
-                                    </div>
-                                </div>
-                                <button class="btn btn-primary-glow px-3" id="refreshHomeBtn"><i
-                                        class="bi bi-arrow-clockwise me-1"></i> Refresh</button>
-                            </div>
-
-                            <div class="row g-3 mb-4" id="statCardsRow"></div>
-
-                            <div class="row g-3 mb-4">
-                                <div class="col-lg-8">
-                                    <div class="glass-card panel h-100">
-                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <div class="panel-title">Platform activity</div>
-                                                <div class="text-dim small">New users vs. new job posts, last 7 days
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="chart-wrap">
-                                            <canvas id="activityChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-4">
-                                    <div class="glass-card panel h-100">
-                                        <div class="panel-title mb-1">Jobs by category</div>
-                                        <div class="text-dim small mb-3">Share of active listings</div>
-                                        <div class="chart-wrap small">
-                                            <canvas id="categoryChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-lg-7">
-                                    <div class="glass-card panel h-100">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div class="panel-title">Recent activity</div>
-                                        </div>
-                                        <div id="activityFeed"></div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-5">
-                                    <div class="glass-card panel h-100">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div class="panel-title">Needs your attention</div>
-                                        </div>
-                                        <div id="attentionList"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ============ ANALYTICS ============ -->
-                        <div id="view-analytics" class="app-view">
-                            <div class="view-header">
-                                <div>
-                                    <div class="view-title">Analytics</div>
-                                    <div class="text-dim small">Deeper look at growth and engagement.</div>
-                                </div>
-                                <select class="form-select glass-input" id="analyticsRange" style="width:160px;">
-                                    <option value="7">Last 7 days</option>
-                                    <option value="30" selected>Last 30 days</option>
-                                    <option value="90">Last 90 days</option>
-                                </select>
-                            </div>
-
-                            <div class="row g-3 mb-4" id="analyticsStatRow"></div>
-
-                            <div class="row g-3 mb-4">
-                                <div class="col-lg-6">
-                                    <div class="glass-card panel h-100">
-                                        <div class="panel-title mb-1">User growth</div>
-                                        <div class="text-dim small mb-3">Cumulative registered users</div>
-                                        <div class="chart-wrap">
-                                            <canvas id="userGrowthChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="glass-card panel h-100">
-                                        <div class="panel-title mb-1">Applications submitted</div>
-                                        <div class="text-dim small mb-3">Daily volume across all jobs</div>
-                                        <div class="chart-wrap">
-                                            <canvas id="applicationsChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-lg-6">
-                                    <div class="glass-card panel h-100">
-                                        <div class="panel-title mb-1">Top locations</div>
-                                        <div class="text-dim small mb-3">By active job listings</div>
-                                        <div class="chart-wrap small">
-                                            <canvas id="locationChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="glass-card panel h-100">
-                                        <div class="panel-title mb-1">User roles</div>
-                                        <div class="text-dim small mb-3">Job seekers vs. recruiters</div>
-                                        <div class="chart-wrap small">
-                                            <canvas id="rolesChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ============ USERS ============ -->
-                        <div id="view-users" class="app-view">
-                            <div class="view-header">
-                                <div>
-                                    <div class="view-title">Users</div>
-                                    <div class="text-dim small">Manage job seekers and recruiters on the platform.
-                                    </div>
-                                </div>
-                                <button class="btn btn-primary-glow px-3"><i class="bi bi-plus-lg me-1"></i> Add
-                                    user</button>
-                            </div>
-
-                            <div class="glass-card panel">
-                                <div class="toolbar">
-                                    <div class="search-wrap flex-grow-1" style="min-width:220px;">
-                                        <i class="bi bi-search"></i>
-                                        <input type="search" class="form-control glass-input" id="usersSearch"
-                                            placeholder="Search by name or email...">
-                                    </div>
-                                    <select class="form-select glass-input" id="usersRoleFilter">
-                                        <option value="">All roles</option>
-                                        <option value="Job seeker">Job seeker</option>
-                                        <option value="Recruiter">Recruiter</option>
-                                    </select>
-                                    <select class="form-select glass-input" id="usersStatusFilter">
-                                        <option value="">All statuses</option>
-                                        <option value="Active">Active</option>
-                                        <option value="Pending">Pending</option>
-                                        <option value="Suspended">Suspended</option>
-                                    </select>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="table table-admin">
-                                        <thead>
-                                            <tr>
-                                                <th>User</th>
-                                                <th>Role</th>
-                                                <th>Location</th>
-                                                <th>Joined</th>
-                                                <th>Status</th>
-                                                <th class="text-end">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="usersTableBody"></tbody>
-                                    </table>
-                                </div>
-                                <div id="usersEmpty" class="empty-state d-none">
-                                    <i class="bi bi-people" style="font-size:2rem;"></i>
-                                    <p class="mt-2 mb-0">No users match your filters.</p>
-                                </div>
-                                <div class="table-footnote">
-                                    <span id="usersCount">0 users</span>
-                                    <span>Showing all matching results</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ============ JOBS ============ -->
-                        <div id="view-jobs" class="app-view">
-                            <div class="view-header">
-                                <div>
-                                    <div class="view-title">Jobs</div>
-                                    <div class="text-dim small">Review, approve and moderate job listings.</div>
-                                </div>
-                            </div>
-
-                            <div class="glass-card panel">
-                                <div class="toolbar">
-                                    <div class="search-wrap flex-grow-1" style="min-width:220px;">
-                                        <i class="bi bi-search"></i>
-                                        <input type="search" class="form-control glass-input" id="jobsSearch"
-                                            placeholder="Search by title or company...">
-                                    </div>
-                                    <select class="form-select glass-input" id="jobsCategoryFilter">
-                                        <option value="">All categories</option>
-                                        <option>Tech</option>
-                                        <option>Engineering</option>
-                                        <option>Healthcare</option>
-                                        <option>Education</option>
-                                        <option>Sales</option>
-                                        <option>Admin</option>
-                                        <option>Other</option>
-                                    </select>
-                                    <select class="form-select glass-input" id="jobsStatusFilter">
-                                        <option value="">All statuses</option>
-                                        <option value="Active">Active</option>
-                                        <option value="Pending">Pending</option>
-                                        <option value="Flagged">Flagged</option>
-                                    </select>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="table table-admin">
-                                        <thead>
-                                            <tr>
-                                                <th>Job</th>
-                                                <th>Company</th>
-                                                <th>Category</th>
-                                                <th>Posted</th>
-                                                <th>Status</th>
-                                                <th class="text-end">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="jobsTableBody"></tbody>
-                                    </table>
-                                </div>
-                                <div id="jobsEmpty" class="empty-state d-none">
-                                    <i class="bi bi-briefcase" style="font-size:2rem;"></i>
-                                    <p class="mt-2 mb-0">No jobs match your filters.</p>
-                                </div>
-                                <div class="table-footnote">
-                                    <span id="jobsCount">0 jobs</span>
-                                    <span>Showing all matching results</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ============ RECRUITER VERIFICATION ============ -->
-                        <div id="view-recruiters" class="app-view">
-                            <div class="view-header">
-                                <div>
-                                    <div class="view-title">Recruiter verification</div>
-                                    <div class="text-dim small">Approve recruiter accounts before they can post jobs.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <ul class="nav nav-pills mb-3" id="verifyTabs">
-                                <li class="nav-item"><a class="nav-link active" data-status="Pending" href="#">Pending
-                                        <span class="notif-badge ms-1" id="verifyPendingCount">0</span></a></li>
-                                <li class="nav-item"><a class="nav-link" data-status="Verified" href="#">Verified</a>
-                                </li>
-                                <li class="nav-item"><a class="nav-link" data-status="Rejected" href="#">Rejected</a>
-                                </li>
-                            </ul>
-
-                            <div id="recruitersList"></div>
-                            <div id="recruitersEmpty" class="empty-state glass-card d-none">
-                                <i class="bi bi-patch-check" style="font-size:2rem;"></i>
-                                <p class="mt-2 mb-0">Nothing here right now.</p>
-                            </div>
-                        </div>
-
-                        <!-- ============ REPORTS ============ -->
-                        <div id="view-reports" class="app-view">
-                            <div class="view-header">
-                                <div>
-                                    <div class="view-title">Reports</div>
-                                    <div class="text-dim small">Content and user reports flagged by the community.
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="glass-card panel">
-                                <div class="toolbar">
-                                    <select class="form-select glass-input" id="reportsTypeFilter">
-                                        <option value="">All types</option>
-                                        <option value="Job post">Job post</option>
-                                        <option value="User">User</option>
-                                        <option value="Message">Message</option>
-                                    </select>
-                                    <select class="form-select glass-input" id="reportsStatusFilter">
-                                        <option value="">All statuses</option>
-                                        <option value="Open">Open</option>
-                                        <option value="Resolved">Resolved</option>
-                                        <option value="Dismissed">Dismissed</option>
-                                    </select>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="table table-admin">
-                                        <thead>
-                                            <tr>
-                                                <th>Report</th>
-                                                <th>Type</th>
-                                                <th>Reason</th>
-                                                <th>Reported by</th>
-                                                <th>Date</th>
-                                                <th>Status</th>
-                                                <th class="text-end">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="reportsTableBody"></tbody>
-                                    </table>
-                                </div>
-                                <div id="reportsEmpty" class="empty-state d-none">
-                                    <i class="bi bi-flag" style="font-size:2rem;"></i>
-                                    <p class="mt-2 mb-0">No reports match your filters.</p>
-                                </div>
-                                <div class="table-footnote">
-                                    <span id="reportsCount">0 reports</span>
-                                    <span>Showing all matching results</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ============ SETTINGS ============ -->
-                        <div id="view-settings" class="app-view">
-                            <div class="view-header">
-                                <div>
-                                    <div class="view-title">Settings</div>
-                                    <div class="text-dim small">Admin profile and platform configuration.</div>
-                                </div>
-                            </div>
-
-                            <div class="row g-3">
-                                <div class="col-lg-5">
-                                    <div class="glass-card panel mb-3">
-                                        <div class="panel-title mb-3">Admin profile</div>
-                                        <form id="adminProfileForm">
-                                            <div class="d-flex align-items-center gap-3 mb-3">
-                                                <img id="settingsAvatarPreview"
-                                                    src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg"
-                                                    class="profile-img" style="width:64px;height:64px;"
-                                                    alt="Admin avatar preview">
-                                                <div class="flex-grow-1">
-                                                    <label class="form-label-admin" for="settingsAvatarInput">Photo</label>
-                                                    <input type="file" class="form-control glass-input"
-                                                        id="settingsAvatarInput" accept="image/*">
-                                                </div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label-admin" for="settingsAdminName">Full
-                                                    name</label>
-                                                <input type="text" class="form-control glass-input"
-                                                    id="settingsAdminName" maxlength="60">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label-admin" for="settingsAdminEmail">Email</label>
-                                                <input type="email" class="form-control glass-input"
-                                                    id="settingsAdminEmail" maxlength="80">
-                                            </div>
-                                            <button type="submit" class="btn btn-primary-glow px-4">Save
-                                                profile</button>
-                                            <div id="profileSavedMsg" class="text-success small mt-3 d-none">Profile
-                                                updated.</div>
-                                        </form>
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-7">
-                                    <div class="glass-card panel mb-3">
-                                        <div class="panel-title mb-2">Notifications</div>
-                                        <div class="settings-row">
-                                            <div>
-                                                <div class="label">New user sign-ups</div>
-                                                <div class="desc">Get notified when someone new joins the platform.
-                                                </div>
-                                            </div>
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" id="notifSignups" checked></div>
-                                        </div>
-                                        <div class="settings-row">
-                                            <div>
-                                                <div class="label">New job postings</div>
-                                                <div class="desc">Get notified when a recruiter posts a job.</div>
-                                            </div>
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" id="notifJobs" checked></div>
-                                        </div>
-                                        <div class="settings-row">
-                                            <div>
-                                                <div class="label">New reports</div>
-                                                <div class="desc">Get notified when content is reported.</div>
-                                            </div>
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" id="notifReports" checked></div>
-                                        </div>
-                                        <div class="settings-row">
-                                            <div>
-                                                <div class="label">Recruiter verification requests</div>
-                                                <div class="desc">Get notified when a recruiter requests
-                                                    verification.</div>
-                                            </div>
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" id="notifVerify" checked></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="glass-card panel mb-3">
-                                        <div class="panel-title mb-2">Platform</div>
-                                        <div class="settings-row">
-                                            <div>
-                                                <div class="label">Require recruiter verification</div>
-                                                <div class="desc">New recruiters must be approved before posting
-                                                    jobs.</div>
-                                            </div>
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" id="platformRequireVerify" checked></div>
-                                        </div>
-                                        <div class="settings-row">
-                                            <div>
-                                                <div class="label">Auto-flag reported jobs after 3 reports</div>
-                                                <div class="desc">Automatically move a listing to Flagged for
-                                                    review.</div>
-                                            </div>
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" id="platformAutoFlag" checked></div>
-                                        </div>
-                                        <div class="settings-row">
-                                            <div>
-                                                <div class="label">Allow public profiles</div>
-                                                <div class="desc">Job seeker profiles are visible to recruiters by
-                                                    default.</div>
-                                            </div>
-                                            <div class="form-check form-switch"><input class="form-check-input"
-                                                    type="checkbox" id="platformPublicProfiles" checked></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="text-end">
-                                        <button class="btn btn-primary-glow px-4" id="savePlatformSettingsBtn">Save
-                                            settings</button>
-                                        <div id="settingsSavedMsg" class="text-success small mt-2 d-none">Settings
-                                            saved.</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                    <!-- /main-content -->
-                </div>
-                <!-- /col-lg-10 -->
+    <nav class="navbar navbar-expand-lg sticky-top mb-4">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                <img src="images/LIGHT MARKET.png" style="height:50px;" alt="Logo" onerror="this.style.display='none'">
+                <span class="fw-bold fs-4 text-light">Admin Portal</span>
+            </a>
+            <div class="ms-auto d-flex gap-2">
+                <a href="home.html" class="btn btn-outline-light btn-sm rounded-pill px-3 d-flex align-items-center">
+                    <i class="bi bi-house-door-fill me-1"></i> Go to Live Home Page
+                </a>
             </div>
         </div>
-    </div>
-    <!-- /appShell -->
+    </nav>
 
-    <!-- =======================================================
-    USER DETAIL MODAL
-    ======================================================== -->
-    <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">User details</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <div class="container">
+        
+        <!-- STATS DASHBOARD HEADER -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="admin-card d-flex align-items-center justify-content-between py-3 mb-2">
+                    <div>
+                        <h6 class="text-secondary mb-1">Total Posted Jobs</h6>
+                        <h2 class="mb-0 text-primary fw-bold" id="totalJobsCount">0</h2>
+                    </div>
+                    <i class="bi bi-briefcase-fill fs-1 text-primary"></i>
                 </div>
-                <div class="modal-body" id="userModalBody"></div>
-                <div class="modal-footer" id="userModalFooter"></div>
+            </div>
+            <div class="col-md-4">
+                <div class="admin-card d-flex align-items-center justify-content-between py-3 mb-2">
+                    <div>
+                        <h6 class="text-secondary mb-1">Total Registered Users</h6>
+                        <h2 class="mb-0 text-info fw-bold" id="totalUsersCount">0</h2>
+                    </div>
+                    <i class="bi bi-people-fill fs-1 text-info"></i>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="admin-card d-flex align-items-center justify-content-between py-3 mb-2">
+                    <div>
+                        <h6 class="text-secondary mb-1">Active Job Posters</h6>
+                        <h2 class="mb-0 text-warning fw-bold" id="totalPostersCount">0</h2>
+                    </div>
+                    <i class="bi bi-person-badge-fill fs-1 text-warning"></i>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- =======================================================
-    JOB DETAIL MODAL
-    ======================================================== -->
-    <div class="modal fade" id="jobDetailModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Job details</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <!-- NEW USER SIGNUPS TABLE -->
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h4 class="mb-0"><i class="bi bi-person-check-fill text-info me-2"></i>New User Signups</h4>
+                <div class="d-flex gap-2">
+                    <input type="text" id="userSearchInput" class="search-admin form-control-sm" placeholder="Search user..." onkeyup="filterUsers()">
+                    <button class="btn btn-sm btn-outline-info rounded-pill" onclick="loadUsers()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
                 </div>
-                <div class="modal-body" id="jobDetailModalBody"></div>
-                <div class="modal-footer" id="jobDetailModalFooter"></div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role / Classification</th>
+                            <th>Phone</th>
+                            <th>Location</th>
+                            <th>Signed Up Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="6" class="text-center text-secondary py-4">Loading user signups...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
 
-    <!-- =======================================================
-    REPORT DETAIL MODAL
-    ======================================================== -->
-    <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Report details</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <!-- ALL POSTED JOBS MANAGEMENT LIST -->
+        <div class="admin-card">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h4 class="mb-0"><i class="bi bi-journal-text text-primary me-2"></i>All Posted Jobs Management</h4>
+                <div class="d-flex gap-2">
+                    <input type="text" id="jobSearchInput" class="search-admin form-control-sm" placeholder="Search title or company..." onkeyup="filterJobs()">
+                    <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="loadJobs()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
                 </div>
-                <div class="modal-body" id="reportModalBody"></div>
-                <div class="modal-footer" id="reportModalFooter"></div>
+            </div>
+            <div id="jobsContainer">
+                <div class="text-center text-secondary py-4">Loading job postings...</div>
             </div>
         </div>
+
     </div>
 
-    <div class="toast-stack" id="toastStack"></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        (function () {
-            'use strict';
+        const API_BASE = 'https://project-connect-001.onrender.com';
+        const DEFAULT_AVATAR = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg';
 
-            /* =========================================================
-               Storage helpers
-            ========================================================= */
-            const KEYS = {
-                session: 'ylmAdmin.session',
-                profile: 'ylmAdmin.profile',
-                platform: 'ylmAdmin.platform',
-                notif: 'ylmAdmin.notif',
-                users: 'ylmAdmin.users',
-                jobs: 'ylmAdmin.jobs',
-                recruiters: 'ylmAdmin.recruiters',
-                reports: 'ylmAdmin.reports',
-                jobOverrides: 'ylmAdmin.jobOverrides',
-                userOverrides: 'ylmAdmin.userOverrides'
-            };
-            function loadJSON(key, fallback) {
-                try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
-                catch (e) { return fallback; }
-            }
-            function saveJSON(key, value) {
-                try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* ignore */ }
-            }
-            function escapeHtml(str) {
-                const div = document.createElement('div');
-                div.textContent = (str === undefined || str === null) ? '' : String(str);
-                return div.innerHTML;
-            }
-            function fmtDate(iso) {
-                const d = new Date(iso);
-                return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-            }
-            function timeAgo(iso) {
-                const diffMs = Date.now() - new Date(iso).getTime();
-                const mins = Math.floor(diffMs / 60000);
-                if (mins < 1) return 'Just now';
-                if (mins < 60) return mins + 'm ago';
-                const hrs = Math.floor(mins / 60);
-                if (hrs < 24) return hrs + 'h ago';
-                const days = Math.floor(hrs / 24);
-                return days + 'd ago';
-            }
-            function toast(msg, icon) {
-                const stack = document.getElementById('toastStack');
-                const el = document.createElement('div');
-                el.className = 'mini-toast';
-                el.innerHTML = '<i class="bi ' + (icon || 'bi-check-circle-fill') + '" style="color:#3ddc84;"></i><span>' + escapeHtml(msg) + '</span>';
-                stack.appendChild(el);
-                setTimeout(function () {
-                    el.style.opacity = '0';
-                    el.style.transform = 'translateY(6px)';
-                    el.style.transition = '.25s';
-                    setTimeout(function () { el.remove(); }, 260);
-                }, 2400);
-            }
+        let cachedUsers = [];
+        let cachedJobs = [];
 
-            /* =========================================================
-               Backend record normalization + local moderation overrides
-               ---------------------------------------------------------
-               The Postgres backend only stores the fields the public
-               posting form collects (title, company, location, salary,
-               description, attachment, createdAt). It has no concept of
-               "status", "category" or "applicants" - those are admin-side
-               moderation concerns. So every record fetched from the API
-               is normalized here to have sane defaults, and any
-               moderation action the admin takes (approve, suspend, flag,
-               remove...) is stored locally by record id and re-applied
-               on top of the freshest API data every time we refetch.
-            ========================================================= */
-            function saveOverride(key, id, patch) {
-                const overrides = loadJSON(key, {});
-                overrides[id] = Object.assign({}, overrides[id], patch);
-                saveJSON(key, overrides);
-            }
-            function applyOverrides(list, overrides) {
-                return list.map(function (item) {
-                    return overrides[item.id] ? Object.assign({}, item, overrides[item.id]) : item;
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        // FETCH & RENDER USERS
+        function loadUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            fetch(`${API_BASE}/admin/users`)
+                .then(res => {
+                    if (!res.ok) return fetch(`${API_BASE}/users`).then(r => r.json());
+                    return res.json();
+                })
+                .then(users => {
+                    cachedUsers = Array.isArray(users) ? users : [];
+                    renderUsersTable(cachedUsers);
+                })
+                .catch(err => {
+                    console.error('Error fetching users:', err);
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">Failed to load user signup data.</td></tr>`;
                 });
-            }
-            function normalizeJob(j) {
-                return {
-                    id: j.id,
-                    title: j.title || 'Untitled listing',
-                    company: j.company || 'Unknown company',
-                    category: j.category || 'Other',
-                    location: j.location || 'Not specified',
-                    salary: j.salary || 'N/A',
-                    // The backend has no moderation status yet - treat every
-                    // synced listing as live/Active unless an admin action
-                    // (stored in the jobOverrides key) says otherwise.
-                    status: j.status || 'Active',
-                    applicants: typeof j.applicants === 'number' ? j.applicants : 0,
-                    postedAt: j.postedAt || j.createdAt || new Date().toISOString(),
-                    hidden: false
-                };
-            }
-            function normalizeUser(u) {
-                return {
-                    id: u.id,
-                    name: u.name || u.fullName || 'Unnamed user',
-                    email: u.email || 'unknown@mail.com',
-                    avatar: u.avatar || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg',
-                    role: u.role || 'Job seeker',
-                    location: u.location || 'Not specified',
-                    status: u.status || 'Active',
-                    joinedAt: u.joinedAt || u.createdAt || new Date().toISOString(),
-                    hidden: false
-                };
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('usersTableBody');
+            if (users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-secondary py-4">No registered users found.</td></tr>`;
+                document.getElementById('totalUsersCount').textContent = '0';
+                document.getElementById('totalPostersCount').textContent = '0';
+                return;
             }
 
-            const state = {
-                profile: Object.assign(
-                    {
-                        name: 'Ada Nwachukwu',
-                        email: 'admin@ylm.com',
-                        avatar: ''
-                    },
-                    loadJSON(KEYS.profile, {})
-                ),
+            document.getElementById('totalUsersCount').textContent = users.length;
+            
+            const posterCount = users.filter(u => u.role && u.role.toLowerCase().includes('poster')).length;
+            document.getElementById('totalPostersCount').textContent = posterCount;
 
-                platform: Object.assign({
-                    notifSignups: true,
-                    notifJobs: true,
-                    notifReports: true,
-                    notifVerify: true,
-                    requireVerify: true,
-                    autoFlag: true,
-                    publicProfiles: true
-                }, loadJSON(KEYS.platform, {})),
+            tbody.innerHTML = users.map(user => {
+                const avatar = user.avatar || DEFAULT_AVATAR;
+                const role = user.role || 'Jobseeker';
+                const badgeClass = role.toLowerCase().includes('poster') ? 'bg-warning text-dark' : 'bg-primary';
+                const dateStr = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recent';
+                const userId = user.id || user._id || user.email;
 
-                users: [],
+                return `
+                    <tr id="admin-user-${escapeHtml(userId)}">
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="${escapeHtml(avatar)}" class="profile-img-sm" alt="User">
+                                <div>
+                                    <div class="fw-semibold">${escapeHtml(user.name || 'Anonymous User')}</div>
+                                    <small class="text-secondary">${escapeHtml(user.email || 'No email provided')}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-role ${badgeClass}">${escapeHtml(role)}</span></td>
+                        <td>${escapeHtml(user.phone || 'N/A')}</td>
+                        <td>${escapeHtml(user.location || 'N/A')}</td>
+                        <td><small class="text-secondary">${dateStr}</small></td>
+                        <td class="text-end">
+                            <button class="btn-delete-user" onclick="deleteUser('${escapeHtml(userId)}')">
+                                <i class="bi bi-person-x-fill me-1"></i> Delete User
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
 
-                jobs: [],
+        function filterUsers() {
+            const term = document.getElementById('userSearchInput').value.toLowerCase();
+            const filtered = cachedUsers.filter(u => 
+                (u.name && u.name.toLowerCase().includes(term)) ||
+                (u.email && u.email.toLowerCase().includes(term)) ||
+                (u.role && u.role.toLowerCase().includes(term))
+            );
+            renderUsersTable(filtered);
+        }
 
-                recruiters: loadJSON(KEYS.recruiters, null) || seedRecruiters(),
-
-                reports: loadJSON(KEYS.reports, null) || seedReports()
-            };
-
-            function persist(key) {
-                const map = { users: KEYS.users, jobs: KEYS.jobs, recruiters: KEYS.recruiters, reports: KEYS.reports, profile: KEYS.profile, platform: KEYS.platform };
-                saveJSON(map[key], state[key]);
+        // DELETE USER DIRECTLY FROM SERVER
+        function deleteUser(userId) {
+            if (!confirm('Are you sure you want to delete this user account? This action cannot be undone.')) {
+                return;
             }
 
-            /* =========================================================
-               Seed data (recruiters + reports only - users/jobs come
-               from the live backend, see boot())
-            ========================================================= */
-            const NIGERIAN_LOCATIONS = ['Uyo, Akwa Ibom', 'Eket, Akwa Ibom', 'Lagos', 'Port Harcourt, Rivers', 'Abuja', 'Calabar, Cross River', 'Ikot Ekpene'];
-            function daysAgoISO(n) { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString(); }
-            function pick(arr, i) { return arr[i % arr.length]; }
-            function seedRecruiters() {
-                const companies = ['Coastal Retail Group', 'Fintrust Ltd', 'Nimbus Systems', 'Delta Power Co',
-                    'Wellness Diagnostics', 'BrightPen Media', 'Ledger & Co', 'HelpDesk NG'];
-                const contacts = ['Uduak James', 'Michael Osagie', 'Chiamaka Eze', 'Peter Ikpe',
-                    'Sandra Nkemdirim', 'Bassey Williams', 'Halima Suleiman', 'Godwin Etim'];
-                const statuses = ['Pending', 'Pending', 'Pending', 'Verified', 'Verified', 'Verified', 'Rejected', 'Pending'];
-                return companies.map(function (c, i) {
-                    return {
-                        id: 'r' + (i + 1),
-                        company: c,
-                        contact: contacts[i],
-                        email: contacts[i].toLowerCase().replace(/\s+/g, '.') + '@' + c.toLowerCase().replace(/[^a-z]/g, '') + '.com',
-                        location: pick(NIGERIAN_LOCATIONS, i),
-                        status: statuses[i],
-                        requestedAt: daysAgoISO(1 + i * 2),
-                        document: 'CAC-Certificate-' + c.replace(/\s+/g, '') + '.pdf'
-                    };
-                });
-            }
-            function seedReports() {
-                const types = ['Job post', 'User', 'Job post', 'Message', 'Job post', 'User'];
-                const reasons = ['Suspected scam / advance fee request', 'Fake company profile', 'Duplicate listing',
-                    'Harassment in chat', 'Discriminatory requirements', 'Impersonating another user'];
-                const reporters = ['Ekaette Umoh', 'Chidi Okafor', 'Blessing Etuk', 'Tunde Bakare', 'Grace Effiong', 'Ifeoma Nwosu'];
-                const targets = ['Frontend Developer @ AK Tech Solutions', 'Ibom Engineering Ltd', 'Civil Engineer @ Ibom Engineering Ltd',
-                    'Chat with Royal Schools', 'Registered Nurse @ Divine Hospital', 'Samuel Akpan'];
-                const statuses = ['Open', 'Open', 'Open', 'Resolved', 'Dismissed', 'Open'];
-                return types.map(function (t, i) {
-                    return {
-                        id: 'rp' + (i + 1),
-                        type: t,
-                        target: targets[i],
-                        reason: reasons[i],
-                        reporter: reporters[i],
-                        status: statuses[i],
-                        createdAt: daysAgoISO(i)
-                    };
-                });
-            }
-
-            if (!loadJSON(KEYS.recruiters, null)) saveJSON(KEYS.recruiters, state.recruiters);
-            if (!loadJSON(KEYS.reports, null)) saveJSON(KEYS.reports, state.reports);
-
-            /* =========================================================
-               LOGIN
-            ========================================================= */
-            const DEMO_EMAIL = 'admin@ylm.com';
-            const DEMO_PASSWORD = 'admin123';
-            const loginScreen = document.getElementById('loginScreen');
-            const appShell = document.getElementById('appShell');
-            const loginForm = document.getElementById('loginForm');
-            const loginError = document.getElementById('loginError');
-
-            function showApp() {
-                loginScreen.style.display = 'none';
-                appShell.style.display = 'block';
-                updateProfileUI();
-                boot();
-            }
-            function showLogin() {
-                appShell.style.display = 'none';
-                loginScreen.style.display = 'flex';
-            }
-
-            loginForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-                const email = document.getElementById('loginEmail').value.trim();
-                const pass = document.getElementById('loginPassword').value;
-                if (email.toLowerCase() === DEMO_EMAIL && pass === DEMO_PASSWORD) {
-                    loginError.classList.add('d-none');
-                    const remember = document.getElementById('rememberMe').checked;
-                    (remember ? localStorage : sessionStorage).setItem(KEYS.session, '1');
-                    showApp();
-                } else {
-                    loginError.classList.remove('d-none');
+            fetch(`${API_BASE}/admin/users/${encodeURIComponent(userId)}`, {
+                method: 'DELETE'
+            })
+            .then(res => {
+                if (!res.ok) {
+                    // Fallback to secondary endpoint if primary /admin/users route is not configured
+                    return fetch(`${API_BASE}/users/${encodeURIComponent(userId)}`, { method: 'DELETE' });
                 }
+                return res;
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('User deletion failed');
+                cachedUsers = cachedUsers.filter(u => String(u.id || u._id || u.email) !== String(userId));
+                renderUsersTable(cachedUsers);
+            })
+            .catch(err => {
+                console.error('Error deleting user:', err);
+                alert('Could not remove user from server. Please try again.');
             });
+        }
 
-            document.getElementById('logoutBtn').addEventListener('click', function (e) {
-                e.preventDefault();
-                localStorage.removeItem(KEYS.session);
-                sessionStorage.removeItem(KEYS.session);
-                document.getElementById('loginPassword').value = '';
-                showLogin();
+        // FETCH & RENDER JOBS
+        function loadJobs() {
+            const container = document.getElementById('jobsContainer');
+            fetch(`${API_BASE}/jobs`)
+                .then(res => res.json())
+                .then(jobs => {
+                    cachedJobs = Array.isArray(jobs) ? jobs : [];
+                    renderJobsList(cachedJobs);
+                })
+                .catch(err => {
+                    console.error('Error fetching jobs:', err);
+                    container.innerHTML = `<div class="text-center text-danger py-4">Failed to fetch job postings from backend.</div>`;
+                });
+        }
+
+        function renderJobsList(jobs) {
+            const container = document.getElementById('jobsContainer');
+            if (jobs.length === 0) {
+                container.innerHTML = `<div class="text-center text-secondary py-4">No posted jobs found.</div>`;
+                document.getElementById('totalJobsCount').textContent = '0';
+                return;
+            }
+
+            document.getElementById('totalJobsCount').textContent = jobs.length;
+            container.innerHTML = jobs.map(job => {
+                return `
+                    <div class="job-item" id="admin-job-${job.id}">
+                        <div>
+                            <h5 class="mb-1">${escapeHtml(job.title)}</h5>
+                            <p class="mb-0 text-secondary small">
+                                <strong>Company:</strong> ${escapeHtml(job.company)} | 
+                                <strong>Location:</strong> ${escapeHtml(job.location || 'N/A')} | 
+                                <strong>ID:</strong> ${escapeHtml(job.id)}
+                            </p>
+                        </div>
+                        <button class="btn-delete-job" onclick="deleteJob('${job.id}')">
+                            <i class="bi bi-trash-fill me-1"></i> Delete Job
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterJobs() {
+            const term = document.getElementById('jobSearchInput').value.toLowerCase();
+            const filtered = cachedJobs.filter(j => 
+                (j.title && j.title.toLowerCase().includes(term)) ||
+                (j.company && j.company.toLowerCase().includes(term))
+            );
+            renderJobsList(filtered);
+        }
+
+        // DELETE JOB DIRECTLY FROM SERVER
+        function deleteJob(jobId) {
+            if (!confirm('Are you sure you want to permanently delete this job? It will be automatically removed from all user feeds.')) {
+                return;
+            }
+
+            fetch(`${API_BASE}/jobs/${encodeURIComponent(jobId)}`, {
+                method: 'DELETE'
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Deletion failed');
+                cachedJobs = cachedJobs.filter(j => String(j.id) !== String(jobId));
+                renderJobsList(cachedJobs);
+            })
+            .catch(err => {
+                console.error('Error deleting job:', err);
+                alert('Could not remove job from server. Please try again.');
             });
+        }
 
-            /* =========================================================
-               Sidebar navigation
-            ========================================================= */
-            const views = document.querySelectorAll('.app-view');
-            const sideLinks = document.querySelectorAll('.side-link, .side-link-inline');
-            function activateView(name) {
-                views.forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + name); });
-                document.querySelectorAll('.side-link').forEach(function (l) {
-                    l.classList.toggle('active', l.dataset.view === name);
-                });
-                closeSidebarMobile();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                if (name === 'analytics') renderAnalyticsCharts();
-            }
-            sideLinks.forEach(function (link) {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    activateView(link.dataset.view);
-                });
-            });
-
-            const sidebar = document.getElementById('sidebar');
-            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-            document.getElementById('sidebarToggle').addEventListener('click', function () {
-                sidebar.classList.add('open');
-                sidebarBackdrop.classList.add('show');
-            });
-            sidebarBackdrop.addEventListener('click', closeSidebarMobile);
-            function closeSidebarMobile() {
-                sidebar.classList.remove('open');
-                sidebarBackdrop.classList.remove('show');
-            }
-
-            /* =========================================================
-               Profile UI
-            ========================================================= */
-            function updateProfileUI() {
-                const avatar = state.profile.avatar || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg';
-                document.getElementById('topAdminName').textContent = state.profile.name || 'Admin';
-                document.getElementById('sideAdminName').textContent = state.profile.name || 'Admin';
-                document.getElementById('homeGreeting').textContent = 'Welcome back, ' + (state.profile.name || 'Admin').split(' ')[0] + ' 👋';
-                document.getElementById('settingsAvatarPreview').src = avatar;
-                document.getElementById('settingsAdminName').value = state.profile.name || '';
-                document.getElementById('settingsAdminEmail').value = state.profile.email || '';
-                document.querySelectorAll('.topbar img.profile-img, .sidebar img.profile-img').forEach(function (img) { img.src = avatar; });
-            }
-            document.getElementById('settingsAvatarInput').addEventListener('change', function (e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function () {
-                    state.profile.avatar = reader.result;
-                    document.getElementById('settingsAvatarPreview').src = reader.result;
-                };
-                reader.readAsDataURL(file);
-            });
-            document.getElementById('adminProfileForm').addEventListener('submit', function (e) {
-                e.preventDefault();
-                state.profile.name = document.getElementById('settingsAdminName').value.trim();
-                state.profile.email = document.getElementById('settingsAdminEmail').value.trim();
-                persist('profile');
-                updateProfileUI();
-                const msg = document.getElementById('profileSavedMsg');
-                msg.classList.remove('d-none');
-                setTimeout(function () { msg.classList.add('d-none'); }, 2200);
-                toast('Profile updated');
-            });
-
-            /* =========================================================
-               Settings (platform toggles)
-            ========================================================= */
-            function populateSettingsToggles() {
-                document.getElementById('notifSignups').checked = state.platform.notifSignups;
-                document.getElementById('notifJobs').checked = state.platform.notifJobs;
-                document.getElementById('notifReports').checked = state.platform.notifReports;
-                document.getElementById('notifVerify').checked = state.platform.notifVerify;
-                document.getElementById('platformRequireVerify').checked = state.platform.requireVerify;
-                document.getElementById('platformAutoFlag').checked = state.platform.autoFlag;
-                document.getElementById('platformPublicProfiles').checked = state.platform.publicProfiles;
-            }
-            document.getElementById('savePlatformSettingsBtn').addEventListener('click', function () {
-                state.platform.notifSignups = document.getElementById('notifSignups').checked;
-                state.platform.notifJobs = document.getElementById('notifJobs').checked;
-                state.platform.notifReports = document.getElementById('notifReports').checked;
-                state.platform.notifVerify = document.getElementById('notifVerify').checked;
-                state.platform.requireVerify = document.getElementById('platformRequireVerify').checked;
-                state.platform.autoFlag = document.getElementById('platformAutoFlag').checked;
-                state.platform.publicProfiles = document.getElementById('platformPublicProfiles').checked;
-                persist('platform');
-                const msg = document.getElementById('settingsSavedMsg');
-                msg.classList.remove('d-none');
-                setTimeout(function () { msg.classList.add('d-none'); }, 2200);
-                toast('Settings saved');
-            });
-
-            /* =========================================================
-               STAT CARDS (home + analytics)
-            ========================================================= */
-            function computeStats() {
-                const activeUsers = state.users.filter(function (u) { return u.status === 'Active'; }).length;
-                const activeJobs = state.jobs.filter(function (j) { return j.status === 'Active'; }).length;
-                const pendingRecruiters = state.recruiters.filter(function (r) { return r.status === 'Pending'; }).length;
-                const openReports = state.reports.filter(function (r) { return r.status === 'Open'; }).length;
-                return { activeUsers: activeUsers, activeJobs: activeJobs, pendingRecruiters: pendingRecruiters, openReports: openReports };
-            }
-            function statCardHTML(icon, iconBg, value, label, delta, deltaUp) {
-                return '<div class="col-6 col-lg-3"><div class="glass-card stat-card h-100">' +
-                    '<div class="stat-icon" style="background:' + iconBg + ';">' + '<i class="bi ' + icon + '"></i></div>' +
-                    '<div class="stat-value">' + value + '</div>' +
-                    '<div class="stat-label">' + label + '</div>' +
-                    (delta ? ('<div class="stat-delta ' + (deltaUp ? 'up' : 'down') + '"><i class="bi ' + (deltaUp ? 'bi-arrow-up-short' : 'bi-arrow-down-short') + '"></i>' + delta + '</div>') : '') +
-                    '</div></div>';
-            }
-            function renderStatCards() {
-                const s = computeStats();
-                document.getElementById('statCardsRow').innerHTML =
-                    statCardHTML('bi-people-fill', 'rgba(13,110,253,.25)', state.users.length, 'Total users', '12% this month', true) +
-                    statCardHTML('bi-briefcase-fill', 'rgba(61,220,132,.2)', s.activeJobs, 'Active jobs', '8% this month', true) +
-                    statCardHTML('bi-patch-check-fill', 'rgba(255,193,7,.2)', s.pendingRecruiters, 'Pending verifications', s.pendingRecruiters + ' awaiting review', s.pendingRecruiters === 0) +
-                    statCardHTML('bi-flag-fill', 'rgba(255,107,107,.2)', s.openReports, 'Open reports', s.openReports + ' need action', s.openReports === 0);
-            }
-            function renderAnalyticsStatCards() {
-                const totalApplicants = state.jobs.reduce(function (sum, j) { return sum + j.applicants; }, 0);
-                document.getElementById('analyticsStatRow').innerHTML =
-                    statCardHTML('bi-people-fill', 'rgba(13,110,253,.25)', state.users.length, 'Total users', '12% vs. last period', true) +
-                    statCardHTML('bi-person-check-fill', 'rgba(61,220,132,.2)', state.recruiters.filter(function (r) { return r.status === 'Verified'; }).length, 'Verified recruiters', '4 new this period', true) +
-                    statCardHTML('bi-send-fill', 'rgba(13,110,253,.25)', totalApplicants, 'Applications submitted', '18% vs. last period', true) +
-                    statCardHTML('bi-graph-up', 'rgba(61,220,132,.2)', '68%', 'Job fill rate', '3% vs. last period', true);
-            }
-
-            /* =========================================================
-               Activity feed + attention list (home)
-            ========================================================= */
-            function renderActivityFeed() {
-                const items = [
-                    { icon: 'bi-person-plus-fill', bg: 'rgba(13,110,253,.25)', text: '<strong>Grace Effiong</strong> created a job seeker account', time: 18 },
-                    { icon: 'bi-briefcase-fill', bg: 'rgba(61,220,132,.2)', text: '<strong>AK Tech Solutions</strong> posted "Frontend Developer"', time: 55 },
-                    { icon: 'bi-flag-fill', bg: 'rgba(255,107,107,.2)', text: 'Job post <strong>"Civil Engineer Wanted"</strong> was reported', time: 130 },
-                    { icon: 'bi-patch-check-fill', bg: 'rgba(255,193,7,.2)', text: '<strong>Fintrust Ltd</strong> requested recruiter verification', time: 260 },
-                    { icon: 'bi-shield-check', bg: 'rgba(13,110,253,.25)', text: 'You verified <strong>Nimbus Systems</strong>', time: 400 },
-                    { icon: 'bi-x-octagon-fill', bg: 'rgba(255,107,107,.2)', text: '<strong>Chidi Okafor</strong>\'s account was suspended', time: 610 }
-                ];
-                document.getElementById('activityFeed').innerHTML = items.map(function (it) {
-                    return '<div class="activity-item"><div class="activity-dot" style="background:' + it.bg + ';"><i class="bi ' + it.icon + '"></i></div>' +
-                        '<div><div class="activity-text">' + it.text + '</div><div class="activity-time">' + it.time + ' min ago</div></div></div>';
-                }).join('');
-            }
-            function renderAttentionList() {
-                const pendingRecruiters = state.recruiters.filter(function (r) { return r.status === 'Pending'; }).slice(0, 3);
-                const openReports = state.reports.filter(function (r) { return r.status === 'Open'; }).slice(0, 3);
-                const flaggedJobs = state.jobs.filter(function (j) { return j.status === 'Flagged'; }).slice(0, 2);
-                let html = '';
-                pendingRecruiters.forEach(function (r) {
-                    html += attentionRow('bi-patch-check-fill', 'rgba(255,193,7,.2)', r.company + ' wants recruiter access', 'Review', function () { activateView('recruiters'); });
-                });
-                flaggedJobs.forEach(function (j) {
-                    html += attentionRow('bi-briefcase-fill', 'rgba(255,107,107,.2)', '"' + j.title + '" was flagged', 'Review', function () { activateView('jobs'); });
-                });
-                openReports.forEach(function (r) {
-                    html += attentionRow('bi-flag-fill', 'rgba(255,107,107,.2)', r.reason, 'Review', function () { activateView('reports'); });
-                });
-                const box = document.getElementById('attentionList');
-                if (!html) {
-                    box.innerHTML = '<div class="empty-state py-4"><i class="bi bi-check-circle" style="font-size:1.8rem;"></i><p class="mt-2 mb-0 small">You\'re all caught up.</p></div>';
-                    return;
-                }
-                box.innerHTML = html;
-            }
-            function attentionRow(icon, bg, text, actionLabel, onClick) {
-                const idAttr = 'att-' + Math.random().toString(36).slice(2, 9);
-                setTimeout(function () {
-                    const btn = document.getElementById(idAttr);
-                    if (btn) btn.addEventListener('click', onClick);
-                }, 0);
-                return '<div class="activity-item"><div class="activity-dot" style="background:' + bg + ';"><i class="bi ' + icon + '"></i></div>' +
-                    '<div class="flex-grow-1"><div class="activity-text">' + escapeHtml(text) + '</div></div>' +
-                    '<button class="btn-chip view" id="' + idAttr + '">' + actionLabel + '</button></div>';
-            }
-
-            /* =========================================================
-               Charts
-            ========================================================= */
-            Chart.defaults.color = 'rgba(255,255,255,.6)';
-            Chart.defaults.font.family = "'Poppins', sans-serif";
-            const gridColor = 'rgba(255,255,255,.06)';
-            let chartRefs = {};
-            function destroyChart(key) { if (chartRefs[key]) { chartRefs[key].destroy(); delete chartRefs[key]; } }
-
-            function renderHomeCharts() {
-                destroyChart('activity');
-                const ctx = document.getElementById('activityChart');
-                const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                chartRefs.activity = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            { label: 'New users', data: [8, 14, 10, 18, 22, 16, 20], borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,.15)', tension: .4, fill: true, pointRadius: 3 },
-                            { label: 'New jobs', data: [4, 6, 5, 9, 12, 8, 11], borderColor: '#3ddc84', backgroundColor: 'rgba(61,220,132,.12)', tension: .4, fill: true, pointRadius: 3 }
-                        ]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { labels: { boxWidth: 10, usePointStyle: true } } },
-                        scales: { x: { grid: { display: false } }, y: { grid: { color: gridColor }, beginAtZero: true } }
-                    }
-                });
-
-                destroyChart('category');
-                const catCounts = {};
-                state.jobs.forEach(function (j) { catCounts[j.category] = (catCounts[j.category] || 0) + 1; });
-                chartRefs.category = new Chart(document.getElementById('categoryChart'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: Object.keys(catCounts),
-                        datasets: [{ data: Object.values(catCounts), backgroundColor: ['#0d6efd', '#3ddc84', '#ffc107', '#6ea8ff', '#ff6b6b', '#8a7dfa'], borderWidth: 0 }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, padding: 12, font: { size: 11 } } } } }
-                });
-            }
-
-            function renderAnalyticsCharts() {
-                destroyChart('userGrowth');
-                const days = 14;
-                const growthLabels = [];
-                const growthData = [];
-                let running = state.users.length - days * 2;
-                for (let i = days; i >= 0; i--) {
-                    const d = new Date(); d.setDate(d.getDate() - i);
-                    growthLabels.push(d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }));
-                    running += 2 + (i % 3);
-                    growthData.push(running);
-                }
-                chartRefs.userGrowth = new Chart(document.getElementById('userGrowthChart'), {
-                    type: 'line',
-                    data: { labels: growthLabels, datasets: [{ label: 'Total users', data: growthData, borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,.15)', fill: true, tension: .35, pointRadius: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } }, y: { grid: { color: gridColor } } } }
-                });
-
-                destroyChart('applications');
-                const appLabels = growthLabels.slice(-7);
-                chartRefs.applications = new Chart(document.getElementById('applicationsChart'), {
-                    type: 'bar',
-                    data: { labels: appLabels, datasets: [{ label: 'Applications', data: [22, 34, 28, 41, 37, 19, 25], backgroundColor: '#0d6efd', borderRadius: 6, maxBarThickness: 34 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: gridColor } } } }
-                });
-
-                destroyChart('location');
-                const locCounts = {};
-                state.jobs.forEach(function (j) { locCounts[j.location] = (locCounts[j.location] || 0) + 1; });
-                const locEntries = Object.entries(locCounts).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 6);
-                chartRefs.location = new Chart(document.getElementById('locationChart'), {
-                    type: 'bar',
-                    data: { labels: locEntries.map(function (e) { return e[0]; }), datasets: [{ data: locEntries.map(function (e) { return e[1]; }), backgroundColor: '#3ddc84', borderRadius: 6 }] },
-                    options: {
-                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { x: { grid: { color: gridColor } }, y: { grid: { display: false } } }
-                    }
-                });
-
-                destroyChart('roles');
-                const seekerCount = state.users.filter(function (u) { return u.role === 'Job seeker'; }).length;
-                const recruiterCount = state.users.length - seekerCount;
-                chartRefs.roles = new Chart(document.getElementById('rolesChart'), {
-                    type: 'doughnut',
-                    data: { labels: ['Job seekers', 'Recruiters'], datasets: [{ data: [seekerCount, recruiterCount], backgroundColor: ['#0d6efd', '#ffc107'], borderWidth: 0 }] },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } } } }
-                });
-                renderAnalyticsStatCards();
-            }
-
-            /* =========================================================
-               USERS TABLE
-            ========================================================= */
-            function statusPillClass(status) {
-                const map = { Active: 'pill-active', Pending: 'pill-pending', Suspended: 'pill-suspended', Flagged: 'pill-flagged', Verified: 'pill-verified', Rejected: 'pill-rejected', Open: 'pill-pending', Resolved: 'pill-resolved', Dismissed: 'pill-resolved' };
-                return map[status] || 'pill-resolved';
-            }
-            function renderUsersTable() {
-                const q = document.getElementById('usersSearch').value.trim().toLowerCase();
-                const role = document.getElementById('usersRoleFilter').value;
-                const status = document.getElementById('usersStatusFilter').value;
-                const rows = state.users.filter(function (u) {
-                    const matchQ = !q || (u.name + ' ' + u.email).toLowerCase().indexOf(q) !== -1;
-                    const matchRole = !role || u.role === role;
-                    const matchStatus = !status || u.status === status;
-                    return matchQ && matchRole && matchStatus;
-                });
-                const tbody = document.getElementById('usersTableBody');
-                tbody.innerHTML = rows.map(function (u) {
-                    return '<tr data-id="' + u.id + '">' +
-                        '<td><div class="cell-user"><img src="' + u.avatar + '" class="row-avatar" alt="">' +
-                        '<div><div class="name">' + escapeHtml(u.name) + '</div><div class="sub">' + escapeHtml(u.email) + '</div></div></div></td>' +
-                        '<td>' + escapeHtml(u.role) + '</td>' +
-                        '<td>' + escapeHtml(u.location) + '</td>' +
-                        '<td>' + fmtDate(u.joinedAt) + '</td>' +
-                        '<td><span class="pill ' + statusPillClass(u.status) + '">' + u.status + '</span></td>' +
-                        '<td class="text-end">' +
-                        '<button class="icon-btn me-1 act-view" title="View"><i class="bi bi-eye"></i></button>' +
-                        '<button class="icon-btn me-1 success act-toggle" title="' + (u.status === 'Suspended' ? 'Activate' : 'Suspend') + '"><i class="bi ' + (u.status === 'Suspended' ? 'bi-check-lg' : 'bi-slash-circle') + '"></i></button>' +
-                        '<button class="icon-btn danger act-delete" title="Delete"><i class="bi bi-trash"></i></button>' +
-                        '</td></tr>';
-                }).join('');
-                document.getElementById('usersEmpty').classList.toggle('d-none', rows.length > 0);
-                document.getElementById('usersCount').textContent = rows.length + (rows.length === 1 ? ' user' : ' users');
-
-                tbody.querySelectorAll('tr').forEach(function (tr) {
-                    const id = tr.dataset.id;
-                    const user = state.users.find(function (u) { return u.id === id; });
-                    tr.querySelector('.act-view').addEventListener('click', function () { openUserModal(user); });
-                    tr.querySelector('.act-toggle').addEventListener('click', function () {
-                        user.status = user.status === 'Suspended' ? 'Active' : 'Suspended';
-                        saveOverride(KEYS.userOverrides, user.id, { status: user.status });
-                        persist('users'); renderUsersTable(); renderStatCards();
-                        toast(user.status === 'Suspended' ? 'User suspended' : 'User activated', user.status === 'Suspended' ? 'bi-slash-circle-fill' : 'bi-check-circle-fill');
-                    });
-                    tr.querySelector('.act-delete').addEventListener('click', function () {
-                        if (!confirm('Remove ' + user.name + ' from the platform?')) return;
-                        saveOverride(KEYS.userOverrides, user.id, { hidden: true });
-                        state.users = state.users.filter(function (u) { return u.id !== id; });
-                        persist('users'); renderUsersTable(); renderStatCards();
-                        toast('User removed', 'bi-trash-fill');
-                    });
-                });
-            }
-            function openUserModal(user) {
-                document.getElementById('userModalBody').innerHTML =
-                    '<div class="d-flex align-items-center gap-3 mb-3">' +
-                    '<img src="' + user.avatar + '" class="profile-img" style="width:56px;height:56px;" alt="">' +
-                    '<div><div class="fw-semibold">' + escapeHtml(user.name) + '</div><div class="text-dim small">' + escapeHtml(user.email) + '</div></div></div>' +
-                    '<div class="row g-2 small">' +
-                    '<div class="col-6"><div class="text-dim">Role</div><div>' + escapeHtml(user.role) + '</div></div>' +
-                    '<div class="col-6"><div class="text-dim">Status</div><span class="pill ' + statusPillClass(user.status) + '">' + user.status + '</span></div>' +
-                    '<div class="col-6"><div class="text-dim">Location</div><div>' + escapeHtml(user.location) + '</div></div>' +
-                    '<div class="col-6"><div class="text-dim">Joined</div><div>' + fmtDate(user.joinedAt) + '</div></div>' +
-                    '</div>';
-                document.getElementById('userModalFooter').innerHTML = '<button class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>';
-                new bootstrap.Modal(document.getElementById('userModal')).show();
-            }
-            ['usersSearch', 'usersRoleFilter', 'usersStatusFilter'].forEach(function (id) {
-                document.getElementById(id).addEventListener('input', renderUsersTable);
-                document.getElementById(id).addEventListener('change', renderUsersTable);
-            });
-
-            /* =========================================================
-               JOBS TABLE
-            ========================================================= */
-            function renderJobsTable() {
-                const q = document.getElementById('jobsSearch').value.trim().toLowerCase();
-                const cat = document.getElementById('jobsCategoryFilter').value;
-                const status = document.getElementById('jobsStatusFilter').value;
-                const rows = state.jobs.filter(function (j) {
-                    const matchQ = !q || (j.title + ' ' + j.company).toLowerCase().indexOf(q) !== -1;
-                    const matchCat = !cat || j.category === cat;
-                    const matchStatus = !status || j.status === status;
-                    return matchQ && matchCat && matchStatus;
-                });
-                const tbody = document.getElementById('jobsTableBody');
-                tbody.innerHTML = rows.map(function (j) {
-                    return '<tr data-id="' + j.id + '">' +
-                        '<td><div class="name">' + escapeHtml(j.title) + '</div><div class="sub">' + escapeHtml(j.salary) + ' • ' + j.applicants + ' applicants</div></td>' +
-                        '<td>' + escapeHtml(j.company) + '</td>' +
-                        '<td>' + escapeHtml(j.category) + '</td>' +
-                        '<td>' + fmtDate(j.postedAt) + '</td>' +
-                        '<td><span class="pill ' + statusPillClass(j.status) + '">' + j.status + '</span></td>' +
-                        '<td class="text-end">' +
-                        '<button class="icon-btn me-1 act-view" title="View"><i class="bi bi-eye"></i></button>' +
-                        (j.status !== 'Active' ? '<button class="icon-btn me-1 success act-approve" title="Approve"><i class="bi bi-check-lg"></i></button>' : '') +
-                        '<button class="icon-btn danger act-remove" title="Remove"><i class="bi bi-trash"></i></button>' +
-                        '</td></tr>';
-                }).join('');
-                document.getElementById('jobsEmpty').classList.toggle('d-none', rows.length > 0);
-                document.getElementById('jobsCount').textContent = rows.length + (rows.length === 1 ? ' job' : ' jobs');
-
-                tbody.querySelectorAll('tr').forEach(function (tr) {
-                    const id = tr.dataset.id;
-                    const job = state.jobs.find(function (j) { return j.id === id; });
-                    tr.querySelector('.act-view').addEventListener('click', function () { openJobModal(job); });
-                    const approveBtn = tr.querySelector('.act-approve');
-                    if (approveBtn) approveBtn.addEventListener('click', function () {
-                        job.status = 'Active';
-                        saveOverride(KEYS.jobOverrides, job.id, { status: job.status });
-                        persist('jobs'); renderJobsTable(); renderStatCards();
-                        toast('Job approved', 'bi-check-circle-fill');
-                    });
-                    tr.querySelector('.act-remove').addEventListener('click', function () {
-                        if (!confirm('Remove "' + job.title + '"?')) return;
-                        saveOverride(KEYS.jobOverrides, job.id, { hidden: true });
-                        state.jobs = state.jobs.filter(function (j) { return j.id !== id; });
-                        persist('jobs'); renderJobsTable(); renderStatCards();
-                        toast('Job removed', 'bi-trash-fill');
-                    });
-                });
-            }
-            function openJobModal(job) {
-                document.getElementById('jobDetailModalBody').innerHTML =
-                    '<div class="fw-semibold mb-1">' + escapeHtml(job.title) + '</div>' +
-                    '<div class="text-dim small mb-3">' + escapeHtml(job.company) + ' • ' + escapeHtml(job.location) + '</div>' +
-                    '<div class="row g-2 small">' +
-                    '<div class="col-6"><div class="text-dim">Category</div><div>' + escapeHtml(job.category) + '</div></div>' +
-                    '<div class="col-6"><div class="text-dim">Status</div><span class="pill ' + statusPillClass(job.status) + '">' + job.status + '</span></div>' +
-                    '<div class="col-6"><div class="text-dim">Salary</div><div>' + escapeHtml(job.salary) + '</div></div>' +
-                    '<div class="col-6"><div class="text-dim">Applicants</div><div>' + job.applicants + '</div></div>' +
-                    '<div class="col-6"><div class="text-dim">Posted</div><div>' + fmtDate(job.postedAt) + '</div></div>' +
-                    '</div>';
-                document.getElementById('jobDetailModalFooter').innerHTML = '<button class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>';
-                new bootstrap.Modal(document.getElementById('jobDetailModal')).show();
-            }
-            ['jobsSearch', 'jobsCategoryFilter', 'jobsStatusFilter'].forEach(function (id) {
-                document.getElementById(id).addEventListener('input', renderJobsTable);
-                document.getElementById(id).addEventListener('change', renderJobsTable);
-            });
-
-            /* =========================================================
-               RECRUITER VERIFICATION
-            ========================================================= */
-            let recruiterTab = 'Pending';
-            document.querySelectorAll('#verifyTabs .nav-link').forEach(function (tab) {
-                tab.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    document.querySelectorAll('#verifyTabs .nav-link').forEach(function (t) { t.classList.remove('active'); });
-                    tab.classList.add('active');
-                    recruiterTab = tab.dataset.status;
-                    renderRecruiters();
-                });
-            });
-            function renderRecruiters() {
-                const rows = state.recruiters.filter(function (r) { return r.status === recruiterTab; });
-                const box = document.getElementById('recruitersList');
-                document.getElementById('recruitersEmpty').classList.toggle('d-none', rows.length > 0);
-                box.innerHTML = rows.map(function (r) {
-                    const actions = r.status === 'Pending'
-                        ? '<button class="btn-chip approve act-approve"><i class="bi bi-check-lg me-1"></i>Approve</button>' +
-                        '<button class="btn-chip reject act-reject ms-2"><i class="bi bi-x-lg me-1"></i>Reject</button>'
-                        : '<span class="pill ' + statusPillClass(r.status) + '">' + r.status + '</span>';
-                    return '<div class="glass-card verify-card" data-id="' + r.id + '">' +
-                        '<div class="d-flex justify-content-between align-items-start flex-wrap gap-3">' +
-                        '<div>' +
-                        '<div class="fw-semibold">' + escapeHtml(r.company) + '</div>' +
-                        '<div class="text-dim small mb-2">' + escapeHtml(r.contact) + ' • ' + escapeHtml(r.email) + ' • ' + escapeHtml(r.location) + '</div>' +
-                        '<div class="doc-chip"><i class="bi bi-file-earmark-pdf-fill text-danger"></i> ' + escapeHtml(r.document) + '</div>' +
-                        '<div class="text-dim small mt-2">Requested ' + timeAgo(r.requestedAt) + '</div>' +
-                        '</div>' +
-                        '<div>' + actions + '</div>' +
-                        '</div></div>';
-                }).join('');
-                box.querySelectorAll('.verify-card').forEach(function (card) {
-                    const id = card.dataset.id;
-                    const rec = state.recruiters.find(function (r) { return r.id === id; });
-                    const approveBtn = card.querySelector('.act-approve');
-                    const rejectBtn = card.querySelector('.act-reject');
-                    if (approveBtn) approveBtn.addEventListener('click', function () {
-                        rec.status = 'Verified'; persist('recruiters'); renderRecruiters(); renderVerifyBadges(); renderStatCards();
-                        toast(rec.company + ' verified', 'bi-patch-check-fill');
-                    });
-                    if (rejectBtn) rejectBtn.addEventListener('click', function () {
-                        rec.status = 'Rejected'; persist('recruiters'); renderRecruiters(); renderVerifyBadges(); renderStatCards();
-                        toast(rec.company + ' rejected', 'bi-x-circle-fill');
-                    });
-                });
-            }
-            function renderVerifyBadges() {
-                const count = state.recruiters.filter(function (r) { return r.status === 'Pending'; }).length;
-                const sideBadge = document.getElementById('sideVerifyBadge');
-                const tabCount = document.getElementById('verifyPendingCount');
-                tabCount.textContent = count;
-                if (count > 0) { sideBadge.textContent = count; sideBadge.classList.remove('d-none'); }
-                else sideBadge.classList.add('d-none');
-            }
-
-            /* =========================================================
-               REPORTS
-            ========================================================= */
-            function renderReportsTable() {
-                const type = document.getElementById('reportsTypeFilter').value;
-                const status = document.getElementById('reportsStatusFilter').value;
-                const rows = state.reports.filter(function (r) {
-                    return (!type || r.type === type) && (!status || r.status === status);
-                });
-                const tbody = document.getElementById('reportsTableBody');
-                tbody.innerHTML = rows.map(function (r) {
-                    return '<tr data-id="' + r.id + '">' +
-                        '<td class="fw-medium">' + escapeHtml(r.target) + '</td>' +
-                        '<td>' + escapeHtml(r.type) + '</td>' +
-                        '<td class="text-dim">' + escapeHtml(r.reason) + '</td>' +
-                        '<td>' + escapeHtml(r.reporter) + '</td>' +
-                        '<td>' + fmtDate(r.createdAt) + '</td>' +
-                        '<td><span class="pill ' + statusPillClass(r.status) + '">' + r.status + '</span></td>' +
-                        '<td class="text-end">' +
-                        '<button class="icon-btn me-1 act-view" title="View"><i class="bi bi-eye"></i></button>' +
-                        (r.status === 'Open' ? '<button class="icon-btn me-1 success act-resolve" title="Resolve"><i class="bi bi-check-lg"></i></button><button class="icon-btn danger act-dismiss" title="Dismiss"><i class="bi bi-x-lg"></i></button>' : '') +
-                        '</td></tr>';
-                }).join('');
-                document.getElementById('reportsEmpty').classList.toggle('d-none', rows.length > 0);
-                document.getElementById('reportsCount').textContent = rows.length + (rows.length === 1 ? ' report' : ' reports');
-
-                tbody.querySelectorAll('tr').forEach(function (tr) {
-                    const id = tr.dataset.id;
-                    const rep = state.reports.find(function (r) { return r.id === id; });
-                    tr.querySelector('.act-view').addEventListener('click', function () { openReportModal(rep); });
-                    const resolveBtn = tr.querySelector('.act-resolve');
-                    const dismissBtn = tr.querySelector('.act-dismiss');
-                    if (resolveBtn) resolveBtn.addEventListener('click', function () {
-                        rep.status = 'Resolved'; persist('reports'); renderReportsTable(); renderReportBadges(); renderStatCards();
-                        toast('Report resolved', 'bi-check-circle-fill');
-                    });
-                    if (dismissBtn) dismissBtn.addEventListener('click', function () {
-                        rep.status = 'Dismissed'; persist('reports'); renderReportsTable(); renderReportBadges(); renderStatCards();
-                        toast('Report dismissed', 'bi-x-circle-fill');
-                    });
-                });
-            }
-            function openReportModal(rep) {
-                document.getElementById('reportModalBody').innerHTML =
-                    '<div class="fw-semibold mb-1">' + escapeHtml(rep.target) + '</div>' +
-                    '<div class="text-dim small mb-3">Reported by ' + escapeHtml(rep.reporter) + ' • ' + fmtDate(rep.createdAt) + '</div>' +
-                    '<div class="row g-2 small mb-2">' +
-                    '<div class="col-6"><div class="text-dim">Type</div><div>' + escapeHtml(rep.type) + '</div></div>' +
-                    '<div class="col-6"><div class="text-dim">Status</div><span class="pill ' + statusPillClass(rep.status) + '">' + rep.status + '</span></div>' +
-                    '</div>' +
-                    '<div class="text-dim small">Reason</div><div>' + escapeHtml(rep.reason) + '</div>';
-                document.getElementById('reportModalFooter').innerHTML = '<button class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>';
-                new bootstrap.Modal(document.getElementById('reportModal')).show();
-            }
-            function renderReportBadges() {
-                const count = state.reports.filter(function (r) { return r.status === 'Open'; }).length;
-                const sideBadge = document.getElementById('sideReportBadge');
-                if (count > 0) { sideBadge.textContent = count; sideBadge.classList.remove('d-none'); }
-                else sideBadge.classList.add('d-none');
-            }
-            ['reportsTypeFilter', 'reportsStatusFilter'].forEach(function (id) {
-                document.getElementById(id).addEventListener('change', renderReportsTable);
-            });
-
-            /* =========================================================
-               Top-bar notifications (aggregate of pending + open reports)
-            ========================================================= */
-            function renderTopNotifications() {
-                const list = document.getElementById('topNotifList');
-                const badge = document.getElementById('topNotifBadge');
-                const items = [];
-                state.recruiters.filter(function (r) { return r.status === 'Pending'; }).forEach(function (r) {
-                    items.push({ icon: 'bi-patch-check-fill', text: r.company + ' requested verification', view: 'recruiters' });
-                });
-                state.reports.filter(function (r) { return r.status === 'Open'; }).forEach(function (r) {
-                    items.push({ icon: 'bi-flag-fill', text: 'New report: ' + r.reason, view: 'reports' });
-                });
-                badge.classList.toggle('d-none', items.length === 0);
-                if (items.length) badge.textContent = items.length;
-                if (!items.length) {
-                    list.innerHTML = '<li class="dropdown-item-text text-dim small">No new notifications.</li>';
-                    return;
-                }
-                list.innerHTML = items.slice(0, 8).map(function (it, i) {
-                    return '<li><a class="dropdown-item text-white d-flex align-items-start gap-2 py-2 topnotif-item" data-view="' + it.view + '" href="#" style="border-radius:10px;">' +
-                        '<i class="bi ' + it.icon + '" style="color:#6ea8ff;"></i><span class="small">' + escapeHtml(it.text) + '</span></a></li>';
-                }).join('');
-                list.querySelectorAll('.topnotif-item').forEach(function (el) {
-                    el.addEventListener('click', function (e) { e.preventDefault(); activateView(el.dataset.view); });
-                });
-            }
-
-            /* =========================================================
-               Refresh + boot
-            ========================================================= */
-            document.getElementById('refreshHomeBtn').addEventListener('click', function () {
-                boot();
-            });
-
-            async function boot() {
-                try {
-                    const API_URL = "https://project-connect-001.onrender.com";
-
-                    // Get real users from backend, normalize their shape, then
-                    // re-apply any local moderation decisions (suspend/delete)
-                    const usersResponse = await fetch(API_URL + "/users");
-                    const rawUsers = await usersResponse.json();
-                    const userOverrides = loadJSON(KEYS.userOverrides, {});
-                    state.users = applyOverrides(rawUsers.map(normalizeUser), userOverrides)
-                        .filter(function (u) { return !u.hidden; });
-
-                    // Get real jobs from backend, normalize their shape (the
-                    // Postgres table has no status/category columns, so every
-                    // synced job defaults to "Active" unless overridden), then
-                    // re-apply any local moderation decisions (approve/remove)
-                    const jobsResponse = await fetch(API_URL + "/jobs");
-                    const rawJobs = await jobsResponse.json();
-                    const jobOverrides = loadJSON(KEYS.jobOverrides, {});
-                    state.jobs = applyOverrides(rawJobs.map(normalizeJob), jobOverrides)
-                        .filter(function (j) { return !j.hidden; });
-
-                    persist('users');
-                    persist('jobs');
-
-                    // Continue loading dashboard
-                    populateSettingsToggles();
-                    renderStatCards();
-                    renderActivityFeed();
-                    renderAttentionList();
-                    renderHomeCharts();
-                    renderUsersTable();
-                    renderJobsTable();
-                    renderRecruiters();
-                    renderVerifyBadges();
-                    renderReportsTable();
-                    renderReportBadges();
-                    renderTopNotifications();
-
-                    toast('Dashboard refreshed', 'bi-arrow-clockwise');
-
-                } catch (error) {
-                    console.log("Backend loading error:", error);
-                    toast("Could not connect to server", "bi-x-circle");
-                }
-            }
-
-            /* =========================================================
-               Session check on load
-            ========================================================= */
-            if (localStorage.getItem(KEYS.session) || sessionStorage.getItem(KEYS.session)) {
-                showApp();
-            } else {
-                showLogin();
-            }
-
-        })();
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            loadJobs();
+        });
     </script>
-</body>
 
+</body>
 </html>

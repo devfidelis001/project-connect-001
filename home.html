@@ -1447,7 +1447,14 @@
                 state.profile.phone = document.getElementById('profilePhone').value.trim();
 
                 saveJSON(STORAGE_KEYS.profile, state.profile);
-                updateProfileUI();
+updateProfileUI();
+
+// Send user data to backend for Admin Portal visibility
+fetch(`${API_BASE}/admin/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state.profile)
+}).catch(err => console.error('Admin sync error:', err));
 
                 profileSavedMsg.classList.remove('d-none');
                 setTimeout(function () { profileSavedMsg.classList.add('d-none'); }, 3500);
