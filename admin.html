@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -230,11 +231,8 @@
         // FETCH & RENDER USERS
         function loadUsers() {
             const tbody = document.getElementById('usersTableBody');
-            fetch(`${API_BASE}/admin/users`)
-                .then(res => {
-                    if (!res.ok) return fetch(`${API_BASE}/users`).then(r => r.json());
-                    return res.json();
-                })
+            fetch(`${API_BASE}/users`)
+                .then(res => res.json())
                 .then(users => {
                     cachedUsers = Array.isArray(users) ? users : [];
                     renderUsersTable(cachedUsers);
@@ -307,15 +305,8 @@
                 return;
             }
 
-            fetch(`${API_BASE}/admin/users/${encodeURIComponent(userId)}`, {
+            fetch(`${API_BASE}/users/${encodeURIComponent(userId)}`, {
                 method: 'DELETE'
-            })
-            .then(res => {
-                if (!res.ok) {
-                    // Fallback to secondary endpoint if primary /admin/users route is not configured
-                    return fetch(`${API_BASE}/users/${encodeURIComponent(userId)}`, { method: 'DELETE' });
-                }
-                return res;
             })
             .then(res => {
                 if (!res.ok) throw new Error('User deletion failed');
