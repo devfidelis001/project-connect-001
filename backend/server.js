@@ -78,6 +78,21 @@ async function createTables() {
             ADD COLUMN IF NOT EXISTS author_skills TEXT;
         `);
 
+        // Automatically patch schema for existing "users" tables that predate
+        // newer profile columns (this is what the admin dashboard's
+        // "Total Registered Users" query selects, so a missing column here
+        // makes GET /users throw and the count silently stays at 0)
+        await pool.query(`
+            ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS phone TEXT,
+            ADD COLUMN IF NOT EXISTS accounttype TEXT,
+            ADD COLUMN IF NOT EXISTS location TEXT,
+            ADD COLUMN IF NOT EXISTS profession TEXT,
+            ADD COLUMN IF NOT EXISTS skills TEXT,
+            ADD COLUMN IF NOT EXISTS avatar TEXT,
+            ADD COLUMN IF NOT EXISTS createdat TEXT;
+        `);
+
         // ==========================
         // Likes / Saves / Applications / Comments
         // ==========================
@@ -248,6 +263,7 @@ app.get("/users", async (req, res) => {
         }));
         res.json(users);
     } catch (error) {
+        console.log("Fetch users error:", error.message);
         res.status(500).json({ message: "Could not fetch users" });
     }
 });
