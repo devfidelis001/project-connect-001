@@ -1,3 +1,6 @@
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -577,6 +580,36 @@
             margin-right: 4px;
         }
 
+        .badge-verified-icon {
+            color: #1d9bf0;
+            font-size: 0.85em;
+            vertical-align: middle;
+        }
+
+        .admin-mode-banner {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: #1d9bf0;
+            background: rgba(29, 155, 240, 0.12);
+            border: 1px solid rgba(29, 155, 240, 0.3);
+            border-radius: 10px;
+            padding: 6px 10px;
+            margin-bottom: 14px;
+        }
+
+        .admin-mode-banner a {
+            color: #ff7676;
+            text-decoration: none;
+            margin-left: auto;
+            font-weight: 500;
+        }
+
+        .admin-mode-banner a:hover {
+            text-decoration: underline;
+        }
+
         .skill-badge {
             background: #132847;
             border: 1px solid rgba(255, 255, 255, .15);
@@ -723,7 +756,13 @@
             <!-- LEFT MENU -->
             <div class="col-12 col-lg-3" id="sidebarCol">
                 <div class="left-card" id="leftCard">
-                    <h4 class="mb-4" id="welcomeHeading">Welcome 👋</h4>
+                    <h4 class="mb-2" id="welcomeHeading">Welcome 👋</h4>
+                    <div id="adminModeBanner" class="admin-mode-banner d-none">
+                        <i class="bi bi-patch-check-fill"></i>
+                        <span>Verified Admin Account</span>
+                        <a href="#" id="exitAdminModeLink">Exit</a>
+                    </div>
+                    <a href="#" id="switchAccountLink" class="d-block small text-secondary mb-2"><i class="bi bi-arrow-left-right me-1"></i>Not you? Switch account</a>
                     <a class="left-link active-link" data-view="home"><i class="bi bi-house-door-fill"></i> Home</a>
                     <a class="left-link" data-view="saved"><i class="bi bi-bookmark-fill"></i> Saved Jobs</a>
                     <a class="left-link" data-view="applications"><i class="bi bi-file-earmark-person-fill"></i>
@@ -968,7 +1007,7 @@
                 <!-- PROFILE VIEW -->
                 <div id="view-profile" class="app-view d-none">
                     <div class="post-box mb-4">
-                        <h4 class="mb-3">My Profile</h4>
+                        <h4 class="mb-3">My Profile <span id="profileVerifiedBadge" class="d-none"><i class="bi bi-patch-check-fill badge-verified-icon" title="Verified Account"></i></span></h4>
                         
                         <!-- PUBLIC NOTICE -->
                         <div class="alert alert-info border-0 rounded-4 mb-4 small text-light" style="background: rgba(13, 110, 253, 0.2);">
@@ -1149,6 +1188,39 @@
         </div>
     </div>
 
+    <!-- ACCOUNT GATE MODAL: gives every person their own account on this device,
+         instead of one shared identity based on browser storage. -->
+    <div class="modal fade" id="accountGateModal" tabindex="-1" aria-labelledby="accountGateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="accountGateForm" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="accountGateModalLabel"><i class="bi bi-person-check-fill me-2"></i>Who's using the app?</h5>
+                        <button type="button" id="accountGateCloseBtn" class="btn-close btn-close-white d-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-secondary small mb-3">Sign in with your own name and phone number so your likes, comments and messages stay yours &mdash; even if other people use this same phone.</p>
+                        <div class="mb-3">
+                            <label class="form-label" for="accountGateName">Your Name</label>
+                            <input type="text" class="form-control" id="accountGateName" placeholder="e.g. John Doe" maxlength="60" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" for="accountGatePhone">Phone Number</label>
+                            <input type="tel" class="form-control" id="accountGatePhone" placeholder="e.g. 090XXXXXXXX" maxlength="30" required>
+                        </div>
+                        <div id="accountGateError" class="text-danger small mt-2 d-none">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Please enter your name and phone number.
+                        </div>
+                        <div id="accountGateKnownList"></div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="submit" class="btn-post"><i class="bi bi-box-arrow-in-right me-1"></i> Continue</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- NEW JOB MODAL -->
     <div class="modal fade" id="jobModal" tabindex="-1" aria-labelledby="jobModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -1250,6 +1322,7 @@
                         <div>
                             <div class="d-flex align-items-center gap-2 mb-1">
                                 <h4 id="userModalName" class="mb-0">Name</h4>
+                                <i id="userModalVerifiedBadge" class="bi bi-patch-check-fill badge-verified-icon d-none" title="Verified Account"></i>
                                 <span id="userModalRole" class="badge bg-primary rounded-pill">Jobseeker</span>
                             </div>
                             <p class="mb-1 text-secondary small"><i class="bi bi-geo-alt-fill text-danger me-1"></i><span id="userModalLocation">Location</span></p>
@@ -1306,8 +1379,14 @@
                 profile: 'ylm.profile',
                 settings: 'ylm.settings',
                 aiChat: 'ylm.aiChat',
-                deviceId: 'ylm.deviceId'
+                deviceId: 'ylm.deviceId',
+                adminVerified: 'ylm.adminVerified',
+                seenJobIds: 'ylm.seenJobIds',
+                accounts: 'ylm.accounts',
+                activeAccount: 'ylm.activeAccount'
             };
+
+            const ADMIN_ACCOUNT_ID = 'admin-verified';
 
             function loadJSON(key, fallback) {
                 try {
@@ -1322,15 +1401,209 @@
                 catch (err) { }
             }
 
-            function getDeviceId() {
-                let id = localStorage.getItem(STORAGE_KEYS.deviceId);
-                if (!id) {
-                    id = 'u-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
-                    localStorage.setItem(STORAGE_KEYS.deviceId, id);
-                }
-                return id;
+            /* ============================================================
+               ACCOUNT SYSTEM
+               Previously every visitor on a given browser shared ONE random
+               "device id", so if two people used the same phone/browser they
+               were treated as the same person everywhere (likes, comments,
+               chats, applications) - liking a post as "user 2" was really
+               just liking it again as the same underlying id, which is why
+               the like count never moved and both people saw each other's
+               activity.
+
+               Now each person signs in with their own name + phone number.
+               That becomes their permanent account id, and ALL of their
+               activity is tracked under that id - never under a shared,
+               randomly generated browser id. Multiple accounts can live on
+               the same phone/browser side by side without mixing data.
+               ============================================================ */
+
+            function normalizePhone(phone) {
+                return (phone || '').replace(/\D/g, '');
             }
-            const DEVICE_ID = getDeviceId();
+
+            function loadAccounts() { return loadJSON(STORAGE_KEYS.accounts, {}); }
+            function saveAccounts(accounts) { saveJSON(STORAGE_KEYS.accounts, accounts); }
+
+            function getStoredActiveAccountId() {
+                try { return localStorage.getItem(STORAGE_KEYS.activeAccount) || ''; }
+                catch (err) { return ''; }
+            }
+            function setStoredActiveAccountId(id) {
+                try { localStorage.setItem(STORAGE_KEYS.activeAccount, id); }
+                catch (err) { }
+            }
+
+            // One-time migration for people who used the app before accounts existed,
+            // so their existing profile/likes/history aren't lost.
+            (function migrateLegacyProfileIfNeeded() {
+                const accounts = loadAccounts();
+                if (Object.keys(accounts).length > 0) return;
+
+                let legacyProfile = null;
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEYS.profile);
+                    legacyProfile = raw ? JSON.parse(raw) : null;
+                } catch (err) { legacyProfile = null; }
+
+                let legacyDeviceId = null;
+                try { legacyDeviceId = localStorage.getItem(STORAGE_KEYS.deviceId); } catch (err) { }
+
+                if (!legacyProfile || !legacyDeviceId) return;
+
+                let wasAdmin = false;
+                try { wasAdmin = localStorage.getItem(STORAGE_KEYS.adminVerified) === 'true'; } catch (err) { }
+
+                const id = wasAdmin ? ADMIN_ACCOUNT_ID : ('acct-' + (normalizePhone(legacyProfile.phone) || legacyDeviceId));
+                accounts[id] = { name: wasAdmin ? 'Admin' : (legacyProfile.name || ''), phone: legacyProfile.phone || '' };
+                saveAccounts(accounts);
+
+                const migratedProfile = Object.assign({}, legacyProfile, wasAdmin ? { name: 'Admin', role: 'Admin', verified: true } : {});
+                saveJSON(STORAGE_KEYS.profile + '.' + id, migratedProfile);
+                saveJSON(STORAGE_KEYS.settings + '.' + id, loadJSON(STORAGE_KEYS.settings, {}));
+                saveJSON(STORAGE_KEYS.seenJobIds + '.' + id, loadJSON(STORAGE_KEYS.seenJobIds, []));
+                saveJSON(STORAGE_KEYS.aiChat + '.' + id, loadJSON(STORAGE_KEYS.aiChat, []));
+                setStoredActiveAccountId(id);
+            })();
+
+            // ADMIN VERIFIED ACCOUNT DETECTION
+            // Set when the login form on the Admin Dashboard is completed correctly.
+            // The Admin account is its own special, permanent account (not a flag on
+            // whichever profile happens to be active), so it always shows as "Admin"
+            // with the verified badge, and never leaks onto another person's account.
+            (function checkAdminEntry() {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('admin') === '1') {
+                    const accounts = loadAccounts();
+                    accounts[ADMIN_ACCOUNT_ID] = { name: 'Admin', phone: '' };
+                    saveAccounts(accounts);
+
+                    const adminProfile = loadJSON(STORAGE_KEYS.profile + '.' + ADMIN_ACCOUNT_ID, {});
+                    adminProfile.name = 'Admin';
+                    adminProfile.role = 'Admin';
+                    adminProfile.verified = true;
+                    saveJSON(STORAGE_KEYS.profile + '.' + ADMIN_ACCOUNT_ID, adminProfile);
+
+                    setStoredActiveAccountId(ADMIN_ACCOUNT_ID);
+                    // clean the URL so a refresh doesn't keep re-triggering
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            })();
+
+            function getActiveAccountId() {
+                const id = getStoredActiveAccountId();
+                const accounts = loadAccounts();
+                return (id && accounts[id]) ? id : '';
+            }
+
+            function renderKnownAccountsList() {
+                const listEl = document.getElementById('accountGateKnownList');
+                if (!listEl) return;
+                const accounts = loadAccounts();
+                const ids = Object.keys(accounts).filter(function (id) { return id !== ADMIN_ACCOUNT_ID; });
+                if (!ids.length) { listEl.innerHTML = ''; return; }
+                listEl.innerHTML = '<div class="text-secondary small mb-2 mt-3">Or continue as someone who already signed in on this phone:</div><div>' +
+                    ids.map(function (id) {
+                        const acc = accounts[id];
+                        const maskedPhone = acc.phone ? acc.phone.replace(/.(?=.{4})/g, '•') : '';
+                        const label = (acc.name || 'User') + (maskedPhone ? ' (' + maskedPhone + ')' : '');
+                        return '<button type="button" class="btn btn-outline-light btn-sm rounded-pill me-2 mb-2 account-switch-btn" data-account-id="' +
+                            id.replace(/"/g, '&quot;') + '">' + label.replace(/</g, '&lt;') + '</button>';
+                    }).join('') + '</div>';
+                listEl.querySelectorAll('.account-switch-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        setStoredActiveAccountId(btn.getAttribute('data-account-id'));
+                        window.location.reload();
+                    });
+                });
+            }
+
+            function initAccountGate(forced) {
+                const modalEl = document.getElementById('accountGateModal');
+                if (!modalEl) return;
+                renderKnownAccountsList();
+
+                const closeBtn = document.getElementById('accountGateCloseBtn');
+                closeBtn.classList.toggle('d-none', !!forced);
+
+                const existing = bootstrap.Modal.getInstance(modalEl);
+                if (existing) existing.dispose();
+                const modal = new bootstrap.Modal(modalEl, forced ? { backdrop: 'static', keyboard: false } : { backdrop: true, keyboard: true });
+                modal.show();
+
+                const form = document.getElementById('accountGateForm');
+                const errorEl = document.getElementById('accountGateError');
+                if (form.dataset.bound === '1') return; // avoid double-binding if opened more than once
+                form.dataset.bound = '1';
+
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const name = document.getElementById('accountGateName').value.trim();
+                    const phone = document.getElementById('accountGatePhone').value.trim();
+                    const normalized = normalizePhone(phone);
+
+                    if (!name || !normalized) {
+                        errorEl.classList.remove('d-none');
+                        return;
+                    }
+                    errorEl.classList.add('d-none');
+
+                    const id = 'acct-' + normalized;
+                    const accounts = loadAccounts();
+                    accounts[id] = { name: name, phone: phone };
+                    saveAccounts(accounts);
+
+                    const existingProfile = loadJSON(STORAGE_KEYS.profile + '.' + id, null);
+                    if (!existingProfile) {
+                        saveJSON(STORAGE_KEYS.profile + '.' + id, {
+                            name: name, avatar: '', location: '', skills: '', role: 'Jobseeker', phone: phone, verified: false
+                        });
+                    } else if (!existingProfile.name) {
+                        existingProfile.name = name;
+                        saveJSON(STORAGE_KEYS.profile + '.' + id, existingProfile);
+                    }
+
+                    setStoredActiveAccountId(id);
+                    window.location.reload();
+                });
+            }
+
+            const ACCOUNT_ID = getActiveAccountId();
+
+            if (!ACCOUNT_ID) {
+                // No one is signed in on this device/browser yet - show the
+                // account gate and stop the rest of the app from running
+                // until someone signs in. It will reload once they do.
+                initAccountGate(true);
+                return;
+            }
+
+            // Namespace every piece of per-person storage under this account id so
+            // switching accounts on a shared phone never mixes one person's data
+            // into another's.
+            STORAGE_KEYS.profile = STORAGE_KEYS.profile + '.' + ACCOUNT_ID;
+            STORAGE_KEYS.settings = STORAGE_KEYS.settings + '.' + ACCOUNT_ID;
+            STORAGE_KEYS.aiChat = STORAGE_KEYS.aiChat + '.' + ACCOUNT_ID;
+            STORAGE_KEYS.seenJobIds = STORAGE_KEYS.seenJobIds + '.' + ACCOUNT_ID;
+
+            // DEVICE_ID is kept as the name used throughout the rest of this file,
+            // but it is no longer a random per-browser id - it is this specific
+            // signed-in account's permanent id, sent to the server for every like,
+            // comment, application, and message so activity is always counted
+            // against the right person.
+            const DEVICE_ID = ACCOUNT_ID;
+
+            function isAdminVerified() {
+                return ACCOUNT_ID === ADMIN_ACCOUNT_ID;
+            }
+
+            const switchAccountLink = document.getElementById('switchAccountLink');
+            if (switchAccountLink) {
+                switchAccountLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    initAccountGate(false);
+                });
+            }
 
             const DEFAULT_SETTINGS = {
                 categories: [],
@@ -1349,16 +1622,34 @@
                 comments: {},
                 conversations: {},
                 recentJobsNotif: [],
+                seenJobIds: new Set(loadJSON(STORAGE_KEYS.seenJobIds, [])),
                 profile: loadJSON(STORAGE_KEYS.profile, {
                     name: '',
                     avatar: '',
                     location: '',
                     skills: '',
                     role: 'Jobseeker',
-                    phone: ''
+                    phone: '',
+                    verified: false
                 }),
                 settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {}))
             };
+
+            // The Admin account always displays as "Admin" with the verified badge,
+            // everywhere its name shows - posts, comments, chat messages, profile.
+            // Verification only ever comes from the Admin Dashboard login gate.
+            state.profile.verified = isAdminVerified();
+            if (state.profile.verified) {
+                state.profile.name = 'Admin';
+                state.profile.role = 'Admin';
+            }
+            saveJSON(STORAGE_KEYS.profile, state.profile);
+
+            function persistProfile() { saveJSON(STORAGE_KEYS.profile, state.profile); }
+
+            function verifiedBadgeHtml(isVerified) {
+                return isVerified ? ' <i class="bi bi-patch-check-fill badge-verified-icon" title="Verified Account"></i>' : '';
+            }
 
             let idCounter = 1;
             function newId() { return 'job-' + Date.now() + '-' + (idCounter++); }
@@ -1410,22 +1701,47 @@
                 if (navAvatar) navAvatar.src = avatarUrl;
                 if (composerAvatar) composerAvatar.src = avatarUrl;
                 if (preview) preview.src = avatarUrl;
+
+                const verifiedBadge = verifiedBadgeHtml(state.profile.verified);
+
                 if (welcomeHeading) {
-                    welcomeHeading.textContent = state.profile.name
-                        ? ('Welcome, ' + state.profile.name + ' 👋')
-                        : 'Welcome 👋';
+                    welcomeHeading.innerHTML = (state.profile.name
+                        ? ('Welcome, ' + escapeHtml(state.profile.name) + ' 👋')
+                        : 'Welcome 👋') + verifiedBadge;
                 }
+
+                const adminModeBanner = document.getElementById('adminModeBanner');
+                if (adminModeBanner) adminModeBanner.classList.toggle('d-none', !state.profile.verified);
+
+                const profileVerifiedBadge = document.getElementById('profileVerifiedBadge');
+                if (profileVerifiedBadge) profileVerifiedBadge.classList.toggle('d-none', !state.profile.verified);
 
                 if (nameInput && document.activeElement !== nameInput) nameInput.value = state.profile.name || '';
                 if (locationInput && document.activeElement !== locationInput) locationInput.value = state.profile.location || '';
                 if (skillsInput && document.activeElement !== skillsInput) skillsInput.value = state.profile.skills || '';
                 if (roleInput && document.activeElement !== roleInput) roleInput.value = state.profile.role || 'Jobseeker';
                 if (phoneInput && document.activeElement !== phoneInput) phoneInput.value = state.profile.phone || '';
+
+                // The Admin account's name is fixed - lock it so it can't be edited away.
+                if (nameInput) nameInput.disabled = !!state.profile.verified;
+                if (roleInput) roleInput.disabled = !!state.profile.verified;
             }
 
             const profileAvatarInput = document.getElementById('profileAvatarInput');
             const profileForm = document.getElementById('profileForm');
             const profileSavedMsg = document.getElementById('profileSavedMsg');
+
+            const exitAdminModeLink = document.getElementById('exitAdminModeLink');
+            if (exitAdminModeLink) {
+                exitAdminModeLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    // Admin is its own account now - "Exit" just signs out of it on
+                    // this device and returns to the sign-in screen so whoever is
+                    // using the phone next signs into their own account.
+                    try { localStorage.removeItem(STORAGE_KEYS.activeAccount); } catch (err) { }
+                    window.location.reload();
+                });
+            }
 
             profileAvatarInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
@@ -1440,13 +1756,20 @@
 
             profileForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                state.profile.name = document.getElementById('profileName').value.trim();
                 state.profile.location = document.getElementById('profileLocation').value.trim();
                 state.profile.skills = document.getElementById('profileSkills').value.trim();
-                state.profile.role = document.getElementById('profileRole').value;
                 state.profile.phone = document.getElementById('profilePhone').value.trim();
 
-                saveJSON(STORAGE_KEYS.profile, state.profile);
+                if (state.profile.verified) {
+                    // The Admin account always stays "Admin" - never overwritten by the form.
+                    state.profile.name = 'Admin';
+                    state.profile.role = 'Admin';
+                } else {
+                    state.profile.name = document.getElementById('profileName').value.trim();
+                    state.profile.role = document.getElementById('profileRole').value;
+                }
+
+                persistProfile();
 updateProfileUI();
 
 // Send user data to backend for Admin Portal visibility
@@ -1609,12 +1932,14 @@ fetch(`${API_BASE}/admin/users`, {
                 card.dataset.authorAvatar = job.authorAvatar || job.avatar || getAvatar();
                 card.dataset.authorRole = job.authorRole || 'Jobseeker';
                 card.dataset.authorSkills = job.authorSkills || '';
+                card.dataset.authorVerified = job.authorVerified ? '1' : '0';
 
                 const metaParts = [job.meta || timeAgo(job.createdAt)];
                 if (job.location) metaParts.push(job.location);
                 const salaryLine = job.salary ? ('<br><br>Salary: ' + escapeHtml(job.salary)) : '';
                 const descLine = job.description ? escapeHtml(job.description).replace(/\n/g, '<br>') : '';
                 const badge = job.isNew ? '<span class="badge rounded-pill badge-new">New</span>' : '';
+                const verifiedIcon = job.authorVerified ? ' <i class="bi bi-patch-check-fill badge-verified-icon" title="Verified Account"></i>' : '';
 
                 const likeCount = job.likeCount || 0;
                 const likeLabel = likeCount > 0 ? likeCount : 'Like';
@@ -1626,7 +1951,7 @@ fetch(`${API_BASE}/admin/users`, {
                 card.innerHTML =
                     '<div class="d-flex align-items-center mb-3">' +
                     '<img src="' + escapeHtml(card.dataset.authorAvatar) + '" class="profile-img me-3 clickable-profile" alt="' + escapeHtml(job.company) + '">' +
-                    '<div><h5 class="mb-0 clickable-profile">' + escapeHtml(job.company) + badge + '</h5>' +
+                    '<div><h5 class="mb-0 clickable-profile">' + escapeHtml(job.company) + verifiedIcon + badge + '</h5>' +
                     '<small class="text-secondary">' + metaParts.map(escapeHtml).join(' • ') + '</small></div></div>' +
                     '<p class="mb-3">📢 <strong>' + escapeHtml(job.title) + '</strong><br><br>' + descLine + salaryLine + '</p>' +
                     attachmentMarkup(job.attachment) +
@@ -1647,7 +1972,7 @@ fetch(`${API_BASE}/admin/users`, {
                 const card = buildJobCard(job);
                 jobFeed.prepend(card);
 
-                if (opts.notify) {
+                if (opts.notify && !state.seenJobIds.has(job.id)) {
                     state.recentJobsNotif.unshift(job);
                     updateNotifBadge();
                 }
@@ -1670,7 +1995,7 @@ fetch(`${API_BASE}/admin/users`, {
                     const card = buildJobCard(job);
                     frag.appendChild(card);
 
-                    if (job.isNew) {
+                    if (job.isNew && !state.seenJobIds.has(job.id)) {
                         state.recentJobsNotif.unshift(job);
                         hasNewJob = true;
                     }
@@ -1804,6 +2129,7 @@ fetch(`${API_BASE}/admin/users`, {
                         senderRole: 'seeker',
                         senderName: state.profile.name || 'Applicant',
                         senderAvatar: getAvatar(),
+                        senderVerified: !!state.profile.verified,
                         text: messageText
                     })
                 })
@@ -1884,7 +2210,8 @@ fetch(`${API_BASE}/admin/users`, {
                     return;
                 }
                 list.innerHTML = comments.map(function (c) {
-                    return '<div class="mb-2 small"><strong>' + escapeHtml(c.author) + ':</strong> ' + escapeHtml(c.text) + '</div>';
+                    const badge = verifiedBadgeHtml(!!c.authorVerified || c.author === 'Admin');
+                    return '<div class="mb-2 small"><strong>' + escapeHtml(c.author) + badge + ':</strong> ' + escapeHtml(c.text) + '</div>';
                 }).join('');
                 list.scrollTop = list.scrollHeight;
             }
@@ -1903,6 +2230,7 @@ fetch(`${API_BASE}/admin/users`, {
                         userId: DEVICE_ID,
                         author: state.profile.name || 'You',
                         authorAvatar: getAvatar(),
+                        authorVerified: !!state.profile.verified,
                         text: text
                     })
                 })
@@ -1933,7 +2261,20 @@ fetch(`${API_BASE}/admin/users`, {
                 };
             }
 
+            // Marks a job as "seen" so it stops showing up in the notifications
+            // dropdown, and remembers that in localStorage so it stays gone even
+            // after the page is reloaded or the app polls the backend again.
+            function markJobSeen(id) {
+                if (!id || state.seenJobIds.has(id)) return;
+                state.seenJobIds.add(id);
+                saveJSON(STORAGE_KEYS.seenJobIds, Array.from(state.seenJobIds));
+                const before = state.recentJobsNotif.length;
+                state.recentJobsNotif = state.recentJobsNotif.filter(function (j) { return j.id !== id; });
+                if (state.recentJobsNotif.length !== before) updateNotifBadge();
+            }
+
             function viewSavedPost(id) {
+                markJobSeen(id);
                 ensureHomeView();
                 if (searchDesktop) searchDesktop.value = '';
                 if (searchMobile) searchMobile.value = '';
@@ -2296,11 +2637,13 @@ fetch(`${API_BASE}/admin/users`, {
                 chatMessagesEl.innerHTML = messages.map(function (m) {
                     const isMe = m.senderId === DEVICE_ID;
                     const label = m.senderRole === 'recruiter' ? 'Recruiter' : (isMe ? (state.profile.name || 'You') : (m.senderName || 'Applicant'));
+                    const isVerified = isMe ? !!state.profile.verified : (!!m.senderVerified || label === 'Admin');
+                    const badge = verifiedBadgeHtml(isVerified);
                     const align = isMe ? 'text-end' : 'text-start';
                     const bubbleBg = isMe ? '#0d6efd' : '#132847';
                     return '<div class="mb-2 ' + align + '"><span style="display:inline-block;background:' + bubbleBg +
                         ';padding:8px 14px;border-radius:14px;max-width:80%;text-align:left;"><strong>' +
-                        escapeHtml(label) + ':</strong> ' + formatChatMessageText(m.text) + '</span></div>';
+                        escapeHtml(label) + badge + ':</strong> ' + formatChatMessageText(m.text) + '</span></div>';
                 }).join('');
                 
                 chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
@@ -2381,6 +2724,7 @@ fetch(`${API_BASE}/admin/users`, {
                         senderRole: activeRole,
                         senderName: state.profile.name || 'You',
                         senderAvatar: getAvatar(),
+                        senderVerified: !!state.profile.verified,
                         text: text
                     })
                 })
@@ -2419,12 +2763,14 @@ fetch(`${API_BASE}/admin/users`, {
                     const authorAvatar = card.dataset.authorAvatar || getAvatar();
                     const authorRole = card.dataset.authorRole || 'Jobseeker';
                     const authorSkills = card.dataset.authorSkills || '';
+                    const authorVerified = card.dataset.authorVerified === '1';
 
                     document.getElementById('userModalAvatar').src = authorAvatar;
                     document.getElementById('userModalName').textContent = authorName;
                     document.getElementById('userModalPhone').textContent = authorPhone;
                     document.getElementById('userModalLocation').textContent = authorLocation;
                     document.getElementById('userModalRole').textContent = authorRole;
+                    document.getElementById('userModalVerifiedBadge').classList.toggle('d-none', !authorVerified);
 
                     const skillsContainer = document.getElementById('userModalSkillsContainer');
                     if (authorSkills.trim()) {
@@ -2613,7 +2959,8 @@ fetch(`${API_BASE}/admin/users`, {
                     authorLocation: state.profile.location || 'Not specified',
                     authorAvatar: getAvatar(),
                     authorRole: state.profile.role || 'Jobseeker',
-                    authorSkills: state.profile.skills || ''
+                    authorSkills: state.profile.skills || '',
+                    authorVerified: !!state.profile.verified
                 };
 
                 addJobToFeed(job, { scroll: true, notify: true });
@@ -2687,7 +3034,8 @@ fetch(`${API_BASE}/admin/users`, {
                     authorLocation: location || state.profile.location || 'Not specified',
                     authorAvatar: getAvatar(),
                     authorRole: state.profile.role || 'Job Poster',
-                    authorSkills: state.profile.skills || ''
+                    authorSkills: state.profile.skills || '',
+                    authorVerified: !!state.profile.verified
                 };
 
                 addJobToFeed(job, { scroll: true, notify: true });
