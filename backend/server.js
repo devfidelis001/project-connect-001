@@ -350,7 +350,7 @@ app.get("/users/search", async (req, res) => {
         const like = "%" + q + "%";
         const result = await pool.query(
             `
-            SELECT id, fullname, phone, accounttype, location, profession, skills, avatar
+            SELECT id, fullname, email, phone, accounttype, location, profession, skills, avatar
             FROM users
             WHERE fullname ILIKE $1
                OR profession ILIKE $1
@@ -363,8 +363,15 @@ app.get("/users/search", async (req, res) => {
             [like]
         );
 
+        // IMPORTANT: every other part of the app (jobs, likes, applications,
+        // chat messages) identifies a person by "acct-<email>", not by the
+        // numeric users.id primary key. Returning row.id here used to hand
+        // the frontend a completely different id space, so messaging or
+        // viewing a profile from search results never matched that same
+        // person's real posts/likes/applications/chats. Build the id the
+        // same way the rest of the app does.
         const people = result.rows.map((row) => ({
-            id: row.id,
+            id: row.email ? ("acct-" + row.email.trim().toLowerCase()) : row.id,
             name: row.fullname,
             phone: row.phone,
             role: row.accounttype,
