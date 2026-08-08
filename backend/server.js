@@ -142,7 +142,7 @@ async function createTables() {
         await pool.query(`
         CREATE TABLE IF NOT EXISTS chat_messages(
             id SERIAL PRIMARY KEY,
-            job_id TEXT NOT NULL,
+            job_id TEXT,
             seeker_id TEXT NOT NULL,
             sender_id TEXT NOT NULL,
             sender_role TEXT NOT NULL,
@@ -154,6 +154,34 @@ async function createTables() {
             read_by_recruiter BOOLEAN DEFAULT FALSE
         )
         `);
+
+        // ==========================
+        // Conversations used to be keyed by (job_id, seeker_id), which meant a
+        // recruiter and a job seeker got a brand new, empty thread for every
+        // single job post they messaged about. A conversation is really
+        // between two PEOPLE, so it's now keyed by (recruiter_id, seeker_id)
+        // instead - recruiter_id is whoever owned the job at the time the
+        // message was sent. job_id is kept on each message only as optional
+        // context (which job the message was about / for the "View Tagged
+        // Job" link), not as part of the thread's identity.
+        // ==========================
+        await pool.query(`
+            ALTER TABLE chat_messages
+            ADD COLUMN IF NOT EXISTS recruiter_id TEXT;
+        `);
+        await pool.query(`ALTER TABLE chat_messages ALTER COLUMN job_id DROP NOT NULL;`);
+
+        // Backfill recruiter_id for any pre-existing rows from the job they
+        // were sent about, so old conversations keep working under the new
+        // (recruiter_id, seeker_id) key instead of disappearing.
+        await pool.query(`
+            UPDATE chat_messages cm
+            SET recruiter_id = j.user_id
+            FROM jobs j
+            WHERE cm.job_id = j.id AND cm.recruiter_id IS NULL
+        `);
+
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_chat_messages_thread ON chat_messages (recruiter_id, seeker_id);`);
 
         console.log("Database tables and migration scripts ready.");
     } catch (error) {
@@ -271,6 +299,171 @@ app.get("/users", async (req, res) => {
 });
 
 // ==========================
+// USER SEARCH (find people, not just job posts)
+// ==========================
+// Lets the app search for a person by name, profession/role, skills, or
+// location - even if they've never posted a job. Only public-safe fields are
+// returned (no email, no password).
+app.get("/users/search", async (req, res) => {
+    const q = (req.query.q || "").trim();
+    if (!q) return res.json([]);
+
+    try {
+        const like = "%" + q + "%";
+        const result = await pool.query(
+            `
+            SELECT id, fullname, phone, accounttype, location, profession, skills, avatar
+            FROM users
+            WHERE fullname ILIKE $1
+               OR profession ILIKE $1
+               OR skills ILIKE $1
+               OR location ILIKE $1
+               OR accounttype ILIKE $1
+            ORDER BY fullname ASC
+            LIMIT 30
+            `,
+            [like]
+        );
+
+        const people = result.rows.map((row) => ({
+            id: row.id,
+            name: row.fullname,
+            phone: row.phone,
+            role: row.accounttype,
+            location: row.location,
+            profession: row.profession,
+            skills: row.skills,
+            avatar: row.avatar
+        }));
+
+        res.json(people);
+    } catch (error) {
+        console.log("User search error:", error.message);
+        res.status(500).json({ message: "Could not search users" });
+    }
+});
+
+// ==========================
+// PUBLIC PROFILE (single user, live data)
+// ==========================
+// Used when a profile picture/name is clicked anywhere in the app, so what's
+// shown always reflects the person's CURRENT profile rather than whatever
+// was copied onto a post the last time they published it.
+app.get("/users/:userId/public-profile", async (req, res) => {
+    const userId = req.params.userId;
+    try {
+        const userRow = await resolveUserRow(userId);
+        if (userRow) {
+            return res.json({
+                id: userId,
+                name: userRow.fullname,
+                phone: userRow.phone,
+                location: userRow.location,
+                role: userRow.accounttype,
+                profession: userRow.profession,
+                skills: userRow.skills,
+                avatar: userRow.avatar,
+                source: "profile"
+            });
+        }
+
+        // No formal account row (e.g. this device never called /users/profile) -
+        // fall back to the most recent job they posted so we still show
+        // something sensible instead of an empty profile.
+        const jobResult = await pool.query(
+            "SELECT * FROM jobs WHERE user_id=$1 ORDER BY createdat DESC LIMIT 1",
+            [userId]
+        );
+        const job = jobResult.rows[0];
+        if (!job) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json({
+            id: userId,
+            name: job.author_name || job.company,
+            phone: job.author_phone,
+            location: job.author_location || job.location,
+            role: job.author_role,
+            profession: "",
+            skills: job.author_skills,
+            avatar: job.author_avatar,
+            source: "job"
+        });
+    } catch (error) {
+        console.log("Fetch public profile error:", error.message);
+        res.status(500).json({ message: "Could not fetch profile" });
+    }
+});
+
+// All jobs a user has POSTED (their real post history, not a DOM guess by name)
+app.get("/users/:userId/posts", async (req, res) => {
+    const userId = req.params.userId;
+    const viewerId = req.query.viewerId || "";
+    try {
+        const result = await pool.query(
+            `
+            SELECT j.*,
+                (SELECT COUNT(*)::int FROM job_likes l WHERE l.job_id = j.id) AS like_count,
+                EXISTS(SELECT 1 FROM job_likes l WHERE l.job_id = j.id AND l.user_id = $2) AS liked_by_me,
+                (SELECT COUNT(*)::int FROM job_comments c WHERE c.job_id = j.id) AS comment_count,
+                EXISTS(SELECT 1 FROM job_saves s WHERE s.job_id = j.id AND s.user_id = $2) AS saved_by_me,
+                EXISTS(SELECT 1 FROM job_applications a WHERE a.job_id = j.id AND a.user_id = $2) AS applied_by_me
+            FROM jobs j
+            WHERE j.user_id = $1
+            ORDER BY j.createdat DESC
+            `,
+            [userId, viewerId]
+        );
+        res.json(result.rows.map((row) => ({
+            id: row.id,
+            userId: row.user_id,
+            company: row.company,
+            title: row.title,
+            location: row.location,
+            salary: row.salary,
+            description: row.description,
+            attachment: row.attachment,
+            createdAt: row.createdat,
+            isNew: row.isnew,
+            authorName: row.author_name || row.company,
+            authorPhone: row.author_phone,
+            authorLocation: row.author_location || row.location,
+            authorAvatar: row.author_avatar,
+            authorRole: row.author_role,
+            authorSkills: row.author_skills,
+            likeCount: row.like_count,
+            likedByMe: row.liked_by_me,
+            commentCount: row.comment_count,
+            savedByMe: row.saved_by_me,
+            appliedByMe: row.applied_by_me
+        })));
+    } catch (error) {
+        console.log("Fetch user posts error:", error.message);
+        res.status(500).json({ message: "Could not fetch user's posts" });
+    }
+});
+
+// All jobs a user has LIKED
+app.get("/users/:userId/liked", async (req, res) => {
+    const userId = req.params.userId;
+    try {
+        const result = await pool.query(
+            `
+            SELECT j.* FROM jobs j
+            JOIN job_likes l ON l.job_id = j.id
+            WHERE l.user_id = $1
+            ORDER BY l.createdat DESC
+            `,
+            [userId]
+        );
+        res.json(result.rows.map(mapJobRow));
+    } catch (error) {
+        console.log("Fetch liked error:", error.message);
+        res.status(500).json({ message: "Could not fetch liked jobs" });
+    }
+});
+
+// ==========================
 // ADMIN - DELETE USER (cascades related data + owned jobs)
 // ==========================
 app.delete("/users/:id", async (req, res) => {
@@ -293,7 +486,10 @@ app.delete("/users/:id", async (req, res) => {
         await pool.query("DELETE FROM job_saves WHERE user_id = ANY($1)", [keys]);
         await pool.query("DELETE FROM job_applications WHERE user_id = ANY($1)", [keys]);
         await pool.query("DELETE FROM job_comments WHERE user_id = ANY($1)", [keys]);
-        await pool.query("DELETE FROM chat_messages WHERE seeker_id = ANY($1) OR sender_id = ANY($1)", [keys]);
+        await pool.query(
+            "DELETE FROM chat_messages WHERE seeker_id = ANY($1) OR sender_id = ANY($1) OR recruiter_id = ANY($1)",
+            [keys]
+        );
 
         // Remove any jobs this user posted, along with engagement/chat tied to those jobs
         const ownedJobs = await pool.query("SELECT id FROM jobs WHERE user_id = ANY($1)", [keys]);
@@ -303,7 +499,7 @@ app.delete("/users/:id", async (req, res) => {
             await pool.query("DELETE FROM job_saves WHERE job_id=$1", [jobId]);
             await pool.query("DELETE FROM job_applications WHERE job_id=$1", [jobId]);
             await pool.query("DELETE FROM job_comments WHERE job_id=$1", [jobId]);
-            await pool.query("DELETE FROM chat_messages WHERE job_id=$1", [jobId]);
+            await pool.query("UPDATE chat_messages SET job_id=NULL WHERE job_id=$1", [jobId]);
         }
         await pool.query("DELETE FROM jobs WHERE user_id = ANY($1)", [keys]);
 
@@ -557,7 +753,10 @@ app.delete("/jobs/:id", async (req, res) => {
         await pool.query("DELETE FROM job_saves WHERE job_id=$1", [id]);
         await pool.query("DELETE FROM job_applications WHERE job_id=$1", [id]);
         await pool.query("DELETE FROM job_comments WHERE job_id=$1", [id]);
-        await pool.query("DELETE FROM chat_messages WHERE job_id=$1", [id]);
+        // A conversation now belongs to the two people, not to one job post, so
+        // deleting the job shouldn't wipe out the chat history between them -
+        // just clear the reference to this job on any message that tagged it.
+        await pool.query("UPDATE chat_messages SET job_id=NULL WHERE job_id=$1", [id]);
         await pool.query("DELETE FROM jobs WHERE id=$1", [id]);
         res.json({ message: "Job deleted successfully" });
     } catch (error) {
@@ -776,16 +975,20 @@ app.post("/jobs/:id/comments", async (req, res) => {
 // ==========================
 // REAL CHAT (Job Seeker <-> Recruiter)
 // ==========================
-// A conversation is uniquely identified by (jobId, seekerId).
-// The recruiter is whoever owns the job (jobs.user_id). Either side can send
-// messages into the same thread and both sides poll for new messages.
+// A conversation is uniquely identified by (recruiterId, seekerId) - the two
+// PEOPLE talking - not by which job post they happened to be discussing. So
+// if a seeker messages the same recruiter about three different job posts,
+// it's the same thread with the full history, not three separate empty
+// chats. Each message can still optionally carry a jobId, purely as context
+// for what was being discussed / for the "View Tagged Job" link - it no
+// longer decides which thread the message belongs to.
 
-app.get("/chats/:jobId/:seekerId/messages", async (req, res) => {
-    const { jobId, seekerId } = req.params;
+app.get("/chats/:recruiterId/:seekerId/messages", async (req, res) => {
+    const { recruiterId, seekerId } = req.params;
     try {
         const result = await pool.query(
-            "SELECT * FROM chat_messages WHERE job_id=$1 AND seeker_id=$2 ORDER BY id ASC",
-            [jobId, seekerId]
+            "SELECT * FROM chat_messages WHERE recruiter_id=$1 AND seeker_id=$2 ORDER BY id ASC",
+            [recruiterId, seekerId]
         );
         res.json(result.rows.map(mapMessageRow));
     } catch (error) {
@@ -794,9 +997,9 @@ app.get("/chats/:jobId/:seekerId/messages", async (req, res) => {
     }
 });
 
-app.post("/chats/:jobId/:seekerId/messages", async (req, res) => {
-    const { jobId, seekerId } = req.params;
-    const { senderId, senderRole, senderName, senderAvatar, text } = req.body;
+app.post("/chats/:recruiterId/:seekerId/messages", async (req, res) => {
+    const { recruiterId, seekerId } = req.params;
+    const { senderId, senderRole, senderName, senderAvatar, text, jobId } = req.body;
 
     if (!senderId || !senderRole || !text || !text.trim()) {
         return res.status(400).json({ message: "senderId, senderRole and text are required" });
@@ -818,11 +1021,11 @@ app.post("/chats/:jobId/:seekerId/messages", async (req, res) => {
         const result = await pool.query(
             `
             INSERT INTO chat_messages
-            (job_id, seeker_id, sender_id, sender_role, sender_name, sender_avatar, text, createdat, read_by_seeker, read_by_recruiter)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+            (job_id, recruiter_id, seeker_id, sender_id, sender_role, sender_name, sender_avatar, text, createdat, read_by_seeker, read_by_recruiter)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
             RETURNING *
             `,
-            [jobId, seekerId, senderId, senderRole, senderName || "", senderAvatar || "", text.trim(), createdAt, readBySeeker, readByRecruiter]
+            [jobId || null, recruiterId, seekerId, senderId, senderRole, senderName || "", senderAvatar || "", text.trim(), createdAt, readBySeeker, readByRecruiter]
         );
 
         res.status(201).json(mapMessageRow(result.rows[0]));
@@ -833,8 +1036,8 @@ app.post("/chats/:jobId/:seekerId/messages", async (req, res) => {
 });
 
 // Mark a conversation as read for whichever side is viewing it
-app.post("/chats/:jobId/:seekerId/read", async (req, res) => {
-    const { jobId, seekerId } = req.params;
+app.post("/chats/:recruiterId/:seekerId/read", async (req, res) => {
+    const { recruiterId, seekerId } = req.params;
     const { role } = req.body;
     if (role !== "seeker" && role !== "recruiter") {
         return res.status(400).json({ message: "role must be 'seeker' or 'recruiter'" });
@@ -842,8 +1045,8 @@ app.post("/chats/:jobId/:seekerId/read", async (req, res) => {
     try {
         const column = role === "seeker" ? "read_by_seeker" : "read_by_recruiter";
         await pool.query(
-            `UPDATE chat_messages SET ${column} = TRUE WHERE job_id=$1 AND seeker_id=$2`,
-            [jobId, seekerId]
+            `UPDATE chat_messages SET ${column} = TRUE WHERE recruiter_id=$1 AND seeker_id=$2`,
+            [recruiterId, seekerId]
         );
         res.json({ message: "Marked as read" });
     } catch (error) {
@@ -852,62 +1055,98 @@ app.post("/chats/:jobId/:seekerId/read", async (req, res) => {
     }
 });
 
+// Delete an entire conversation between two people
+app.delete("/chats/:recruiterId/:seekerId", async (req, res) => {
+    const { recruiterId, seekerId } = req.params;
+    try {
+        await pool.query(
+            "DELETE FROM chat_messages WHERE recruiter_id=$1 AND seeker_id=$2",
+            [recruiterId, seekerId]
+        );
+        res.json({ message: "Conversation deleted successfully" });
+    } catch (error) {
+        console.log("Delete conversation error:", error.message);
+        res.status(500).json({ message: "Could not delete conversation" });
+    }
+});
+
 // List every conversation a user is part of, whether they are the job seeker
-// or the recruiter (job owner) side of that thread.
+// or the recruiter side of that thread. One row per (recruiter, seeker) pair,
+// however many job posts they've discussed together.
 app.get("/users/:userId/conversations", async (req, res) => {
     const userId = req.params.userId;
     try {
         const result = await pool.query(
             `
-            SELECT DISTINCT cm.job_id, cm.seeker_id
-            FROM chat_messages cm
-            JOIN jobs j ON j.id = cm.job_id
-            WHERE cm.seeker_id = $1 OR j.user_id = $1
+            SELECT DISTINCT recruiter_id, seeker_id
+            FROM chat_messages
+            WHERE seeker_id = $1 OR recruiter_id = $1
             `,
             [userId]
         );
 
         const conversations = await Promise.all(result.rows.map(async (row) => {
-            const jobId = row.job_id;
+            const recruiterId = row.recruiter_id;
             const seekerId = row.seeker_id;
+            if (!recruiterId || !seekerId) return null;
 
-            const jobResult = await pool.query("SELECT * FROM jobs WHERE id=$1", [jobId]);
-            const job = jobResult.rows[0];
-            if (!job) return null;
-
-            const isRecruiter = job.user_id === userId;
+            const isRecruiter = recruiterId === userId;
             const myRole = isRecruiter ? "recruiter" : "seeker";
 
             const lastMsgResult = await pool.query(
-                "SELECT * FROM chat_messages WHERE job_id=$1 AND seeker_id=$2 ORDER BY id DESC LIMIT 1",
-                [jobId, seekerId]
+                "SELECT * FROM chat_messages WHERE recruiter_id=$1 AND seeker_id=$2 ORDER BY id DESC LIMIT 1",
+                [recruiterId, seekerId]
             );
             const lastMsg = lastMsgResult.rows[0];
 
+            // Most recently referenced job, just to show a label like "Applied
+            // for: X" - the thread itself isn't scoped to it.
+            const lastJobResult = await pool.query(
+                `SELECT j.* FROM chat_messages cm JOIN jobs j ON j.id = cm.job_id
+                 WHERE cm.recruiter_id=$1 AND cm.seeker_id=$2 AND cm.job_id IS NOT NULL
+                 ORDER BY cm.id DESC LIMIT 1`,
+                [recruiterId, seekerId]
+            );
+            const lastJob = lastJobResult.rows[0];
+
+            const distinctJobsResult = await pool.query(
+                `SELECT COUNT(DISTINCT job_id)::int AS count FROM chat_messages
+                 WHERE recruiter_id=$1 AND seeker_id=$2 AND job_id IS NOT NULL`,
+                [recruiterId, seekerId]
+            );
+            const distinctJobCount = distinctJobsResult.rows[0].count;
+
             const unreadColumn = isRecruiter ? "read_by_recruiter" : "read_by_seeker";
             const unreadResult = await pool.query(
-                `SELECT COUNT(*)::int AS count FROM chat_messages WHERE job_id=$1 AND seeker_id=$2 AND ${unreadColumn} = FALSE AND sender_role != $3`,
-                [jobId, seekerId, myRole]
+                `SELECT COUNT(*)::int AS count FROM chat_messages WHERE recruiter_id=$1 AND seeker_id=$2 AND ${unreadColumn} = FALSE AND sender_role != $3`,
+                [recruiterId, seekerId, myRole]
             );
 
             let counterpartName, counterpartAvatar;
             if (isRecruiter) {
                 const seekerMsgResult = await pool.query(
-                    "SELECT sender_name, sender_avatar FROM chat_messages WHERE job_id=$1 AND seeker_id=$2 AND sender_role='seeker' ORDER BY id DESC LIMIT 1",
-                    [jobId, seekerId]
+                    "SELECT sender_name, sender_avatar FROM chat_messages WHERE recruiter_id=$1 AND seeker_id=$2 AND sender_role='seeker' ORDER BY id DESC LIMIT 1",
+                    [recruiterId, seekerId]
                 );
                 counterpartName = (seekerMsgResult.rows[0] && seekerMsgResult.rows[0].sender_name) || "Applicant";
                 counterpartAvatar = (seekerMsgResult.rows[0] && seekerMsgResult.rows[0].sender_avatar) || "";
             } else {
-                counterpartName = job.author_name || job.company;
-                counterpartAvatar = job.author_avatar || "";
+                const recruiterProfile = await resolveUserRow(recruiterId);
+                if (recruiterProfile) {
+                    counterpartName = recruiterProfile.fullname;
+                    counterpartAvatar = recruiterProfile.avatar || "";
+                } else {
+                    counterpartName = (lastJob && (lastJob.author_name || lastJob.company)) || "Recruiter";
+                    counterpartAvatar = (lastJob && lastJob.author_avatar) || "";
+                }
             }
 
             return {
-                jobId: jobId,
+                recruiterId: recruiterId,
                 seekerId: seekerId,
-                jobTitle: job.title,
-                company: job.company,
+                jobId: lastJob ? lastJob.id : "",
+                jobTitle: lastJob ? (distinctJobCount > 1 ? lastJob.title + " (+" + (distinctJobCount - 1) + " more)" : lastJob.title) : "",
+                company: lastJob ? lastJob.company : "",
                 myRole: myRole,
                 counterpartName: counterpartName,
                 counterpartAvatar: counterpartAvatar,
@@ -994,6 +1233,7 @@ function mapMessageRow(row) {
     return {
         id: row.id,
         jobId: row.job_id,
+        recruiterId: row.recruiter_id,
         seekerId: row.seeker_id,
         senderId: row.sender_id,
         senderRole: row.sender_role,
