@@ -736,7 +736,7 @@
             z-index: 1999;
             display: flex;
             justify-content: center;
-            transform: translateY(-120%);
+            transform: translateY(calc(-100% - 200px));
             transition: transform .45s cubic-bezier(.4, 0, .2, 1);
             pointer-events: none;
         }
@@ -3591,7 +3591,7 @@
 
             // "Set up your profile" banner - only for a brand-new account,
             // and only the very first time it lands on this page. Disappears
-            // on its own after 5 seconds, or sooner if the button is used.
+            // on its own after 12 seconds, or sooner if the button is used.
             (function () {
                 const banner = document.getElementById('profileSetupBanner');
                 if (!banner) return;
@@ -3609,7 +3609,7 @@
                 });
 
                 function hideBanner() { banner.classList.remove('show'); }
-                const autoHideTimer = setTimeout(hideBanner, 5000);
+                const autoHideTimer = setTimeout(hideBanner, 12000);
 
                 const setupBtn = document.getElementById('profileSetupBtn');
                 if (setupBtn) {
