@@ -1380,7 +1380,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        (function () {
+        (async function () {
             'use strict';
 
             const API_BASE = 'https://project-connect-001.onrender.com';
@@ -1482,7 +1482,7 @@
             // "only if empty" condition was the bug: it let a stale, unrelated
             // account stay active forever once set, so a brand-new signup could
             // load home.html and still show the previous person's name.
-            (function syncBackendSession() {
+            await (async function syncBackendSession() {
                 if (getActiveAccountId() === ADMIN_ACCOUNT_ID) return; // never touch an active admin session
 
                 let email = '';
@@ -1507,17 +1507,20 @@
                 if (!existingProfile) {
                     // No cached profile on THIS device yet. That does not mean
                     // the account is new - it may just be a different browser
-                    // or a cleared cache. Ask the server for the real saved
-                    // profile first, so an existing account loads its actual
-                    // data instead of a blank template that looks like a
-                    // brand-new account.
+                    // or phone. sessionProfile (just written at login, from the
+                    // server's own user record) is the fastest, most reliable
+                    // source. The public-profile fetch below is a second,
+                    // best-effort top-up in case sessionProfile is missing
+                    // something - it must never be allowed to blank out a
+                    // field sessionProfile already has real data for. Uses a
+                    // real async fetch (not a synchronous XHR) so this works
+                    // on mobile browsers, which commonly block synchronous
+                    // requests outright.
                     let serverProfile = null;
                     try {
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('GET', API_BASE + '/users/' + encodeURIComponent(id) + '/public-profile', false);
-                        xhr.send(null);
-                        if (xhr.status === 200) {
-                            const found = JSON.parse(xhr.responseText);
+                        const resp = await fetch(API_BASE + '/users/' + encodeURIComponent(id) + '/public-profile');
+                        if (resp.ok) {
+                            const found = await resp.json();
                             serverProfile = {
                                 name: found.name || '',
                                 avatar: found.avatar || '',
@@ -1529,18 +1532,28 @@
                         }
                     } catch (err) { serverProfile = null; }
 
-                    if (serverProfile) {
-                        // Real, existing account - restore its actual saved data.
-                        saveJSON(STORAGE_KEYS.profile + '.' + id, Object.assign({
-                            verified: false
-                        }, serverProfile, sessionProfile || {}));
-                    } else {
+                    // Layer defaults -> server fetch -> session (login) data,
+                    // but only let a later layer override an earlier one when
+                    // it actually has a non-empty value. An empty string from
+                    // a thinner source must never erase good data.
+                    function applyNonEmpty(target, source) {
+                        if (!source) return;
+                        Object.keys(source).forEach(function (key) {
+                            const val = source[key];
+                            if (val !== undefined && val !== null && val !== '') {
+                                target[key] = val;
+                            }
+                        });
+                    }
+
+                    const merged = { name: '', avatar: '', location: '', skills: '', role: 'Jobseeker', phone: '', verified: false };
+                    applyNonEmpty(merged, serverProfile);
+                    applyNonEmpty(merged, sessionProfile);
+                    saveJSON(STORAGE_KEYS.profile + '.' + id, merged);
+
+                    if (!serverProfile && !(sessionProfile && sessionProfile.name)) {
                         // Genuinely nothing saved for this account anywhere -
-                        // seed blank and flag it so the "complete your profile"
-                        // banner shows.
-                        saveJSON(STORAGE_KEYS.profile + '.' + id, Object.assign({
-                            name: '', avatar: '', location: '', skills: '', role: 'Jobseeker', phone: '', verified: false
-                        }, sessionProfile || {}));
+                        // flag it so the "complete your profile" banner shows.
                         try { localStorage.setItem('ylm.justSignedUp', id); } catch (err) { }
                     }
                 }

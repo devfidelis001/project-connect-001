@@ -1072,17 +1072,19 @@ signupForm.addEventListener("submit", async function (e) {
 
             localStorage.setItem("ylm_currentUser", email);
 
+            const accountId = "acct-" + email;
 
             localStorage.setItem("ylm.profile", JSON.stringify({
-
                 name: fullname,
+                phone: phone,
+                location: location,
+                skills: "",
+                role: accountType,
                 avatar: ""
-
             }));
 
-            // Force home.html to load THIS new account, not whichever
-            // account happened to be marked "active" before.
-            localStorage.removeItem("ylm.activeAccount");
+            // Point THIS device straight at the account that was just created.
+            localStorage.setItem("ylm.activeAccount", accountId);
 
             goToHome();
 
@@ -1162,18 +1164,23 @@ loginForm.addEventListener("submit", async function (e) {
 
             localStorage.setItem("ylm_currentUser", email);
 
+            const accountId = "acct-" + email;
 
+            // Save the FULL account record the server already returned
+            // (not just the name) so this device has real data to show
+            // immediately, even before any extra profile fetch happens.
             localStorage.setItem("ylm.profile", JSON.stringify({
-
-                name: data.user.fullname,
-                avatar: ""
-
+                name: data.user.fullname || "",
+                phone: data.user.phone || "",
+                location: data.user.location || "",
+                skills: data.user.skills || "",
+                role: data.user.accounttype || "Jobseeker",
+                avatar: data.user.avatar || ""
             }));
 
-            // Force home.html to load THIS exact account (the one that
-            // just matched by email + password on the server), not
-            // whichever account happened to be marked "active" before.
-            localStorage.removeItem("ylm.activeAccount");
+            // Point THIS device straight at the exact account that just
+            // matched by email + password on the server.
+            localStorage.setItem("ylm.activeAccount", accountId);
 
             goToHome();
 
