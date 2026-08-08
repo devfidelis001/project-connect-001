@@ -1,7 +1,3 @@
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -822,7 +818,7 @@
                         <span>Verified Admin Account</span>
                         <a href="#" id="exitAdminModeLink">Exit</a>
                     </div>
-                    <a href="#" id="switchAccountLink" class="d-block small text-secondary mb-2"><i class="bi bi-arrow-left-right me-1"></i>Not you? Switch account</a>
+                    <a href="#" id="logoutLink" class="d-block small text-secondary mb-2"><i class="bi bi-box-arrow-right me-1"></i>Log out</a>
                     <a class="left-link active-link" data-view="home"><i class="bi bi-house-door-fill"></i> Home</a>
                     <a class="left-link" data-view="saved"><i class="bi bi-bookmark-fill"></i> Saved Jobs</a>
                     <a class="left-link" data-view="applications"><i class="bi bi-file-earmark-person-fill"></i>
@@ -1248,39 +1244,6 @@
         </div>
     </div>
 
-    <!-- ACCOUNT GATE MODAL: gives every person their own account on this device,
-         instead of one shared identity based on browser storage. -->
-    <div class="modal fade" id="accountGateModal" tabindex="-1" aria-labelledby="accountGateModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form id="accountGateForm" novalidate>
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="accountGateModalLabel"><i class="bi bi-person-check-fill me-2"></i>Who's using the app?</h5>
-                        <button type="button" id="accountGateCloseBtn" class="btn-close btn-close-white d-none" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p class="text-secondary small mb-3">Sign in with your own name and phone number so your likes, comments and messages stay yours &mdash; even if other people use this same phone.</p>
-                        <div class="mb-3">
-                            <label class="form-label" for="accountGateName">Your Name</label>
-                            <input type="text" class="form-control" id="accountGateName" placeholder="e.g. John Doe" maxlength="60" required>
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label" for="accountGatePhone">Phone Number</label>
-                            <input type="tel" class="form-control" id="accountGatePhone" placeholder="e.g. 090XXXXXXXX" maxlength="30" required>
-                        </div>
-                        <div id="accountGateError" class="text-danger small mt-2 d-none">
-                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Please enter your name and phone number.
-                        </div>
-                        <div id="accountGateKnownList"></div>
-                    </div>
-                    <div class="modal-footer border-0">
-                        <button type="submit" class="btn-post"><i class="bi bi-box-arrow-in-right me-1"></i> Continue</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- NEW JOB MODAL -->
     <div class="modal fade" id="jobModal" tabindex="-1" aria-labelledby="jobModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -1439,8 +1402,6 @@
                 profile: 'ylm.profile',
                 settings: 'ylm.settings',
                 aiChat: 'ylm.aiChat',
-                deviceId: 'ylm.deviceId',
-                adminVerified: 'ylm.adminVerified',
                 seenJobIds: 'ylm.seenJobIds',
                 accounts: 'ylm.accounts',
                 activeAccount: 'ylm.activeAccount'
@@ -1463,24 +1424,29 @@
 
             /* ============================================================
                ACCOUNT SYSTEM
-               Previously every visitor on a given browser shared ONE random
-               "device id", so if two people used the same phone/browser they
-               were treated as the same person everywhere (likes, comments,
-               chats, applications) - liking a post as "user 2" was really
-               just liking it again as the same underlying id, which is why
-               the like count never moved and both people saw each other's
-               activity.
 
-               Now each person signs in with their own name + phone number.
-               That becomes their permanent account id, and ALL of their
-               activity is tracked under that id - never under a shared,
-               randomly generated browser id. Multiple accounts can live on
-               the same phone/browser side by side without mixing data.
+               Identity now comes from the real backend login on index.html
+               (Login / Sign Up page), which authenticates against the server
+               and stores the session as:
+                 - ylm_currentUser  -> the logged-in person's email
+                 - ylm.profile      -> {name, avatar} from that signup/login
+
+               That backend session is the single source of truth. Every time
+               this page loads, it is re-synced into an account keyed by that
+               email (acct-<email>), and that account is ALWAYS made the
+               active one - so a fresh signup can never be shadowed by some
+               older account that happened to still be "active" in this
+               browser from an earlier test or a previous person. That
+               mismatch (new signup silently kept showing an old, unrelated
+               user) was the actual bug - fixed by removing the old
+               "only sync if nobody is active yet" guard and the separate,
+               confusing local "switch account" system that could get out of
+               sync with the real login.
+
+               If there is no backend session at all, the person is sent to
+               index.html to sign in - this page never invents its own
+               account anymore.
                ============================================================ */
-
-            function normalizePhone(phone) {
-                return (phone || '').replace(/\D/g, '');
-            }
 
             function loadAccounts() { return loadJSON(STORAGE_KEYS.accounts, {}); }
             function saveAccounts(accounts) { saveJSON(STORAGE_KEYS.accounts, accounts); }
@@ -1494,43 +1460,17 @@
                 catch (err) { }
             }
 
-            // One-time migration for people who used the app before accounts existed,
-            // so their existing profile/likes/history aren't lost.
-            (function migrateLegacyProfileIfNeeded() {
+            function getActiveAccountId() {
+                const id = getStoredActiveAccountId();
                 const accounts = loadAccounts();
-                if (Object.keys(accounts).length > 0) return;
-
-                let legacyProfile = null;
-                try {
-                    const raw = localStorage.getItem(STORAGE_KEYS.profile);
-                    legacyProfile = raw ? JSON.parse(raw) : null;
-                } catch (err) { legacyProfile = null; }
-
-                let legacyDeviceId = null;
-                try { legacyDeviceId = localStorage.getItem(STORAGE_KEYS.deviceId); } catch (err) { }
-
-                if (!legacyProfile || !legacyDeviceId) return;
-
-                let wasAdmin = false;
-                try { wasAdmin = localStorage.getItem(STORAGE_KEYS.adminVerified) === 'true'; } catch (err) { }
-
-                const id = wasAdmin ? ADMIN_ACCOUNT_ID : ('acct-' + (normalizePhone(legacyProfile.phone) || legacyDeviceId));
-                accounts[id] = { name: wasAdmin ? 'Admin' : (legacyProfile.name || ''), phone: legacyProfile.phone || '' };
-                saveAccounts(accounts);
-
-                const migratedProfile = Object.assign({}, legacyProfile, wasAdmin ? { name: 'Admin', role: 'Admin', verified: true } : {});
-                saveJSON(STORAGE_KEYS.profile + '.' + id, migratedProfile);
-                saveJSON(STORAGE_KEYS.settings + '.' + id, loadJSON(STORAGE_KEYS.settings, {}));
-                saveJSON(STORAGE_KEYS.seenJobIds + '.' + id, loadJSON(STORAGE_KEYS.seenJobIds, []));
-                saveJSON(STORAGE_KEYS.aiChat + '.' + id, loadJSON(STORAGE_KEYS.aiChat, []));
-                setStoredActiveAccountId(id);
-            })();
+                return (id && accounts[id]) ? id : '';
+            }
 
             // ADMIN VERIFIED ACCOUNT DETECTION
             // Set when the login form on the Admin Dashboard is completed correctly.
-            // The Admin account is its own special, permanent account (not a flag on
-            // whichever profile happens to be active), so it always shows as "Admin"
-            // with the verified badge, and never leaks onto another person's account.
+            // The Admin account is its own special, permanent account, so it always
+            // shows as "Admin" with the verified badge, and never leaks onto another
+            // person's account.
             (function checkAdminEntry() {
                 const params = new URLSearchParams(window.location.search);
                 if (params.get('admin') === '1') {
@@ -1550,118 +1490,86 @@
                 }
             })();
 
-            function getActiveAccountId() {
-                const id = getStoredActiveAccountId();
+            // Sync the real backend session (index.html) into this page's active
+            // account, EVERY load - not just when nobody is active yet. That
+            // "only if empty" condition was the bug: it let a stale, unrelated
+            // account stay active forever once set, so a brand-new signup could
+            // load home.html and still show the previous person's name.
+            (function syncBackendSession() {
+                if (getActiveAccountId() === ADMIN_ACCOUNT_ID) return; // never touch an active admin session
+
+                let email = '';
+                try { email = (localStorage.getItem('ylm_currentUser') || '').trim().toLowerCase(); } catch (err) { }
+                if (!email) return; // handled by the redirect below
+
+                let sessionProfile = null;
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEYS.profile);
+                    sessionProfile = raw ? JSON.parse(raw) : null;
+                } catch (err) { sessionProfile = null; }
+
+                const id = 'acct-' + email;
                 const accounts = loadAccounts();
-                return (id && accounts[id]) ? id : '';
-            }
+                accounts[id] = {
+                    name: (sessionProfile && sessionProfile.name) || (accounts[id] && accounts[id].name) || '',
+                    phone: (sessionProfile && sessionProfile.phone) || (accounts[id] && accounts[id].phone) || ''
+                };
+                saveAccounts(accounts);
 
-            function renderKnownAccountsList() {
-                const listEl = document.getElementById('accountGateKnownList');
-                if (!listEl) return;
-                const accounts = loadAccounts();
-                const ids = Object.keys(accounts).filter(function (id) { return id !== ADMIN_ACCOUNT_ID; });
-                if (!ids.length) { listEl.innerHTML = ''; return; }
-                listEl.innerHTML = '<div class="text-secondary small mb-2 mt-3">Or continue as someone who already signed in on this phone:</div><div>' +
-                    ids.map(function (id) {
-                        const acc = accounts[id];
-                        const maskedPhone = acc.phone ? acc.phone.replace(/.(?=.{4})/g, '•') : '';
-                        const label = (acc.name || 'User') + (maskedPhone ? ' (' + maskedPhone + ')' : '');
-                        return '<button type="button" class="btn btn-outline-light btn-sm rounded-pill me-2 mb-2 account-switch-btn" data-account-id="' +
-                            id.replace(/"/g, '&quot;') + '">' + label.replace(/</g, '&lt;') + '</button>';
-                    }).join('') + '</div>';
-                listEl.querySelectorAll('.account-switch-btn').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        setStoredActiveAccountId(btn.getAttribute('data-account-id'));
-                        window.location.reload();
-                    });
-                });
-            }
+                const existingProfile = loadJSON(STORAGE_KEYS.profile + '.' + id, null);
+                if (!existingProfile) {
+                    // Brand-new account on this device - seed it from the signup/login
+                    // details and flag it so the "complete your profile" banner shows.
+                    saveJSON(STORAGE_KEYS.profile + '.' + id, Object.assign({
+                        name: '', avatar: '', location: '', skills: '', role: 'Jobseeker', phone: '', verified: false
+                    }, sessionProfile || {}));
+                    try { localStorage.setItem('ylm.justSignedUp', id); } catch (err) { }
+                } else if (sessionProfile && sessionProfile.name && sessionProfile.name !== existingProfile.name) {
+                    // Name changed at the source (re-signed-up or backend record
+                    // updated) - keep this device's copy in sync.
+                    existingProfile.name = sessionProfile.name;
+                    saveJSON(STORAGE_KEYS.profile + '.' + id, existingProfile);
+                }
 
-            function initAccountGate(forced) {
-                const modalEl = document.getElementById('accountGateModal');
-                if (!modalEl) return;
-                renderKnownAccountsList();
-
-                const closeBtn = document.getElementById('accountGateCloseBtn');
-                closeBtn.classList.toggle('d-none', !!forced);
-
-                const existing = bootstrap.Modal.getInstance(modalEl);
-                if (existing) existing.dispose();
-                const modal = new bootstrap.Modal(modalEl, forced ? { backdrop: 'static', keyboard: false } : { backdrop: true, keyboard: true });
-                modal.show();
-
-                const form = document.getElementById('accountGateForm');
-                const errorEl = document.getElementById('accountGateError');
-                if (form.dataset.bound === '1') return; // avoid double-binding if opened more than once
-                form.dataset.bound = '1';
-
-                form.addEventListener('submit', function (e) {
-                    e.preventDefault();
-                    const name = document.getElementById('accountGateName').value.trim();
-                    const phone = document.getElementById('accountGatePhone').value.trim();
-                    const normalized = normalizePhone(phone);
-
-                    if (!name || !normalized) {
-                        errorEl.classList.remove('d-none');
-                        return;
-                    }
-                    errorEl.classList.add('d-none');
-
-                    const id = 'acct-' + normalized;
-                    const accounts = loadAccounts();
-                    accounts[id] = { name: name, phone: phone };
-                    saveAccounts(accounts);
-
-                    const existingProfile = loadJSON(STORAGE_KEYS.profile + '.' + id, null);
-                    if (!existingProfile) {
-                        saveJSON(STORAGE_KEYS.profile + '.' + id, {
-                            name: name, avatar: '', location: '', skills: '', role: 'Jobseeker', phone: phone, verified: false
-                        });
-                    } else if (!existingProfile.name) {
-                        existingProfile.name = name;
-                        saveJSON(STORAGE_KEYS.profile + '.' + id, existingProfile);
-                    }
-
-                    setStoredActiveAccountId(id);
-                    window.location.reload();
-                });
-            }
+                setStoredActiveAccountId(id);
+            })();
 
             const ACCOUNT_ID = getActiveAccountId();
 
             if (!ACCOUNT_ID) {
-                // No one is signed in on this device/browser yet - show the
-                // account gate and stop the rest of the app from running
-                // until someone signs in. It will reload once they do.
-                initAccountGate(true);
+                // Nobody is signed in on this device - send them to the real
+                // sign-in page instead of showing a local account picker here.
+                window.location.href = 'index.html';
                 return;
             }
 
             // Namespace every piece of per-person storage under this account id so
-            // switching accounts on a shared phone never mixes one person's data
-            // into another's.
+            // this device never mixes one person's data into another's.
             STORAGE_KEYS.profile = STORAGE_KEYS.profile + '.' + ACCOUNT_ID;
             STORAGE_KEYS.settings = STORAGE_KEYS.settings + '.' + ACCOUNT_ID;
             STORAGE_KEYS.aiChat = STORAGE_KEYS.aiChat + '.' + ACCOUNT_ID;
             STORAGE_KEYS.seenJobIds = STORAGE_KEYS.seenJobIds + '.' + ACCOUNT_ID;
 
             // DEVICE_ID is kept as the name used throughout the rest of this file,
-            // but it is no longer a random per-browser id - it is this specific
-            // signed-in account's permanent id, sent to the server for every like,
-            // comment, application, and message so activity is always counted
-            // against the right person.
+            // but it is this specific signed-in account's permanent id, sent to the
+            // server for every like, comment, application, and message so activity
+            // is always counted against the right person.
             const DEVICE_ID = ACCOUNT_ID;
 
             function isAdminVerified() {
                 return ACCOUNT_ID === ADMIN_ACCOUNT_ID;
             }
 
-            const switchAccountLink = document.getElementById('switchAccountLink');
-            if (switchAccountLink) {
-                switchAccountLink.addEventListener('click', function (e) {
+            const logoutLink = document.getElementById('logoutLink');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function (e) {
                     e.preventDefault();
-                    initAccountGate(false);
+                    try {
+                        localStorage.removeItem('ylm_currentUser');
+                        localStorage.removeItem('ylm.profile');
+                        localStorage.removeItem('ylm.activeAccount');
+                    } catch (err) { }
+                    window.location.href = 'index.html';
                 });
             }
 
