@@ -190,6 +190,20 @@
             background: #0d6efd;
         }
 
+        #userModalTabs .nav-link {
+            color: white;
+            background: rgba(255, 255, 255, .06);
+            border-radius: 30px;
+            margin-right: 8px;
+            padding: 6px 16px;
+            font-size: .9rem;
+            font-weight: 500;
+        }
+
+        #userModalTabs .nav-link.active {
+            background: #0d6efd;
+        }
+
         .btn-post {
             background: #0d6efd;
             color: white;
@@ -877,6 +891,12 @@
                         <div id="composerSyncStatus" class="sync-status d-none"></div>
                     </div>
 
+                    <!-- PEOPLE SEARCH RESULTS -->
+                    <div id="peopleResults" class="mb-4 d-none">
+                        <h6 class="mb-3 text-secondary">People</h6>
+                        <div id="peopleResultsList"></div>
+                    </div>
+
                     <!-- JOB FEED -->
                     <div id="jobFeed">
 
@@ -1360,9 +1380,19 @@
                         </div>
                     </div>
 
-                    <h6 class="mb-3">Posts by this user</h6>
+                    <ul class="nav nav-pills mb-3" id="userModalTabs">
+                        <li class="nav-item">
+                            <button class="nav-link active" type="button" data-user-tab="posts">Posts</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" type="button" data-user-tab="liked">Liked</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" type="button" data-user-tab="applied">Applied</button>
+                        </li>
+                    </ul>
                     <div id="userModalPostsContainer">
-                        <!-- Dynamic user posts -->
+                        <!-- Dynamic user activity (posts / liked / applied) -->
                     </div>
                 </div>
             </div>
@@ -1817,18 +1847,57 @@
                 }
 
                 persistProfile();
-updateProfileUI();
+                updateProfileUI();
 
-// Send user data to backend for Admin Portal visibility
-fetch(`${API_BASE}/admin/users`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(state.profile)
-}).catch(err => console.error('Admin sync error:', err));
+                // Push the updated profile to the backend, which cascades the new
+                // name/avatar/phone/location/role/skills onto every post this
+                // person has ever made - so it shows up everywhere, not just here.
+                fetch(API_BASE + '/users/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: DEVICE_ID,
+                        name: state.profile.name,
+                        phone: state.profile.phone,
+                        location: state.profile.location,
+                        skills: state.profile.skills,
+                        role: state.profile.role,
+                        avatar: state.profile.avatar
+                    })
+                }).then(function () {
+                    // Refresh any of this person's cards already on screen so the
+                    // change is visible immediately, without waiting on the next poll.
+                    applyProfileToOwnCards();
+                    loadJobsFromBackend();
+                }).catch(function (err) {
+                    console.error('Profile sync error:', err);
+                });
 
                 profileSavedMsg.classList.remove('d-none');
                 setTimeout(function () { profileSavedMsg.classList.add('d-none'); }, 3500);
             });
+
+            // Optimistically updates every post card owned by this account so a
+            // profile edit shows up immediately, without waiting for a refresh.
+            function applyProfileToOwnCards() {
+                const ownCards = jobFeed.querySelectorAll('[data-user-id="' + CSS.escape(DEVICE_ID) + '"]');
+                ownCards.forEach(function (card) {
+                    // The backend cascade also writes the new name onto `company`
+                    // (the name shown on each card) - mirror that here so the
+                    // visible text matches what the next refresh will show.
+                    if (state.profile.name) card.dataset.company = state.profile.name;
+                    card.dataset.authorName = state.profile.name || card.dataset.authorName;
+                    card.dataset.authorPhone = state.profile.phone || card.dataset.authorPhone;
+                    card.dataset.authorLocation = state.profile.location || card.dataset.authorLocation;
+                    card.dataset.authorAvatar = getAvatar();
+                    card.dataset.authorRole = state.profile.role || card.dataset.authorRole;
+                    card.dataset.authorSkills = state.profile.skills || '';
+                    const nameEl = card.querySelector('h5.clickable-profile');
+                    if (nameEl && state.profile.name) nameEl.childNodes[0].nodeValue = state.profile.name;
+                    const imgEl = card.querySelector('img.clickable-profile');
+                    if (imgEl) imgEl.src = getAvatar();
+                });
+            }
 
             /* Settings */
             function populateSettingsForm() {
@@ -1938,11 +2007,74 @@ fetch(`${API_BASE}/admin/users`, {
             }
             const searchDesktop = document.getElementById('searchInputDesktop');
             const searchMobile = document.getElementById('searchInputMobile');
+            let peopleSearchTimer = null;
+            const PEOPLE_SEARCH_DEBOUNCE_MS = 350;
+
+            function renderPersonCard(p) {
+                const subtitleParts = [p.role, p.profession, p.location].filter(Boolean);
+                return '<div class="mini-card" data-user-id="' + escapeHtml(String(p.id)) + '">' +
+                    '<img src="' + (p.avatar || DEFAULT_AVATAR) + '" alt="">' +
+                    '<div class="mini-info"><h6>' + escapeHtml(p.name || 'User') + '</h6>' +
+                    '<small>' + escapeHtml(subtitleParts.join(' • ')) + (p.skills ? ('<br>' + escapeHtml(p.skills)) : '') + '</small></div>' +
+                    '<div class="mini-actions">' +
+                    '<button class="mini-view-profile"><i class="bi bi-person-fill"></i> View Profile</button>' +
+                    '<button class="mini-message-user"><i class="bi bi-chat-dots-fill"></i> Message</button>' +
+                    '</div></div>';
+            }
+
+            // Searches for people by name, profession/role, skills, or location -
+            // this can surface someone even if they've never posted a job.
+            function searchPeople(query) {
+                const q = query.trim();
+                const wrapper = document.getElementById('peopleResults');
+                const container = document.getElementById('peopleResultsList');
+                if (!q) {
+                    wrapper.classList.add('d-none');
+                    container.innerHTML = '';
+                    return;
+                }
+                fetch(API_BASE + '/users/search?q=' + encodeURIComponent(q))
+                    .then(function (response) { return response.ok ? response.json() : []; })
+                    .then(function (people) {
+                        const currentQuery = ((searchDesktop && searchDesktop.value) || (searchMobile && searchMobile.value) || '').trim();
+                        if (currentQuery !== q) return; // stale response for an old keystroke
+                        if (!people.length) {
+                            wrapper.classList.add('d-none');
+                            container.innerHTML = '';
+                            return;
+                        }
+                        wrapper.classList.remove('d-none');
+                        container.innerHTML = people.map(renderPersonCard).join('');
+                        container.querySelectorAll('.mini-view-profile').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const id = btn.closest('.mini-card').dataset.userId;
+                                const p = people.find(function (x) { return String(x.id) === String(id); });
+                                openUserProfileById(id, p ? {
+                                    name: p.name, phone: p.phone, location: p.location,
+                                    role: p.role, skills: p.skills, avatar: p.avatar
+                                } : {});
+                            });
+                        });
+                        container.querySelectorAll('.mini-message-user').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const id = btn.closest('.mini-card').dataset.userId;
+                                const p = people.find(function (x) { return String(x.id) === String(id); });
+                                openChatById(String(id), DEVICE_ID, p ? p.name : 'User', 'seeker', null);
+                            });
+                        });
+                    })
+                    .catch(function (error) { console.error('People search failed:', error); });
+            }
+
             function handleSearchInput(e) {
                 ensureHomeView();
                 filterJobs(e.target.value);
                 if (searchDesktop && e.target !== searchDesktop) searchDesktop.value = e.target.value;
                 if (searchMobile && e.target !== searchMobile) searchMobile.value = e.target.value;
+
+                clearTimeout(peopleSearchTimer);
+                const value = e.target.value;
+                peopleSearchTimer = setTimeout(function () { searchPeople(value); }, PEOPLE_SEARCH_DEBOUNCE_MS);
             }
             searchDesktop.addEventListener('input', handleSearchInput);
             searchMobile.addEventListener('input', handleSearchInput);
@@ -2166,9 +2298,11 @@ fetch(`${API_BASE}/admin/users`, {
             function sendAutoApplyMessage(card) {
                 const jobId = card.dataset.jobId;
                 const jobTitle = card.dataset.title;
+                const recruiterId = card.dataset.userId;
+                if (!recruiterId) return;
                 const messageText = 'I am interested in this role: [JOB:' + jobId + '|' + jobTitle + ']';
 
-                fetch(API_BASE + '/chats/' + encodeURIComponent(jobId) + '/' + encodeURIComponent(DEVICE_ID) + '/messages', {
+                fetch(API_BASE + '/chats/' + encodeURIComponent(recruiterId) + '/' + encodeURIComponent(DEVICE_ID) + '/messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2177,7 +2311,8 @@ fetch(`${API_BASE}/admin/users`, {
                         senderName: state.profile.name || 'Applicant',
                         senderAvatar: getAvatar(),
                         senderVerified: !!state.profile.verified,
-                        text: messageText
+                        text: messageText,
+                        jobId: jobId
                     })
                 })
                 .then(function () {
@@ -2326,6 +2461,9 @@ fetch(`${API_BASE}/admin/users`, {
                 ensureHomeView();
                 if (searchDesktop) searchDesktop.value = '';
                 if (searchMobile) searchMobile.value = '';
+                clearTimeout(peopleSearchTimer);
+                document.getElementById('peopleResults').classList.add('d-none');
+                document.getElementById('peopleResultsList').innerHTML = '';
                 filterJobs('');
                 const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
                 if (card) {
@@ -2374,7 +2512,11 @@ fetch(`${API_BASE}/admin/users`, {
                             btn.addEventListener('click', function () {
                                 const id = btn.closest('.mini-card').dataset.jobId;
                                 const job = entries.find(j => j.id === id);
-                                openChatById(id, DEVICE_ID, job ? job.company : 'Recruiter', 'seeker');
+                                if (!job || !job.userId) {
+                                    alert('This post has no recruiter to message yet.');
+                                    return;
+                                }
+                                openChatById(job.userId, DEVICE_ID, job.company, 'seeker', id);
                             });
                         });
                         container.querySelectorAll('.mini-remove').forEach(function (btn) {
@@ -2453,7 +2595,11 @@ fetch(`${API_BASE}/admin/users`, {
                             btn.addEventListener('click', function () {
                                 const id = btn.closest('.mini-card').dataset.jobId;
                                 const job = entries.find(j => j.id === id);
-                                openChatById(id, DEVICE_ID, job ? job.company : 'Recruiter', 'seeker');
+                                if (!job || !job.userId) {
+                                    alert('This post has no recruiter to message yet.');
+                                    return;
+                                }
+                                openChatById(job.userId, DEVICE_ID, job.company, 'seeker', id);
                             });
                         });
                     })
@@ -2474,13 +2620,13 @@ fetch(`${API_BASE}/admin/users`, {
                         }
 
                         applicantsContainer.innerHTML = applicantChats.map(function (c) {
-                            return '<div class="mini-card" data-job-id="' + escapeHtml(c.jobId) + '" data-seeker-id="' + escapeHtml(c.seekerId) + '">' +
+                            return '<div class="mini-card" data-job-id="' + escapeHtml(c.jobId || '') + '" data-seeker-id="' + escapeHtml(c.seekerId) + '">' +
                                 '<img src="' + (c.counterpartAvatar || DEFAULT_AVATAR) + '" alt="">' +
                                 '<div class="mini-info"><h6>' + escapeHtml(c.counterpartName) + '</h6>' +
-                                '<small>Applied for: <strong>' + escapeHtml(c.jobTitle || 'Posted Job') + '</strong></small></div>' +
+                                '<small>Applied for: <strong>' + escapeHtml(c.jobTitle || 'General enquiry') + '</strong></small></div>' +
                                 '<div class="mini-actions">' +
-                                '<button class="mini-view"><i class="bi bi-eye-fill"></i> View Job</button>' +
-                                '<button class="mini-remove"><i class="bi bi-trash"></i> Delete Application</button>' +
+                                (c.jobId ? '<button class="mini-view"><i class="bi bi-eye-fill"></i> View Job</button>' : '') +
+                                '<button class="mini-remove"><i class="bi bi-trash"></i> Delete Conversation</button>' +
                                 '<button class="mini-chat"><i class="bi bi-chat-dots-fill"></i> Message Job Seeker</button>' +
                                 '</div></div>';
                         }).join('');
@@ -2493,9 +2639,8 @@ fetch(`${API_BASE}/admin/users`, {
                         applicantsContainer.querySelectorAll('.mini-remove').forEach(function (btn) {
                             btn.addEventListener('click', function () {
                                 const card = btn.closest('.mini-card');
-                                const jobId = card.dataset.jobId;
                                 const seekerId = card.dataset.seekerId;
-                                fetch(API_BASE + '/chats/' + encodeURIComponent(jobId) + '/' + encodeURIComponent(seekerId), {
+                                fetch(API_BASE + '/chats/' + encodeURIComponent(DEVICE_ID) + '/' + encodeURIComponent(seekerId), {
                                     method: 'DELETE'
                                 }).then(function () {
                                     renderApplicationsView();
@@ -2510,8 +2655,8 @@ fetch(`${API_BASE}/admin/users`, {
                                 const card = btn.closest('.mini-card');
                                 const jobId = card.dataset.jobId;
                                 const seekerId = card.dataset.seekerId;
-                                const chat = applicantChats.find(c => c.jobId === jobId && c.seekerId === seekerId);
-                                openChatById(jobId, seekerId, chat ? chat.counterpartName : 'Job Seeker', 'recruiter');
+                                const chat = applicantChats.find(c => c.seekerId === seekerId);
+                                openChatById(DEVICE_ID, seekerId, chat ? chat.counterpartName : 'Job Seeker', 'recruiter', jobId || null);
                             });
                         });
                     })
@@ -2528,13 +2673,16 @@ fetch(`${API_BASE}/admin/users`, {
             const chatSendBtn = document.getElementById('chatSendBtn');
             const chatModalTitle = document.getElementById('chatModalTitle');
 
-            let activeChatJobId = null;
+            let activeRecruiterId = null;
             let activeSeekerId = null;
             let activeRole = null;
+            let activeContextJobId = null;
             let activeChatPollTimer = null;
             const CHAT_POLL_INTERVAL_MS = 4000;
 
-            function conversationKey(jobId, seekerId) { return jobId + '::' + seekerId; }
+            // A conversation is between two PEOPLE (a recruiter and a seeker),
+            // not scoped to one job post - so the key is just the pair of ids.
+            function conversationKey(recruiterId, seekerId) { return recruiterId + '::' + seekerId; }
 
             function getTotalUnread() {
                 return Object.keys(state.conversations).reduce(function (sum, key) {
@@ -2551,7 +2699,7 @@ fetch(`${API_BASE}/admin/users`, {
                     .then(function (conversations) {
                         const fresh = {};
                         conversations.forEach(function (c) {
-                            fresh[conversationKey(c.jobId, c.seekerId)] = c;
+                            fresh[conversationKey(c.recruiterId, c.seekerId)] = c;
                         });
                         state.conversations = fresh;
                         updateNotifBadge();
@@ -2593,7 +2741,7 @@ fetch(`${API_BASE}/admin/users`, {
                         .filter(function (c) { return c.unreadCount > 0; });
 
                     unread.forEach(function (c) {
-                        itemsHtml += '<li><a class="dropdown-item notif-item" href="#" data-key="' + escapeHtml(conversationKey(c.jobId, c.seekerId)) + '">' +
+                        itemsHtml += '<li><a class="dropdown-item notif-item" href="#" data-key="' + escapeHtml(conversationKey(c.recruiterId, c.seekerId)) + '">' +
                             '💬 <strong>' + escapeHtml(c.counterpartName) + '</strong><br><span class="small text-secondary">' +
                             escapeHtml(c.lastMessage || '') + '</span></a></li>';
                     });
@@ -2618,7 +2766,7 @@ fetch(`${API_BASE}/admin/users`, {
                     item.addEventListener('click', function (e) {
                         e.preventDefault();
                         const c = state.conversations[item.dataset.key];
-                        if (c) openChatById(c.jobId, c.seekerId, c.counterpartName, c.myRole);
+                        if (c) openChatById(c.recruiterId, c.seekerId, c.counterpartName, c.myRole, c.jobId);
                     });
                 });
 
@@ -2630,8 +2778,8 @@ fetch(`${API_BASE}/admin/users`, {
                 });
             }
 
-            function markChatRead(jobId, seekerId, role) {
-                return fetch(API_BASE + '/chats/' + encodeURIComponent(jobId) + '/' + encodeURIComponent(seekerId) + '/read', {
+            function markChatRead(recruiterId, seekerId, role) {
+                return fetch(API_BASE + '/chats/' + encodeURIComponent(recruiterId) + '/' + encodeURIComponent(seekerId) + '/read', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ role: role })
@@ -2649,20 +2797,21 @@ fetch(`${API_BASE}/admin/users`, {
                     return;
                 }
                 container.innerHTML = entries.map(function (c) {
-                    const key = conversationKey(c.jobId, c.seekerId);
+                    const key = conversationKey(c.recruiterId, c.seekerId);
                     const you = c.lastSenderRole === c.myRole ? 'You: ' : '';
                     const preview = c.lastMessage ? (you + c.lastMessage) : 'No messages yet';
                     const badge = c.unreadCount > 0 ? '<span class="notif-badge">' + c.unreadCount + '</span>' : '';
                     const roleTag = c.myRole === 'recruiter' ? ' (as recruiter)' : '';
+                    const subtitle = c.jobTitle || c.company || 'General enquiry';
                     return '<div class="mini-card message-row" data-key="' + escapeHtml(key) + '" style="cursor:pointer;">' +
                         '<img src="' + (c.counterpartAvatar || DEFAULT_AVATAR) + '" alt="">' +
                         '<div class="mini-info"><h6>' + escapeHtml(c.counterpartName) + badge + '</h6>' +
-                        '<small>' + escapeHtml(c.jobTitle || c.company) + roleTag + '<br>' + escapeHtml(preview) + '</small></div></div>';
+                        '<small>' + escapeHtml(subtitle) + roleTag + '<br>' + escapeHtml(preview) + '</small></div></div>';
                 }).join('');
                 container.querySelectorAll('.message-row').forEach(function (row) {
                     row.addEventListener('click', function () {
                         const c = state.conversations[row.dataset.key];
-                        if (c) openChatById(c.jobId, c.seekerId, c.counterpartName, c.myRole);
+                        if (c) openChatById(c.recruiterId, c.seekerId, c.counterpartName, c.myRole, c.jobId);
                     });
                 });
             }
@@ -2707,15 +2856,15 @@ fetch(`${API_BASE}/admin/users`, {
             }
 
             function loadActiveChatMessages() {
-                if (!activeChatJobId || !activeSeekerId) return Promise.resolve();
-                return fetch(API_BASE + '/chats/' + encodeURIComponent(activeChatJobId) + '/' + encodeURIComponent(activeSeekerId) + '/messages')
+                if (!activeRecruiterId || !activeSeekerId) return Promise.resolve();
+                return fetch(API_BASE + '/chats/' + encodeURIComponent(activeRecruiterId) + '/' + encodeURIComponent(activeSeekerId) + '/messages')
                     .then(function (response) {
                         if (!response.ok) throw new Error('HTTP ' + response.status);
                         return response.json();
                     })
                     .then(function (messages) {
                         renderChat(messages);
-                        if (chatModalEl.classList.contains('show')) markChatRead(activeChatJobId, activeSeekerId, activeRole);
+                        if (chatModalEl.classList.contains('show')) markChatRead(activeRecruiterId, activeSeekerId, activeRole);
                     })
                     .catch(function (error) {
                         console.error('Load chat messages failed:', error);
@@ -2729,43 +2878,55 @@ fetch(`${API_BASE}/admin/users`, {
                 }
             }
 
-            function openChatById(jobId, seekerId, title, role) {
-                activeChatJobId = jobId;
+            // recruiterId + seekerId identify WHO the conversation is between,
+            // and always load the full shared history no matter which job post
+            // it started from. jobId (optional) is just "what we're currently
+            // looking at this conversation from" - it gets tagged onto any new
+            // message sent from this context, but doesn't gate what loads.
+            function openChatById(recruiterId, seekerId, title, role, jobId) {
+                if (!recruiterId) {
+                    alert('This post has no recruiter to message yet.');
+                    return;
+                }
+                activeRecruiterId = recruiterId;
                 activeSeekerId = seekerId;
                 activeRole = role;
+                activeContextJobId = jobId || null;
                 chatModalTitle.textContent = 'Chat with ' + title;
                 chatMessagesEl.innerHTML = '<div class="text-secondary small">Loading messages...</div>';
                 chatModal.show();
                 loadActiveChatMessages().then(function () {
-                    markChatRead(jobId, seekerId, role);
+                    markChatRead(recruiterId, seekerId, role);
                 });
                 stopActiveChatPolling();
                 activeChatPollTimer = setInterval(loadActiveChatMessages, CHAT_POLL_INTERVAL_MS);
             }
             chatModalEl.addEventListener('hidden.bs.modal', function () {
                 stopActiveChatPolling();
-                activeChatJobId = null;
+                activeRecruiterId = null;
                 activeSeekerId = null;
                 activeRole = null;
+                activeContextJobId = null;
             });
 
             function openChat(card) {
                 const jobId = card.dataset.jobId;
-                const isOwner = card.dataset.userId && card.dataset.userId === DEVICE_ID;
+                const recruiterId = card.dataset.userId;
+                const isOwner = recruiterId && recruiterId === DEVICE_ID;
                 if (isOwner) {
                     switchView('messages');
                     return;
                 }
-                openChatById(jobId, DEVICE_ID, card.dataset.company, 'seeker');
+                openChatById(recruiterId, DEVICE_ID, card.dataset.company, 'seeker', jobId);
             }
 
             function sendChatMessage() {
                 if (blockIfSuspended('send messages')) return;
                 const text = chatInput.value.trim();
-                if (!text || !activeChatJobId || !activeSeekerId) return;
+                if (!text || !activeRecruiterId || !activeSeekerId) return;
                 chatInput.value = '';
 
-                fetch(API_BASE + '/chats/' + encodeURIComponent(activeChatJobId) + '/' + encodeURIComponent(activeSeekerId) + '/messages', {
+                fetch(API_BASE + '/chats/' + encodeURIComponent(activeRecruiterId) + '/' + encodeURIComponent(activeSeekerId) + '/messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2774,7 +2935,8 @@ fetch(`${API_BASE}/admin/users`, {
                         senderName: state.profile.name || 'You',
                         senderAvatar: getAvatar(),
                         senderVerified: !!state.profile.verified,
-                        text: text
+                        text: text,
+                        jobId: activeContextJobId || undefined
                     })
                 })
                     .then(function (response) {
@@ -2798,6 +2960,146 @@ fetch(`${API_BASE}/admin/users`, {
             /* User Public Profile Preview Modal */
             const userProfileModalEl = document.getElementById('userProfileModal');
             const userProfileModal = new bootstrap.Modal(userProfileModalEl);
+            const userModalTabsEl = document.getElementById('userModalTabs');
+
+            let currentModalUserId = null;
+            let currentModalTab = 'posts';
+
+            function populateUserModalHeader(p) {
+                document.getElementById('userModalAvatar').src = p.avatar || getAvatar();
+                document.getElementById('userModalName').textContent = p.name || 'Unknown';
+                document.getElementById('userModalPhone').textContent = p.phone || 'Not provided';
+                document.getElementById('userModalLocation').textContent = p.location || 'Not specified';
+                document.getElementById('userModalRole').textContent = p.role || 'Jobseeker';
+                document.getElementById('userModalVerifiedBadge').classList.toggle('d-none', !p.verified);
+
+                const skillsContainer = document.getElementById('userModalSkillsContainer');
+                const skills = (p.skills || '').trim();
+                if (skills) {
+                    skillsContainer.innerHTML = skills.split(',').map(function (s) {
+                        return '<span class="skill-badge">' + escapeHtml(s.trim()) + '</span>';
+                    }).join('');
+                } else {
+                    skillsContainer.innerHTML = '<span class="text-secondary small">No skills listed.</span>';
+                }
+            }
+
+            function renderUserActivityList(jobs, emptyMessage) {
+                if (!jobs || !jobs.length) return '<p class="text-secondary small text-center">' + emptyMessage + '</p>';
+                return jobs.map(function (job) {
+                    const img = (job.attachment && job.attachment.kind === 'image') ? job.attachment.url : DEFAULT_AVATAR;
+                    return '<div class="mini-card" data-job-id="' + escapeHtml(job.id) + '">' +
+                        '<img src="' + img + '" alt="">' +
+                        '<div class="mini-info"><h6>' + escapeHtml(job.title) + '</h6>' +
+                        '<small>' + escapeHtml(job.company) + ' • ' + escapeHtml(timeAgo(job.createdAt)) + '</small></div>' +
+                        '<div class="mini-actions"><button class="mini-view"><i class="bi bi-eye-fill"></i> View</button></div></div>';
+                }).join('');
+            }
+
+            function loadUserModalTabContent() {
+                const container = document.getElementById('userModalPostsContainer');
+                if (!currentModalUserId) return;
+                container.innerHTML = '<div class="text-secondary small">Loading...</div>';
+                const tab = currentModalTab;
+                const endpoints = {
+                    posts: '/users/' + encodeURIComponent(currentModalUserId) + '/posts?viewerId=' + encodeURIComponent(DEVICE_ID),
+                    liked: '/users/' + encodeURIComponent(currentModalUserId) + '/liked',
+                    applied: '/users/' + encodeURIComponent(currentModalUserId) + '/applications'
+                };
+                const emptyMessages = { posts: 'No posts by this user yet.', liked: 'No liked jobs yet.', applied: 'No job applications yet.' };
+
+                fetch(API_BASE + endpoints[tab])
+                    .then(function (response) { return response.ok ? response.json() : []; })
+                    .then(function (jobs) {
+                        if (currentModalTab !== tab || currentModalUserId === null) return; // tab/user changed while loading
+                        container.innerHTML = renderUserActivityList(jobs, emptyMessages[tab]);
+                        container.querySelectorAll('.mini-view').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const id = btn.closest('.mini-card').dataset.jobId;
+                                userProfileModal.hide();
+                                viewSavedPost(id);
+                            });
+                        });
+                    })
+                    .catch(function () {
+                        container.innerHTML = '<p class="text-danger small text-center">Could not load this right now.</p>';
+                    });
+            }
+
+            function setUserModalTab(tab) {
+                currentModalTab = tab;
+                userModalTabsEl.querySelectorAll('.nav-link').forEach(function (btn) {
+                    btn.classList.toggle('active', btn.dataset.userTab === tab);
+                });
+                loadUserModalTabContent();
+            }
+
+            userModalTabsEl.addEventListener('click', function (e) {
+                const btn = e.target.closest('[data-user-tab]');
+                if (!btn) return;
+                setUserModalTab(btn.dataset.userTab);
+            });
+
+            userProfileModalEl.addEventListener('hidden.bs.modal', function () {
+                currentModalUserId = null;
+            });
+
+            // Opens the public profile modal for a real user id, loading their
+            // live profile plus their actual activity (posts / liked / applied)
+            // from the backend - not a guess based on whatever's on screen.
+            function openUserProfileById(userId, fallback) {
+                currentModalUserId = userId;
+                userModalTabsEl.classList.remove('d-none');
+                populateUserModalHeader(fallback || {});
+                userProfileModal.show();
+                setUserModalTab('posts');
+
+                fetch(API_BASE + '/users/' + encodeURIComponent(userId) + '/public-profile')
+                    .then(function (response) { return response.ok ? response.json() : null; })
+                    .then(function (profile) {
+                        if (profile && currentModalUserId === userId) {
+                            populateUserModalHeader(Object.assign({}, profile, { verified: fallback && fallback.verified }));
+                        }
+                    })
+                    .catch(function () { });
+            }
+
+            // Fallback for posts that have no real author id (e.g. the built-in
+            // sample posts) - shows what's on the card itself, without the
+            // activity tabs since there's no id to fetch real activity for.
+            function openUserProfileFromCardOnly(card) {
+                currentModalUserId = null;
+                userModalTabsEl.classList.add('d-none');
+                const authorName = card.dataset.authorName || card.dataset.company;
+                populateUserModalHeader({
+                    name: authorName,
+                    phone: card.dataset.authorPhone,
+                    location: card.dataset.authorLocation,
+                    avatar: card.dataset.authorAvatar,
+                    role: card.dataset.authorRole,
+                    skills: card.dataset.authorSkills,
+                    verified: card.dataset.authorVerified === '1'
+                });
+
+                const postsContainer = document.getElementById('userModalPostsContainer');
+                postsContainer.innerHTML = '';
+                const allCards = jobFeed.querySelectorAll('.post-box');
+                let userPostCount = 0;
+                allCards.forEach(function (singleCard) {
+                    if (singleCard.dataset.authorName === authorName || singleCard.dataset.company === authorName) {
+                        const clonedCard = singleCard.cloneNode(true);
+                        clonedCard.querySelectorAll('.clickable-profile').forEach(function (el) {
+                            el.classList.remove('clickable-profile');
+                        });
+                        postsContainer.appendChild(clonedCard);
+                        userPostCount++;
+                    }
+                });
+                if (userPostCount === 0) {
+                    postsContainer.innerHTML = '<p class="text-secondary small text-center">No posts found for this user.</p>';
+                }
+                userProfileModal.show();
+            }
 
             /* Delegated Events */
             jobFeed.addEventListener('click', function (e) {
@@ -2806,53 +3108,20 @@ fetch(`${API_BASE}/admin/users`, {
 
                 const clickedProfile = e.target.closest('.clickable-profile');
                 if (clickedProfile) {
-                    const authorName = card.dataset.authorName || card.dataset.company;
-                    const authorPhone = card.dataset.authorPhone || 'Not provided';
-                    const authorLocation = card.dataset.authorLocation || 'Not specified';
-                    const authorAvatar = card.dataset.authorAvatar || getAvatar();
-                    const authorRole = card.dataset.authorRole || 'Jobseeker';
-                    const authorSkills = card.dataset.authorSkills || '';
-                    const authorVerified = card.dataset.authorVerified === '1';
-
-                    document.getElementById('userModalAvatar').src = authorAvatar;
-                    document.getElementById('userModalName').textContent = authorName;
-                    document.getElementById('userModalPhone').textContent = authorPhone;
-                    document.getElementById('userModalLocation').textContent = authorLocation;
-                    document.getElementById('userModalRole').textContent = authorRole;
-                    document.getElementById('userModalVerifiedBadge').classList.toggle('d-none', !authorVerified);
-
-                    const skillsContainer = document.getElementById('userModalSkillsContainer');
-                    if (authorSkills.trim()) {
-                        const skillsArray = authorSkills.split(',');
-                        skillsContainer.innerHTML = skillsArray.map(function (s) {
-                            return '<span class="skill-badge">' + escapeHtml(s.trim()) + '</span>';
-                        }).join('');
+                    const userId = card.dataset.userId;
+                    if (userId) {
+                        openUserProfileById(userId, {
+                            name: card.dataset.authorName || card.dataset.company,
+                            phone: card.dataset.authorPhone,
+                            location: card.dataset.authorLocation,
+                            avatar: card.dataset.authorAvatar,
+                            role: card.dataset.authorRole,
+                            skills: card.dataset.authorSkills,
+                            verified: card.dataset.authorVerified === '1'
+                        });
                     } else {
-                        skillsContainer.innerHTML = '<span class="text-secondary small">No skills listed.</span>';
+                        openUserProfileFromCardOnly(card);
                     }
-
-                    const postsContainer = document.getElementById('userModalPostsContainer');
-                    postsContainer.innerHTML = '';
-
-                    const allCards = jobFeed.querySelectorAll('.post-box');
-                    let userPostCount = 0;
-
-                    allCards.forEach(function (singleCard) {
-                        if (singleCard.dataset.authorName === authorName || singleCard.dataset.company === authorName) {
-                            const clonedCard = singleCard.cloneNode(true);
-                            clonedCard.querySelectorAll('.clickable-profile').forEach(function (el) {
-                                el.classList.remove('clickable-profile');
-                            });
-                            postsContainer.appendChild(clonedCard);
-                            userPostCount++;
-                        }
-                    });
-
-                    if (userPostCount === 0) {
-                        postsContainer.innerHTML = '<p class="text-secondary small text-center">No posts found for this user.</p>';
-                    }
-
-                    userProfileModal.show();
                     return;
                 }
 
