@@ -1505,12 +1505,44 @@
 
                 const existingProfile = loadJSON(STORAGE_KEYS.profile + '.' + id, null);
                 if (!existingProfile) {
-                    // Brand-new account on this device - seed it from the signup/login
-                    // details and flag it so the "complete your profile" banner shows.
-                    saveJSON(STORAGE_KEYS.profile + '.' + id, Object.assign({
-                        name: '', avatar: '', location: '', skills: '', role: 'Jobseeker', phone: '', verified: false
-                    }, sessionProfile || {}));
-                    try { localStorage.setItem('ylm.justSignedUp', id); } catch (err) { }
+                    // No cached profile on THIS device yet. That does not mean
+                    // the account is new - it may just be a different browser
+                    // or a cleared cache. Ask the server for the real saved
+                    // profile first, so an existing account loads its actual
+                    // data instead of a blank template that looks like a
+                    // brand-new account.
+                    let serverProfile = null;
+                    try {
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', API_BASE + '/users/' + encodeURIComponent(id) + '/public-profile', false);
+                        xhr.send(null);
+                        if (xhr.status === 200) {
+                            const found = JSON.parse(xhr.responseText);
+                            serverProfile = {
+                                name: found.name || '',
+                                avatar: found.avatar || '',
+                                location: found.location || '',
+                                skills: found.skills || '',
+                                role: found.role || 'Jobseeker',
+                                phone: found.phone || ''
+                            };
+                        }
+                    } catch (err) { serverProfile = null; }
+
+                    if (serverProfile) {
+                        // Real, existing account - restore its actual saved data.
+                        saveJSON(STORAGE_KEYS.profile + '.' + id, Object.assign({
+                            verified: false
+                        }, serverProfile, sessionProfile || {}));
+                    } else {
+                        // Genuinely nothing saved for this account anywhere -
+                        // seed blank and flag it so the "complete your profile"
+                        // banner shows.
+                        saveJSON(STORAGE_KEYS.profile + '.' + id, Object.assign({
+                            name: '', avatar: '', location: '', skills: '', role: 'Jobseeker', phone: '', verified: false
+                        }, sessionProfile || {}));
+                        try { localStorage.setItem('ylm.justSignedUp', id); } catch (err) { }
+                    }
                 }
                 // NOTE: deliberately NOT syncing the name back from sessionProfile
                 // once a per-account profile already exists. sessionProfile only
