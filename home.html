@@ -1442,15 +1442,9 @@
                         <li class="nav-item">
                             <button class="nav-link active" type="button" data-user-tab="posts">Posts</button>
                         </li>
-                        <li class="nav-item">
-                            <button class="nav-link" type="button" data-user-tab="liked">Liked</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" type="button" data-user-tab="applied">Applied</button>
-                        </li>
                     </ul>
                     <div id="userModalPostsContainer">
-                        <!-- Dynamic user activity (posts / liked / applied) -->
+                        <!-- Dynamic user activity (posts) -->
                     </div>
                 </div>
             </div>
@@ -2069,9 +2063,23 @@
             let peopleSearchTimer = null;
             const PEOPLE_SEARCH_DEBOUNCE_MS = 350;
 
+            // Backend search results may name the identifier field differently
+            // (id, userId, _id, accountId) - pick whichever is actually present
+            // instead of assuming one name, so a mismatch here can't silently
+            // turn into the literal string "undefined" being used as an id.
+            function resolvePersonId(p) {
+                if (!p) return '';
+                const candidate = (p.id !== undefined && p.id !== null) ? p.id
+                    : (p.userId !== undefined && p.userId !== null) ? p.userId
+                    : (p._id !== undefined && p._id !== null) ? p._id
+                    : (p.accountId !== undefined && p.accountId !== null) ? p.accountId
+                    : '';
+                return String(candidate);
+            }
+
             function renderPersonCard(p) {
                 const subtitleParts = [p.role, p.profession, p.location].filter(Boolean);
-                return '<div class="mini-card" data-user-id="' + escapeHtml(String(p.id)) + '">' +
+                return '<div class="mini-card" data-user-id="' + escapeHtml(resolvePersonId(p)) + '">' +
                     '<img src="' + (p.avatar || DEFAULT_AVATAR) + '" alt="">' +
                     '<div class="mini-info"><h6>' + escapeHtml(p.name || 'User') + '</h6>' +
                     '<small>' + escapeHtml(subtitleParts.join(' • ')) + (p.skills ? ('<br>' + escapeHtml(p.skills)) : '') + '</small></div>' +
@@ -2103,11 +2111,16 @@
                             return;
                         }
                         wrapper.classList.remove('d-none');
+                        people.forEach(function (p) {
+                            if (!resolvePersonId(p)) {
+                                console.warn('People search result has no usable id field - check the backend response shape:', p);
+                            }
+                        });
                         container.innerHTML = people.map(renderPersonCard).join('');
                         container.querySelectorAll('.mini-view-profile').forEach(function (btn) {
                             btn.addEventListener('click', function () {
                                 const id = btn.closest('.mini-card').dataset.userId;
-                                const p = people.find(function (x) { return String(x.id) === String(id); });
+                                const p = people.find(function (x) { return resolvePersonId(x) === id; });
                                 openUserProfileById(id, p ? {
                                     name: p.name, phone: p.phone, location: p.location,
                                     role: p.role, skills: p.skills, avatar: p.avatar
@@ -2117,8 +2130,13 @@
                         container.querySelectorAll('.mini-message-user').forEach(function (btn) {
                             btn.addEventListener('click', function () {
                                 const id = btn.closest('.mini-card').dataset.userId;
-                                const p = people.find(function (x) { return String(x.id) === String(id); });
-                                openChatById(String(id), DEVICE_ID, p ? p.name : 'User', 'seeker', null);
+                                const p = people.find(function (x) { return resolvePersonId(x) === id; });
+                                const existing = findExistingConversationWith(id);
+                                if (existing) {
+                                    openChatById(existing.recruiterId, existing.seekerId, existing.counterpartName || (p ? p.name : 'User'), existing.myRole, existing.jobId);
+                                } else {
+                                    openChatById(id, DEVICE_ID, p ? p.name : 'User', 'seeker', null);
+                                }
                             });
                         });
                     })
@@ -2743,6 +2761,20 @@
             // not scoped to one job post - so the key is just the pair of ids.
             function conversationKey(recruiterId, seekerId) { return recruiterId + '::' + seekerId; }
 
+            // Looks for a conversation already in progress with this specific
+            // person, no matter which role they were in last time (they may
+            // have messaged you as an applicant, or you may have messaged
+            // them as a seeker) - so re-opening chat with someone never
+            // starts a second, empty thread just because the roles differ.
+            function findExistingConversationWith(otherUserId) {
+                const keys = Object.keys(state.conversations);
+                for (let i = 0; i < keys.length; i++) {
+                    const c = state.conversations[keys[i]];
+                    if (c.recruiterId === otherUserId || c.seekerId === otherUserId) return c;
+                }
+                return null;
+            }
+
             function getTotalUnread() {
                 return Object.keys(state.conversations).reduce(function (sum, key) {
                     return sum + (state.conversations[key].unreadCount || 0);
@@ -2976,7 +3008,12 @@
                     switchView('messages');
                     return;
                 }
-                openChatById(recruiterId, DEVICE_ID, card.dataset.company, 'seeker', jobId);
+                const existing = findExistingConversationWith(recruiterId);
+                if (existing) {
+                    openChatById(existing.recruiterId, existing.seekerId, existing.counterpartName || card.dataset.company, existing.myRole, jobId || existing.jobId);
+                } else {
+                    openChatById(recruiterId, DEVICE_ID, card.dataset.company, 'seeker', jobId);
+                }
             }
 
             function sendChatMessage() {
@@ -3047,20 +3084,18 @@
                 const container = document.getElementById('userModalPostsContainer');
                 if (!currentModalUserId) return;
                 container.innerHTML = '<div class="text-secondary small">Loading...</div>';
-                const tab = currentModalTab;
-                const endpoints = {
-                    posts: '/users/' + encodeURIComponent(currentModalUserId) + '/posts?viewerId=' + encodeURIComponent(DEVICE_ID),
-                    liked: '/users/' + encodeURIComponent(currentModalUserId) + '/liked?viewerId=' + encodeURIComponent(DEVICE_ID),
-                    applied: '/users/' + encodeURIComponent(currentModalUserId) + '/applications?viewerId=' + encodeURIComponent(DEVICE_ID)
-                };
-                const emptyMessages = { posts: 'No posts by this user yet.', liked: 'No liked jobs yet.', applied: 'No job applications yet.' };
+                const userIdAtRequest = currentModalUserId;
+                const endpoint = '/users/' + encodeURIComponent(currentModalUserId) + '/posts?viewerId=' + encodeURIComponent(DEVICE_ID);
 
-                fetch(API_BASE + endpoints[tab])
-                    .then(function (response) { return response.ok ? response.json() : []; })
+                fetch(API_BASE + endpoint)
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
                     .then(function (jobs) {
-                        if (currentModalTab !== tab || currentModalUserId === null) return; // tab/user changed while loading
+                        if (currentModalUserId !== userIdAtRequest) return; // user changed while loading
                         if (!jobs.length) {
-                            container.innerHTML = '<p class="text-secondary small text-center">' + emptyMessages[tab] + '</p>';
+                            container.innerHTML = '<p class="text-secondary small text-center">No posts by this user yet.</p>';
                             return;
                         }
                         // Render the exact same post card used on the home feed, not a
@@ -3074,7 +3109,24 @@
                         });
                         container.appendChild(frag);
                     })
-                    .catch(function () {
+                    .catch(function (error) {
+                        console.error('Load user posts failed:', error);
+                        if (currentModalUserId !== userIdAtRequest) return;
+                        // Backend call failed - fall back to any posts by this
+                        // user already loaded in the main feed, so the tab
+                        // isn't just a dead end.
+                        const localCards = jobFeed.querySelectorAll('.post-box[data-user-id="' + CSS.escape(currentModalUserId) + '"]');
+                        if (localCards.length) {
+                            container.innerHTML = '';
+                            const frag = document.createDocumentFragment();
+                            localCards.forEach(function (c) {
+                                const clone = c.cloneNode(true);
+                                clone.querySelectorAll('.comments-panel').forEach(function (p) { p.remove(); });
+                                frag.appendChild(clone);
+                            });
+                            container.appendChild(frag);
+                            return;
+                        }
                         container.innerHTML = '<p class="text-danger small text-center">Could not load this right now.</p>';
                     });
             }
