@@ -1561,14 +1561,17 @@
             }
 
             const logoutLink = document.getElementById('logoutLink');
+            function clearLocalSession() {
+                try {
+                    localStorage.removeItem('ylm_currentUser');
+                    localStorage.removeItem('ylm.profile');
+                    localStorage.removeItem('ylm.activeAccount');
+                } catch (err) { }
+            }
             if (logoutLink) {
                 logoutLink.addEventListener('click', function (e) {
                     e.preventDefault();
-                    try {
-                        localStorage.removeItem('ylm_currentUser');
-                        localStorage.removeItem('ylm.profile');
-                        localStorage.removeItem('ylm.activeAccount');
-                    } catch (err) { }
+                    clearLocalSession();
                     window.location.href = 'index.html';
                 });
             }
@@ -1614,6 +1617,82 @@
             saveJSON(STORAGE_KEYS.profile, state.profile);
 
             function persistProfile() { saveJSON(STORAGE_KEYS.profile, state.profile); }
+
+            /* ============================================================
+               ACCOUNT STATUS POLLING (deletion + suspension)
+
+               The admin dashboard can delete or suspend a user directly on
+               the server, but this tab has no way to know that happened
+               until it asks. So we poll a lightweight status endpoint on a
+               timer (and immediately on load): if the account no longer
+               exists, log this device out right away; if it's suspended,
+               flip a flag that blocks posting/commenting/applying/messaging
+               in the UI (viewing, liking, and receiving messages still work).
+               ============================================================ */
+            const SESSION_CHECK_INTERVAL_MS = 15000;
+            state.suspended = false;
+            let loggedOutForRemoval = false;
+
+            function forceLogoutRemoved() {
+                if (loggedOutForRemoval) return;
+                loggedOutForRemoval = true;
+                clearLocalSession();
+                alert('Your account has been removed by an administrator.');
+                window.location.href = 'index.html';
+            }
+
+            function checkSessionStatus() {
+                if (isAdminVerified()) return; // the admin account isn't a row in `users`
+                let email = '';
+                try { email = (localStorage.getItem('ylm_currentUser') || '').trim().toLowerCase(); } catch (err) { }
+                if (!email) return;
+
+                fetch(API_BASE + '/session-status/' + encodeURIComponent(email))
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
+                    .then(function (status) {
+                        if (!status.exists) {
+                            forceLogoutRemoved();
+                            return;
+                        }
+                        const wasSuspended = state.suspended;
+                        state.suspended = !!status.suspended;
+                        if (state.suspended && !wasSuspended) {
+                            showSuspensionBanner();
+                        } else if (!state.suspended && wasSuspended) {
+                            hideSuspensionBanner();
+                        }
+                    })
+                    .catch(function (err) {
+                        // Network hiccup - don't log the person out over it, just retry next tick.
+                        console.error('Session status check failed:', err);
+                    });
+            }
+
+            function showSuspensionBanner() {
+                if (document.getElementById('suspensionBanner')) return;
+                const banner = document.createElement('div');
+                banner.id = 'suspensionBanner';
+                banner.setAttribute('role', 'alert');
+                banner.style.cssText = 'position:sticky;top:0;z-index:1050;background:#ffc107;color:#1a1a1a;padding:10px 16px;text-align:center;font-size:0.9rem;';
+                banner.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Your account has been suspended by an administrator. You can still browse, like posts, and receive messages, but can\'t post, comment, apply, or send messages.';
+                document.body.insertBefore(banner, document.body.firstChild);
+            }
+            function hideSuspensionBanner() {
+                const banner = document.getElementById('suspensionBanner');
+                if (banner) banner.remove();
+            }
+
+            function blockIfSuspended(actionLabel) {
+                if (!state.suspended) return false;
+                alert('Your account is suspended, so you can\'t ' + actionLabel + ' right now.');
+                return true;
+            }
+
+            checkSessionStatus();
+            setInterval(checkSessionStatus, SESSION_CHECK_INTERVAL_MS);
 
             function verifiedBadgeHtml(isVerified) {
                 return isVerified ? ' <i class="bi bi-patch-check-fill badge-verified-icon" title="Verified Account"></i>' : '';
@@ -2110,6 +2189,7 @@ fetch(`${API_BASE}/admin/users`, {
             }
 
             function toggleApply(card, btn) {
+                if (blockIfSuspended('apply to jobs')) return;
                 const id = card.dataset.jobId;
                 const willApply = !btn.classList.contains('applied');
                 setApplyButtonState(btn, willApply);
@@ -2680,6 +2760,7 @@ fetch(`${API_BASE}/admin/users`, {
             }
 
             function sendChatMessage() {
+                if (blockIfSuspended('send messages')) return;
                 const text = chatInput.value.trim();
                 if (!text || !activeChatJobId || !activeSeekerId) return;
                 chatInput.value = '';
@@ -2797,6 +2878,7 @@ fetch(`${API_BASE}/admin/users`, {
 
                 const sendBtn = e.target.closest('.comment-send');
                 if (sendBtn) {
+                    if (blockIfSuspended('post comments')) return;
                     const input = card.querySelector('.comment-input');
                     const text = input.value.trim();
                     if (!text) return;
@@ -2906,6 +2988,7 @@ fetch(`${API_BASE}/admin/users`, {
             const composerSyncStatus = document.getElementById('composerSyncStatus');
 
             function submitQuickPost() {
+                if (blockIfSuspended('post')) return;
                 const text = quickPostInput.value.trim();
                 if (!text && !composerAttachment) return;
 
@@ -2967,6 +3050,7 @@ fetch(`${API_BASE}/admin/users`, {
 
             jobForm.addEventListener('submit', function (e) {
                 e.preventDefault();
+                if (blockIfSuspended('post jobs')) return;
 
                 const company = document.getElementById('jobCompany').value.trim();
                 const title = document.getElementById('jobTitle').value.trim();

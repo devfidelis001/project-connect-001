@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -101,6 +99,35 @@
         .btn-delete-job:hover,
         .btn-delete-user:hover {
             background: #bb2d3b;
+        }
+
+        .btn-suspend-user {
+            background: #ffc107;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            transition: 0.2s;
+            margin-right: 6px;
+        }
+
+        .btn-suspend-user:hover {
+            background: #e0a800;
+        }
+
+        .btn-suspend-user.is-unsuspend {
+            background: #198754;
+            color: white;
+        }
+
+        .btn-suspend-user.is-unsuspend:hover {
+            background: #146c43;
+        }
+
+        .badge-suspended {
+            background: #ffc107;
+            color: #1a1a1a;
         }
 
         .search-admin {
@@ -311,6 +338,8 @@
                 const dateStr = createdAt && !isNaN(new Date(createdAt)) ? new Date(createdAt).toLocaleDateString() : 'Recent';
                 const userId = user.id || user._id || user.email;
 
+                const isSuspended = !!user.suspended;
+
                 return `
                     <tr id="admin-user-${escapeHtml(String(userId))}">
                         <td>
@@ -322,11 +351,17 @@
                                 </div>
                             </div>
                         </td>
-                        <td><span class="badge badge-role ${badgeClass}">${escapeHtml(role)}</span></td>
+                        <td>
+                            <span class="badge badge-role ${badgeClass}">${escapeHtml(role)}</span>
+                            ${isSuspended ? ' <span class="badge badge-suspended">Suspended</span>' : ''}
+                        </td>
                         <td>${escapeHtml(user.phone || 'N/A')}</td>
                         <td>${escapeHtml(user.location || 'N/A')}</td>
                         <td><small class="text-secondary">${dateStr}</small></td>
                         <td class="text-end">
+                            <button class="btn-suspend-user ${isSuspended ? 'is-unsuspend' : ''}" onclick="setUserSuspended('${escapeHtml(String(userId))}', ${!isSuspended})">
+                                <i class="bi ${isSuspended ? 'bi-unlock-fill' : 'bi-slash-circle'} me-1"></i> ${isSuspended ? 'Unsuspend' : 'Suspend'}
+                            </button>
                             <button class="btn-delete-user" onclick="deleteUser('${escapeHtml(String(userId))}')">
                                 <i class="bi bi-person-x-fill me-1"></i> Delete User
                             </button>
@@ -367,6 +402,42 @@
             .catch(err => {
                 console.error('Error deleting user:', err);
                 alert('Could not remove user from server. Please try again.');
+            });
+        }
+
+        // SUSPEND / UNSUSPEND USER DIRECTLY ON SERVER
+        // A suspended user stays logged in but is blocked from posting jobs,
+        // commenting, applying, and messaging - they can still browse, like
+        // posts, and receive messages. The app polls this status and applies
+        // the restriction automatically.
+        function setUserSuspended(userId, suspend) {
+            const confirmMsg = suspend
+                ? 'Suspend this user? They will be blocked from posting, commenting, applying, and messaging until unsuspended.'
+                : 'Unsuspend this user and restore their full access?';
+            if (!confirm(confirmMsg)) return;
+
+            fetch(`${API_BASE}/users/${encodeURIComponent(userId)}/suspend`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ suspended: suspend })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Suspension update failed');
+                return res.json();
+            })
+            .then(() => {
+                cachedUsers = cachedUsers.map(u => {
+                    const id = u.id || u._id || u.email;
+                    if (String(id) === String(userId)) {
+                        return Object.assign({}, u, { suspended: suspend });
+                    }
+                    return u;
+                });
+                renderUsersTable(cachedUsers);
+            })
+            .catch(err => {
+                console.error('Error updating suspension:', err);
+                alert('Could not update suspension status. Please try again.');
             });
         }
 
