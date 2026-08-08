@@ -90,7 +90,8 @@ async function createTables() {
             ADD COLUMN IF NOT EXISTS profession TEXT,
             ADD COLUMN IF NOT EXISTS skills TEXT,
             ADD COLUMN IF NOT EXISTS avatar TEXT,
-            ADD COLUMN IF NOT EXISTS createdat TEXT;
+            ADD COLUMN IF NOT EXISTS createdat TEXT,
+            ADD COLUMN IF NOT EXISTS suspended BOOLEAN DEFAULT FALSE;
         `);
 
         // ==========================
@@ -245,7 +246,7 @@ app.post("/users/profile", async (req, res) => {
 app.get("/users", async (req, res) => {
     try {
         const result = await pool.query(
-            "SELECT id, fullname, email, phone, accounttype, location, profession, skills, avatar, createdat FROM users ORDER BY id DESC"
+            "SELECT id, fullname, email, phone, accounttype, location, profession, skills, avatar, createdat, suspended FROM users ORDER BY id DESC"
         );
         // Map raw DB columns to the field names the admin dashboard expects,
         // and never send the password column back to the client.
@@ -259,7 +260,8 @@ app.get("/users", async (req, res) => {
             profession: row.profession,
             skills: row.skills,
             avatar: row.avatar,
-            createdAt: row.createdat
+            createdAt: row.createdat,
+            suspended: !!row.suspended
         }));
         res.json(users);
     } catch (error) {
@@ -275,15 +277,26 @@ app.delete("/users/:id", async (req, res) => {
     const userId = req.params.id;
 
     try {
-        // Remove this user's own engagement + chat records
-        await pool.query("DELETE FROM job_likes WHERE user_id=$1", [userId]);
-        await pool.query("DELETE FROM job_saves WHERE user_id=$1", [userId]);
-        await pool.query("DELETE FROM job_applications WHERE user_id=$1", [userId]);
-        await pool.query("DELETE FROM job_comments WHERE user_id=$1", [userId]);
-        await pool.query("DELETE FROM chat_messages WHERE seeker_id=$1 OR sender_id=$1", [userId]);
+        const userRow = await resolveUserRow(userId);
+        if (!userRow) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // The frontend tags likes/saves/applications/comments/jobs/chats with
+        // whichever id format it was using at the time ("acct-<email>" from
+        // home.html, or the raw numeric id), so we clean up every format that
+        // could point at this same account - otherwise deleted users leave
+        // orphaned posts/comments/likes behind.
+        const keys = deviceKeysForUser(userRow);
+
+        await pool.query("DELETE FROM job_likes WHERE user_id = ANY($1)", [keys]);
+        await pool.query("DELETE FROM job_saves WHERE user_id = ANY($1)", [keys]);
+        await pool.query("DELETE FROM job_applications WHERE user_id = ANY($1)", [keys]);
+        await pool.query("DELETE FROM job_comments WHERE user_id = ANY($1)", [keys]);
+        await pool.query("DELETE FROM chat_messages WHERE seeker_id = ANY($1) OR sender_id = ANY($1)", [keys]);
 
         // Remove any jobs this user posted, along with engagement/chat tied to those jobs
-        const ownedJobs = await pool.query("SELECT id FROM jobs WHERE user_id=$1", [userId]);
+        const ownedJobs = await pool.query("SELECT id FROM jobs WHERE user_id = ANY($1)", [keys]);
         for (const row of ownedJobs.rows) {
             const jobId = row.id;
             await pool.query("DELETE FROM job_likes WHERE job_id=$1", [jobId]);
@@ -292,18 +305,80 @@ app.delete("/users/:id", async (req, res) => {
             await pool.query("DELETE FROM job_comments WHERE job_id=$1", [jobId]);
             await pool.query("DELETE FROM chat_messages WHERE job_id=$1", [jobId]);
         }
-        await pool.query("DELETE FROM jobs WHERE user_id=$1", [userId]);
+        await pool.query("DELETE FROM jobs WHERE user_id = ANY($1)", [keys]);
 
         // Finally remove the user record itself
-        const result = await pool.query("DELETE FROM users WHERE id=$1 RETURNING id", [userId]);
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: "User not found" });
-        }
+        await pool.query("DELETE FROM users WHERE id=$1", [userRow.id]);
 
         res.json({ message: "User deleted successfully" });
     } catch (error) {
         console.log("Delete user error:", error.message);
         res.status(500).json({ message: "Could not delete user" });
+    }
+});
+
+// ==========================
+// ADMIN - SUSPEND / UNSUSPEND USER
+// ==========================
+// A suspended user stays logged in and can still browse, like posts, and
+// receive messages, but is blocked (both here on the server and in the
+// frontend UI) from posting jobs, commenting, applying, and sending chat
+// messages. See the suspension checks on those routes below.
+app.patch("/users/:id/suspend", async (req, res) => {
+    const userId = req.params.id;
+    const { suspended } = req.body;
+
+    if (typeof suspended !== "boolean") {
+        return res.status(400).json({ message: "suspended (true/false) is required" });
+    }
+
+    try {
+        const userRow = await resolveUserRow(userId);
+        if (!userRow) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const result = await pool.query(
+            "UPDATE users SET suspended=$1 WHERE id=$2 RETURNING id, suspended",
+            [suspended, userRow.id]
+        );
+
+        res.json({
+            message: suspended ? "User suspended successfully" : "User unsuspended successfully",
+            id: result.rows[0].id,
+            suspended: result.rows[0].suspended
+        });
+    } catch (error) {
+        console.log("Suspend user error:", error.message);
+        res.status(500).json({ message: "Could not update suspension status" });
+    }
+});
+
+// ==========================
+// SESSION STATUS CHECK
+// ==========================
+// Polled periodically by the frontend so a deleted account is logged off
+// immediately, and a suspended account gets its restrictions applied, without
+// waiting for the person to refresh or re-login. Accepts either an email or
+// the "acct-<email>" id the frontend keeps in localStorage.
+app.get("/session-status/:userKey", async (req, res) => {
+    try {
+        const userRow = await resolveUserRow(req.params.userKey);
+        if (!userRow) {
+            return res.json({ exists: false, suspended: false });
+        }
+        res.json({
+            exists: true,
+            suspended: !!userRow.suspended,
+            id: userRow.id,
+            name: userRow.fullname,
+            email: userRow.email
+        });
+    } catch (error) {
+        console.log("Session status error:", error.message);
+        // Fail open on server errors so a transient DB hiccup can't log
+        // everyone out - only an explicit "exists: false" forces a logout.
+        res.status(500).json({ message: "Could not check session status" });
     }
 });
 
@@ -369,6 +444,11 @@ app.post("/jobs", async (req, res) => {
     }
 
     try {
+        const authorRow = await resolveUserRow(job.userId);
+        if (authorRow && authorRow.suspended) {
+            return res.status(403).json({ message: "Your account is suspended. You can't post jobs right now." });
+        }
+
         await pool.query(
             `
             INSERT INTO jobs
@@ -584,6 +664,11 @@ app.post("/jobs/:id/apply", async (req, res) => {
     if (!userId) return res.status(400).json({ message: "userId is required" });
 
     try {
+        const applicantRow = await resolveUserRow(userId);
+        if (applicantRow && applicantRow.suspended) {
+            return res.status(403).json({ message: "Your account is suspended. You can't apply to jobs right now." });
+        }
+
         const existing = await pool.query(
             "SELECT 1 FROM job_applications WHERE job_id=$1 AND user_id=$2",
             [jobId, userId]
@@ -658,6 +743,11 @@ app.post("/jobs/:id/comments", async (req, res) => {
     if (!text || !text.trim()) return res.status(400).json({ message: "Comment text is required" });
 
     try {
+        const commenterRow = await resolveUserRow(userId);
+        if (commenterRow && commenterRow.suspended) {
+            return res.status(403).json({ message: "Your account is suspended. You can't comment right now." });
+        }
+
         const createdAt = new Date().toISOString();
         const result = await pool.query(
             `
@@ -716,6 +806,11 @@ app.post("/chats/:jobId/:seekerId/messages", async (req, res) => {
     }
 
     try {
+        const senderRow = await resolveUserRow(senderId);
+        if (senderRow && senderRow.suspended) {
+            return res.status(403).json({ message: "Your account is suspended. You can't send messages right now." });
+        }
+
         const createdAt = new Date().toISOString();
         const readBySeeker = senderRole === "seeker";
         const readByRecruiter = senderRole === "recruiter";
@@ -837,6 +932,43 @@ app.get("/users/:userId/conversations", async (req, res) => {
 // ==========================
 // Helpers
 // ==========================
+
+// The frontend sends two different shapes of "user id" depending on where the
+// request comes from:
+//   - the admin dashboard user list uses the numeric `users.id` primary key
+//   - the main app (home.html) uses a string like "acct-<email>" for every
+//     like/comment/application/job/chat message it sends
+// This resolves either shape back to the real row in `users`, so suspension
+// checks and account deletion work no matter which id format was sent.
+async function resolveUserRow(rawId) {
+    if (!rawId) return null;
+    const idStr = String(rawId);
+    if (idStr.startsWith("acct-")) {
+        const email = idStr.slice(5).trim().toLowerCase();
+        if (!email) return null;
+        const result = await pool.query("SELECT * FROM users WHERE LOWER(email)=$1", [email]);
+        return result.rows[0] || null;
+    }
+    if (!isNaN(parseInt(idStr, 10))) {
+        const result = await pool.query("SELECT * FROM users WHERE id=$1", [idStr]);
+        return result.rows[0] || null;
+    }
+    // Fall back to treating it as an email
+    const result = await pool.query("SELECT * FROM users WHERE LOWER(email)=$1", [idStr.trim().toLowerCase()]);
+    return result.rows[0] || null;
+}
+
+// Every "acct-<email>" style id that the frontend could have used for this
+// specific user, so cascading deletes/suspension checks catch rows saved
+// under that format even though the users table itself is keyed by numeric id.
+function deviceKeysForUser(userRow) {
+    const keys = [];
+    if (!userRow) return keys;
+    keys.push(String(userRow.id));
+    if (userRow.email) keys.push("acct-" + String(userRow.email).trim().toLowerCase());
+    return keys;
+}
+
 function mapJobRow(row) {
     return {
         id: row.id,
