@@ -2118,7 +2118,12 @@
                             btn.addEventListener('click', function () {
                                 const id = btn.closest('.mini-card').dataset.userId;
                                 const p = people.find(function (x) { return String(x.id) === String(id); });
-                                openChatById(String(id), DEVICE_ID, p ? p.name : 'User', 'seeker', null);
+                                const existing = findExistingConversationWith(String(id));
+                                if (existing) {
+                                    openChatById(existing.recruiterId, existing.seekerId, existing.counterpartName || (p ? p.name : 'User'), existing.myRole, existing.jobId);
+                                } else {
+                                    openChatById(String(id), DEVICE_ID, p ? p.name : 'User', 'seeker', null);
+                                }
                             });
                         });
                     })
@@ -2743,6 +2748,20 @@
             // not scoped to one job post - so the key is just the pair of ids.
             function conversationKey(recruiterId, seekerId) { return recruiterId + '::' + seekerId; }
 
+            // Looks for a conversation already in progress with this specific
+            // person, no matter which role they were in last time (they may
+            // have messaged you as an applicant, or you may have messaged
+            // them as a seeker) - so re-opening chat with someone never
+            // starts a second, empty thread just because the roles differ.
+            function findExistingConversationWith(otherUserId) {
+                const keys = Object.keys(state.conversations);
+                for (let i = 0; i < keys.length; i++) {
+                    const c = state.conversations[keys[i]];
+                    if (c.recruiterId === otherUserId || c.seekerId === otherUserId) return c;
+                }
+                return null;
+            }
+
             function getTotalUnread() {
                 return Object.keys(state.conversations).reduce(function (sum, key) {
                     return sum + (state.conversations[key].unreadCount || 0);
@@ -2976,7 +2995,12 @@
                     switchView('messages');
                     return;
                 }
-                openChatById(recruiterId, DEVICE_ID, card.dataset.company, 'seeker', jobId);
+                const existing = findExistingConversationWith(recruiterId);
+                if (existing) {
+                    openChatById(existing.recruiterId, existing.seekerId, existing.counterpartName || card.dataset.company, existing.myRole, jobId || existing.jobId);
+                } else {
+                    openChatById(recruiterId, DEVICE_ID, card.dataset.company, 'seeker', jobId);
+                }
             }
 
             function sendChatMessage() {
@@ -3056,7 +3080,10 @@
                 const emptyMessages = { posts: 'No posts by this user yet.', liked: 'No liked jobs yet.', applied: 'No job applications yet.' };
 
                 fetch(API_BASE + endpoints[tab])
-                    .then(function (response) { return response.ok ? response.json() : []; })
+                    .then(function (response) {
+                        if (!response.ok) throw new Error('HTTP ' + response.status);
+                        return response.json();
+                    })
                     .then(function (jobs) {
                         if (currentModalTab !== tab || currentModalUserId === null) return; // tab/user changed while loading
                         if (!jobs.length) {
@@ -3074,7 +3101,26 @@
                         });
                         container.appendChild(frag);
                     })
-                    .catch(function () {
+                    .catch(function (error) {
+                        console.error('Load user ' + tab + ' failed:', error);
+                        if (currentModalTab !== tab || currentModalUserId === null) return;
+                        if (tab === 'posts') {
+                            // Backend call failed - fall back to any posts by this
+                            // user already loaded in the main feed, so the tab
+                            // isn't just a dead end.
+                            const localCards = jobFeed.querySelectorAll('.post-box[data-user-id="' + CSS.escape(currentModalUserId) + '"]');
+                            if (localCards.length) {
+                                container.innerHTML = '';
+                                const frag = document.createDocumentFragment();
+                                localCards.forEach(function (c) {
+                                    const clone = c.cloneNode(true);
+                                    clone.querySelectorAll('.comments-panel').forEach(function (p) { p.remove(); });
+                                    frag.appendChild(clone);
+                                });
+                                container.appendChild(frag);
+                                return;
+                            }
+                        }
                         container.innerHTML = '<p class="text-danger small text-center">Could not load this right now.</p>';
                     });
             }
