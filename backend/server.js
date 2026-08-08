@@ -217,30 +217,68 @@ app.post("/users/profile", async (req, res) => {
     }
 
     try {
-        // 1. Update or create user record
-        await pool.query(
-            `
-            INSERT INTO users (id, fullname, phone, location, skills, accounttype, avatar, createdat)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (id) DO UPDATE SET
-                fullname = EXCLUDED.fullname,
-                phone = EXCLUDED.phone,
-                location = EXCLUDED.location,
-                skills = EXCLUDED.skills,
-                accounttype = EXCLUDED.accounttype,
-                avatar = EXCLUDED.avatar
-            `,
-            [
-                isNaN(parseInt(userId)) ? 1 : parseInt(userId),
-                name || "Anonymous",
-                phone || "",
-                location || "",
-                skills || "",
-                role || "Jobseeker",
-                avatar || "",
-                new Date().toISOString()
-            ]
-        );
+        // 1. Update the REAL user record for this account. The frontend's
+        // account id is either "acct-<email>" (the normal case for anyone who
+        // signed up through index.html) or a plain numeric users.id - so we
+        // have to resolve it the same way resolveUserRow() does, rather than
+        // parseInt-ing an "acct-..." string (which is always NaN and used to
+        // silently fall back to writing over users.id = 1 for everyone).
+        const idStr = String(userId);
+        let updateResult;
+
+        if (idStr.startsWith("acct-")) {
+            const email = idStr.slice(5).trim().toLowerCase();
+            updateResult = await pool.query(
+                `
+                UPDATE users SET
+                    fullname = $1,
+                    phone = $2,
+                    location = $3,
+                    skills = $4,
+                    accounttype = $5,
+                    avatar = $6
+                WHERE LOWER(email) = $7
+                `,
+                [name || "Anonymous", phone || "", location || "", skills || "", role || "Jobseeker", avatar || "", email]
+            );
+            if (updateResult.rowCount === 0 && email) {
+                // No signup row exists for this email yet (shouldn't normally
+                // happen) - create one so the profile has somewhere to live.
+                await pool.query(
+                    `
+                    INSERT INTO users (fullname, email, phone, location, skills, accounttype, avatar, createdat)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    ON CONFLICT (email) DO UPDATE SET
+                        fullname = EXCLUDED.fullname,
+                        phone = EXCLUDED.phone,
+                        location = EXCLUDED.location,
+                        skills = EXCLUDED.skills,
+                        accounttype = EXCLUDED.accounttype,
+                        avatar = EXCLUDED.avatar
+                    `,
+                    [name || "Anonymous", email, phone || "", location || "", skills || "", role || "Jobseeker", avatar || "", new Date().toISOString()]
+                );
+            }
+        } else if (!isNaN(parseInt(idStr, 10))) {
+            await pool.query(
+                `
+                INSERT INTO users (id, fullname, phone, location, skills, accounttype, avatar, createdat)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                ON CONFLICT (id) DO UPDATE SET
+                    fullname = EXCLUDED.fullname,
+                    phone = EXCLUDED.phone,
+                    location = EXCLUDED.location,
+                    skills = EXCLUDED.skills,
+                    accounttype = EXCLUDED.accounttype,
+                    avatar = EXCLUDED.avatar
+                `,
+                [parseInt(idStr, 10), name || "Anonymous", phone || "", location || "", skills || "", role || "Jobseeker", avatar || "", new Date().toISOString()]
+            );
+        }
+        // Any other id shape (e.g. a special built-in account with no real
+        // signup row) has nothing in `users` to update - the jobs cascade
+        // below still applies to it via the raw userId, which is all that
+        // kind of account actually needs.
 
         // 2. Cascade update all existing job posts tied to this user/author name
         await pool.query(
@@ -446,17 +484,30 @@ app.get("/users/:userId/posts", async (req, res) => {
 // All jobs a user has LIKED
 app.get("/users/:userId/liked", async (req, res) => {
     const userId = req.params.userId;
+    const viewerId = req.query.viewerId || "";
     try {
         const result = await pool.query(
             `
-            SELECT j.* FROM jobs j
+            SELECT j.*,
+                (SELECT COUNT(*)::int FROM job_likes l2 WHERE l2.job_id = j.id) AS like_count,
+                EXISTS(SELECT 1 FROM job_likes l2 WHERE l2.job_id = j.id AND l2.user_id = $2) AS liked_by_me,
+                (SELECT COUNT(*)::int FROM job_comments c WHERE c.job_id = j.id) AS comment_count,
+                EXISTS(SELECT 1 FROM job_saves s WHERE s.job_id = j.id AND s.user_id = $2) AS saved_by_me,
+                EXISTS(SELECT 1 FROM job_applications a WHERE a.job_id = j.id AND a.user_id = $2) AS applied_by_me
+            FROM jobs j
             JOIN job_likes l ON l.job_id = j.id
             WHERE l.user_id = $1
             ORDER BY l.createdat DESC
             `,
-            [userId]
+            [userId, viewerId]
         );
-        res.json(result.rows.map(mapJobRow));
+        res.json(result.rows.map((row) => Object.assign(mapJobRow(row), {
+            likeCount: row.like_count,
+            likedByMe: row.liked_by_me,
+            commentCount: row.comment_count,
+            savedByMe: row.saved_by_me,
+            appliedByMe: row.applied_by_me
+        })));
     } catch (error) {
         console.log("Fetch liked error:", error.message);
         res.status(500).json({ message: "Could not fetch liked jobs" });
@@ -894,17 +945,31 @@ app.post("/jobs/:id/apply", async (req, res) => {
 
 app.get("/users/:userId/applications", async (req, res) => {
     const userId = req.params.userId;
+    const viewerId = req.query.viewerId || "";
     try {
         const result = await pool.query(
             `
-            SELECT j.*, a.createdat AS applied_at FROM jobs j
+            SELECT j.*, a.createdat AS applied_at,
+                (SELECT COUNT(*)::int FROM job_likes l WHERE l.job_id = j.id) AS like_count,
+                EXISTS(SELECT 1 FROM job_likes l WHERE l.job_id = j.id AND l.user_id = $2) AS liked_by_me,
+                (SELECT COUNT(*)::int FROM job_comments c WHERE c.job_id = j.id) AS comment_count,
+                EXISTS(SELECT 1 FROM job_saves s WHERE s.job_id = j.id AND s.user_id = $2) AS saved_by_me,
+                EXISTS(SELECT 1 FROM job_applications a2 WHERE a2.job_id = j.id AND a2.user_id = $2) AS applied_by_me
+            FROM jobs j
             JOIN job_applications a ON a.job_id = j.id
             WHERE a.user_id = $1
             ORDER BY a.createdat DESC
             `,
-            [userId]
+            [userId, viewerId]
         );
-        res.json(result.rows.map((row) => Object.assign(mapJobRow(row), { appliedAt: row.applied_at })));
+        res.json(result.rows.map((row) => Object.assign(mapJobRow(row), {
+            appliedAt: row.applied_at,
+            likeCount: row.like_count,
+            likedByMe: row.liked_by_me,
+            commentCount: row.comment_count,
+            savedByMe: row.saved_by_me,
+            appliedByMe: row.applied_by_me
+        })));
     } catch (error) {
         console.log("Fetch applications error:", error.message);
         res.status(500).json({ message: "Could not fetch applications" });
