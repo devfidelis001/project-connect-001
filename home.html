@@ -726,6 +726,55 @@
             font-size: 14.5px;
         }
 
+        /* "Set up your profile" banner - shown once, right below the jobs
+           loading banner, only the first time a brand-new account lands here. */
+        #profileSetupBanner {
+            position: fixed;
+            top: 74px;
+            left: 0;
+            width: 100%;
+            z-index: 1999;
+            display: flex;
+            justify-content: center;
+            transform: translateY(-120%);
+            transition: transform .45s cubic-bezier(.4, 0, .2, 1);
+            pointer-events: none;
+        }
+
+        #profileSetupBanner.show {
+            transform: translateY(0);
+        }
+
+        #profileSetupBanner .banner-inner {
+            pointer-events: auto;
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            max-width: 92vw;
+            background: rgba(7, 14, 30, .92);
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(13, 110, 253, .4);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, .35);
+            padding: 12px 20px;
+            border-radius: 30px;
+            color: #fff;
+            font-weight: 500;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        #profileSetupBanner .banner-inner i {
+            font-size: 1.3rem;
+            color: #0d6efd;
+            flex-shrink: 0;
+        }
+
+        #profileSetupBanner .banner-inner button {
+            white-space: nowrap;
+        }
+
         .green-spinner {
             width: 20px;
             height: 20px;
@@ -752,6 +801,15 @@
         <div class="banner-inner">
             <span class="green-spinner"></span>
             <span>Please wait a moment while jobs appear&hellip;</span>
+        </div>
+    </div>
+
+    <!-- Set Up Profile Banner (new signups only, shown once) -->
+    <div id="profileSetupBanner">
+        <div class="banner-inner">
+            <i class="bi bi-person-badge-fill"></i>
+            <span>You're in! One last thing — a filled-out profile is how people know it's really you. Add your photo, skills and details.</span>
+            <button id="profileSetupBtn" type="button" class="btn btn-primary btn-sm rounded-pill px-3">Set Up Profile Now</button>
         </div>
     </div>
 
@@ -1554,12 +1612,13 @@
                         name: '', avatar: '', location: '', skills: '', role: 'Jobseeker', phone: '', verified: false
                     }, sessionProfile || {}));
                     try { localStorage.setItem('ylm.justSignedUp', id); } catch (err) { }
-                } else if (sessionProfile && sessionProfile.name && sessionProfile.name !== existingProfile.name) {
-                    // Name changed at the source (re-signed-up or backend record
-                    // updated) - keep this device's copy in sync.
-                    existingProfile.name = sessionProfile.name;
-                    saveJSON(STORAGE_KEYS.profile + '.' + id, existingProfile);
                 }
+                // NOTE: deliberately NOT syncing the name back from sessionProfile
+                // once a per-account profile already exists. sessionProfile only
+                // ever gets refreshed at login time, so blindly copying it over
+                // here used to overwrite any edit made on the My Profile page
+                // the very next time this page loaded - the profile page is the
+                // single source of truth for an existing account from here on.
 
                 setStoredActiveAccountId(id);
             })();
@@ -2984,18 +3043,6 @@
                 }
             }
 
-            function renderUserActivityList(jobs, emptyMessage) {
-                if (!jobs || !jobs.length) return '<p class="text-secondary small text-center">' + emptyMessage + '</p>';
-                return jobs.map(function (job) {
-                    const img = (job.attachment && job.attachment.kind === 'image') ? job.attachment.url : DEFAULT_AVATAR;
-                    return '<div class="mini-card" data-job-id="' + escapeHtml(job.id) + '">' +
-                        '<img src="' + img + '" alt="">' +
-                        '<div class="mini-info"><h6>' + escapeHtml(job.title) + '</h6>' +
-                        '<small>' + escapeHtml(job.company) + ' • ' + escapeHtml(timeAgo(job.createdAt)) + '</small></div>' +
-                        '<div class="mini-actions"><button class="mini-view"><i class="bi bi-eye-fill"></i> View</button></div></div>';
-                }).join('');
-            }
-
             function loadUserModalTabContent() {
                 const container = document.getElementById('userModalPostsContainer');
                 if (!currentModalUserId) return;
@@ -3003,8 +3050,8 @@
                 const tab = currentModalTab;
                 const endpoints = {
                     posts: '/users/' + encodeURIComponent(currentModalUserId) + '/posts?viewerId=' + encodeURIComponent(DEVICE_ID),
-                    liked: '/users/' + encodeURIComponent(currentModalUserId) + '/liked',
-                    applied: '/users/' + encodeURIComponent(currentModalUserId) + '/applications'
+                    liked: '/users/' + encodeURIComponent(currentModalUserId) + '/liked?viewerId=' + encodeURIComponent(DEVICE_ID),
+                    applied: '/users/' + encodeURIComponent(currentModalUserId) + '/applications?viewerId=' + encodeURIComponent(DEVICE_ID)
                 };
                 const emptyMessages = { posts: 'No posts by this user yet.', liked: 'No liked jobs yet.', applied: 'No job applications yet.' };
 
@@ -3012,14 +3059,20 @@
                     .then(function (response) { return response.ok ? response.json() : []; })
                     .then(function (jobs) {
                         if (currentModalTab !== tab || currentModalUserId === null) return; // tab/user changed while loading
-                        container.innerHTML = renderUserActivityList(jobs, emptyMessages[tab]);
-                        container.querySelectorAll('.mini-view').forEach(function (btn) {
-                            btn.addEventListener('click', function () {
-                                const id = btn.closest('.mini-card').dataset.jobId;
-                                userProfileModal.hide();
-                                viewSavedPost(id);
-                            });
+                        if (!jobs.length) {
+                            container.innerHTML = '<p class="text-secondary small text-center">' + emptyMessages[tab] + '</p>';
+                            return;
+                        }
+                        // Render the exact same post card used on the home feed, not a
+                        // stripped-down summary - so it looks and behaves identically,
+                        // including working Like/Save/Apply/Chat/Comment buttons.
+                        container.innerHTML = '';
+                        const frag = document.createDocumentFragment();
+                        jobs.forEach(function (rawJob) {
+                            const job = normalizeBackendJob(rawJob);
+                            frag.appendChild(buildJobCard(job));
                         });
+                        container.appendChild(frag);
                     })
                     .catch(function () {
                         container.innerHTML = '<p class="text-danger small text-center">Could not load this right now.</p>';
@@ -3102,7 +3155,11 @@
             }
 
             /* Delegated Events */
-            jobFeed.addEventListener('click', function (e) {
+            // Shared click handling for a post card's buttons (like, save, apply,
+            // comment, chat, profile) - used for the main feed AND for full post
+            // cards rendered inside the profile modal's Posts/Liked/Applied tabs,
+            // so a post looks and behaves exactly the same wherever it's shown.
+            function handlePostCardClick(e) {
                 const card = e.target.closest('.post-box');
                 if (!card) return;
 
@@ -3155,8 +3212,18 @@
                     postComment(card, text);
                     return;
                 }
-            });
+            }
+            jobFeed.addEventListener('click', handlePostCardClick);
+            document.getElementById('userModalPostsContainer').addEventListener('click', handlePostCardClick);
             jobFeed.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.classList.contains('comment-input')) {
+                    e.preventDefault();
+                    const panel = e.target.closest('.comments-panel');
+                    const sendBtn = panel && panel.querySelector('.comment-send');
+                    if (sendBtn) sendBtn.click();
+                }
+            });
+            document.getElementById('userModalPostsContainer').addEventListener('keydown', function (e) {
                 if (e.key === 'Enter' && e.target.classList.contains('comment-input')) {
                     e.preventDefault();
                     const panel = e.target.closest('.comments-panel');
@@ -3520,6 +3587,43 @@
                 setTimeout(function () {
                     banner.classList.remove('show');
                 }, 30000);
+            })();
+
+            // "Set up your profile" banner - only for a brand-new account,
+            // and only the very first time it lands on this page. Disappears
+            // on its own after 5 seconds, or sooner if the button is used.
+            (function () {
+                const banner = document.getElementById('profileSetupBanner');
+                if (!banner) return;
+
+                let justSignedUpId = '';
+                try { justSignedUpId = localStorage.getItem('ylm.justSignedUp') || ''; } catch (err) { }
+                if (justSignedUpId !== ACCOUNT_ID) return;
+
+                // Consume the flag immediately so this never shows again on
+                // this device for this account, even if they refresh right away.
+                try { localStorage.removeItem('ylm.justSignedUp'); } catch (err) { }
+
+                requestAnimationFrame(function () {
+                    banner.classList.add('show');
+                });
+
+                function hideBanner() { banner.classList.remove('show'); }
+                const autoHideTimer = setTimeout(hideBanner, 5000);
+
+                const setupBtn = document.getElementById('profileSetupBtn');
+                if (setupBtn) {
+                    setupBtn.addEventListener('click', function () {
+                        clearTimeout(autoHideTimer);
+                        hideBanner();
+                        switchView('profile');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        setTimeout(function () {
+                            const nameInput = document.getElementById('profileName');
+                            if (nameInput) nameInput.focus();
+                        }, 350);
+                    });
+                }
             })();
 
             // Initializations
