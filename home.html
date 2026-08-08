@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -679,11 +680,70 @@
                 left: 16px;
             }
         }
+
+        /* Loading jobs top banner */
+        #jobsLoadingBanner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            transform: translateY(-120%);
+            transition: transform .45s cubic-bezier(.4, 0, .2, 1);
+            pointer-events: none;
+        }
+
+        #jobsLoadingBanner.show {
+            transform: translateY(0);
+        }
+
+        #jobsLoadingBanner .banner-inner {
+            pointer-events: auto;
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(7, 14, 30, .92);
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(40, 199, 111, .35);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, .35);
+            padding: 12px 22px;
+            border-radius: 30px;
+            color: #fff;
+            font-weight: 500;
+            font-size: 14.5px;
+        }
+
+        .green-spinner {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid rgba(40, 199, 111, .25);
+            border-top-color: #28c76f;
+            animation: green-spin .7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes green-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 
 </head>
 
 <body>
+
+    <!-- Jobs Loading Banner -->
+    <div id="jobsLoadingBanner">
+        <div class="banner-inner">
+            <span class="green-spinner"></span>
+            <span>Please wait a moment while jobs appear&hellip;</span>
+        </div>
+    </div>
 
     <!-- NAV BAR -->
     <nav class="navbar navbar-expand-lg sticky-top">
@@ -3188,6 +3248,18 @@ fetch(`${API_BASE}/admin/users`, {
                         console.error('Load jobs failed:', error);
                     });
             }
+
+            // Jobs loading banner (shown on every refresh)
+            (function () {
+                const banner = document.getElementById('jobsLoadingBanner');
+                if (!banner) return;
+                requestAnimationFrame(function () {
+                    banner.classList.add('show');
+                });
+                setTimeout(function () {
+                    banner.classList.remove('show');
+                }, 30000);
+            })();
 
             // Initializations
             updateProfileUI();
