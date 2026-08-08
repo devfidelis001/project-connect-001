@@ -1080,9 +1080,8 @@ signupForm.addEventListener("submit", async function (e) {
 
             }));
 
-            // Same reason as the login handler below: force home.html to
-            // re-resolve the active account from this brand-new signup
-            // instead of possibly reusing a stale one left in localStorage.
+            // Force home.html to load THIS new account, not whichever
+            // account happened to be marked "active" before.
             localStorage.removeItem("ylm.activeAccount");
 
             goToHome();
@@ -1171,12 +1170,9 @@ loginForm.addEventListener("submit", async function (e) {
 
             }));
 
-            // Clear whichever account home.html previously marked "active"
-            // (including an old Admin session) so it is forced to re-resolve
-            // the active account from THIS login's email instead of
-            // silently keeping whoever was active before. Without this,
-            // logging in can open the previous person's (or Admin's)
-            // account instead of the one you just logged into.
+            // Force home.html to load THIS exact account (the one that
+            // just matched by email + password on the server), not
+            // whichever account happened to be marked "active" before.
             localStorage.removeItem("ylm.activeAccount");
 
             goToHome();
