@@ -1450,12 +1450,16 @@
     </button>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
         (async function () {
             'use strict';
 
-            const API_BASE = 'https://project-connect-001.onrender.com';
+            const SUPABASE_URL = "https://hhobrwtbgzizlwwaikfd.supabase.co";
+            const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_n25X0qzMC_OXxkNr82IoYg_Q9cjPaa7";
+            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
             const POLL_INTERVAL_MS = 15000;
 
             const STORAGE_KEYS = {
@@ -1590,9 +1594,9 @@
                     // requests outright.
                     let serverProfile = null;
                     try {
-                        const resp = await fetch(API_BASE + '/users/' + encodeURIComponent(id) + '/public-profile');
-                        if (resp.ok) {
-                            const found = await resp.json();
+                        const { data: profRows, error: profError } = await supabaseClient.rpc('get_public_profile', { raw_id: id });
+                        if (!profError && profRows && profRows.length) {
+                            const found = profRows[0];
                             serverProfile = {
                                 name: found.name || '',
                                 avatar: found.avatar || '',
@@ -1751,13 +1755,11 @@
                 try { email = (localStorage.getItem('ylm_currentUser') || '').trim().toLowerCase(); } catch (err) { }
                 if (!email) return;
 
-                fetch(API_BASE + '/session-status/' + encodeURIComponent(email))
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function (status) {
-                        if (!status.exists) {
+                supabaseClient.rpc('get_session_status', { user_key: email })
+                    .then(function (result) {
+                        if (result.error) throw result.error;
+                        const status = (result.data && result.data[0]) || { exists_flag: false, suspended: false };
+                        if (!status.exists_flag) {
                             forceLogoutRemoved();
                             return;
                         }
@@ -1926,18 +1928,14 @@
                 // Push the updated profile to the backend, which cascades the new
                 // name/avatar/phone/location/role/skills onto every post this
                 // person has ever made - so it shows up everywhere, not just here.
-                fetch(API_BASE + '/users/profile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: DEVICE_ID,
-                        name: state.profile.name,
-                        phone: state.profile.phone,
-                        location: state.profile.location,
-                        skills: state.profile.skills,
-                        role: state.profile.role,
-                        avatar: state.profile.avatar
-                    })
+                supabaseClient.rpc('sync_user_profile', {
+                    p_user_id: DEVICE_ID,
+                    p_name: state.profile.name,
+                    p_phone: state.profile.phone,
+                    p_location: state.profile.location,
+                    p_skills: state.profile.skills,
+                    p_role: state.profile.role,
+                    p_avatar: state.profile.avatar
                 }).then(function () {
                     // Refresh any of this person's cards already on screen so the
                     // change is visible immediately, without waiting on the next poll.
@@ -2121,8 +2119,8 @@
                     container.innerHTML = '';
                     return;
                 }
-                fetch(API_BASE + '/users/search?q=' + encodeURIComponent(q))
-                    .then(function (response) { return response.ok ? response.json() : []; })
+                supabaseClient.rpc('search_users', { q: q })
+                    .then(function (result) { return result.error ? [] : (result.data || []); })
                     .then(function (people) {
                         const currentQuery = ((searchDesktop && searchDesktop.value) || (searchMobile && searchMobile.value) || '').trim();
                         if (currentQuery !== q) return; // stale response for an old keystroke
@@ -2327,7 +2325,29 @@
             }
 
             /* Like */
-            function toggleLike(card, btn) {
+            /* Shared helper for likes/saves/applications - all three tables have the
+               same (job_id, user_id) shape, toggle by checking then insert/delete */
+            async function toggleJobRelation(table, jobId, userId) {
+                const { data: existing, error: selError } = await supabaseClient
+                    .from(table)
+                    .select('job_id')
+                    .eq('job_id', jobId)
+                    .eq('user_id', userId)
+                    .maybeSingle();
+                if (selError) throw selError;
+
+                if (existing) {
+                    const { error } = await supabaseClient.from(table).delete().eq('job_id', jobId).eq('user_id', userId);
+                    if (error) throw error;
+                    return false;
+                } else {
+                    const { error } = await supabaseClient.from(table).insert({ job_id: jobId, user_id: userId, createdat: new Date().toISOString() });
+                    if (error) throw error;
+                    return true;
+                }
+            }
+
+            async function toggleLike(card, btn) {
                 const id = card.dataset.jobId;
                 const countEl = btn.querySelector('.like-count');
                 const wasLiked = btn.classList.contains('liked');
@@ -2337,24 +2357,20 @@
                 btn.classList.toggle('liked', !wasLiked);
                 countEl.textContent = optimisticCount > 0 ? optimisticCount : 'Like';
 
-                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/like', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: DEVICE_ID })
-                })
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        btn.classList.toggle('liked', !!data.liked);
-                        countEl.textContent = data.likeCount > 0 ? data.likeCount : 'Like';
-                    })
-                    .catch(function (error) {
-                        console.error('Like failed:', error);
-                        btn.classList.toggle('liked', wasLiked);
-                        countEl.textContent = prevCount > 0 ? prevCount : 'Like';
-                    });
+                try {
+                    const liked = await toggleJobRelation('job_likes', id, DEVICE_ID);
+                    const { count, error: countError } = await supabaseClient
+                        .from('job_likes')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('job_id', id);
+                    if (countError) throw countError;
+                    btn.classList.toggle('liked', liked);
+                    countEl.textContent = count > 0 ? count : 'Like';
+                } catch (error) {
+                    console.error('Like failed:', error);
+                    btn.classList.toggle('liked', wasLiked);
+                    countEl.textContent = prevCount > 0 ? prevCount : 'Like';
+                }
             }
 
             /* Save & Apply */
@@ -2364,28 +2380,19 @@
                     ? '<i class="bi bi-bookmark-fill"></i> Saved'
                     : '<i class="bi bi-bookmark"></i> Save';
             }
-            function toggleSave(card, btn) {
+            async function toggleSave(card, btn) {
                 const id = card.dataset.jobId;
                 const willSave = !btn.classList.contains('active');
                 setSaveButtonState(btn, willSave);
 
-                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: DEVICE_ID })
-                })
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        setSaveButtonState(btn, !!data.saved);
-                        if (!document.getElementById('view-saved').classList.contains('d-none')) renderSavedView();
-                    })
-                    .catch(function (error) {
-                        console.error('Save failed:', error);
-                        setSaveButtonState(btn, !willSave);
-                    });
+                try {
+                    const saved = await toggleJobRelation('job_saves', id, DEVICE_ID);
+                    setSaveButtonState(btn, saved);
+                    if (!document.getElementById('view-saved').classList.contains('d-none')) renderSavedView();
+                } catch (error) {
+                    console.error('Save failed:', error);
+                    setSaveButtonState(btn, !willSave);
+                }
             }
 
             function setApplyButtonState(btn, isApplied) {
@@ -2400,18 +2407,16 @@
                 if (!recruiterId) return;
                 const messageText = 'I am interested in this role: [JOB:' + jobId + '|' + jobTitle + ']';
 
-                fetch(API_BASE + '/chats/' + encodeURIComponent(recruiterId) + '/' + encodeURIComponent(DEVICE_ID) + '/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        senderId: DEVICE_ID,
-                        senderRole: 'seeker',
-                        senderName: state.profile.name || 'Applicant',
-                        senderAvatar: getAvatar(),
-                        senderVerified: !!state.profile.verified,
-                        text: messageText,
-                        jobId: jobId
-                    })
+                supabaseClient.from('chat_messages').insert({
+                    recruiter_id: recruiterId,
+                    seeker_id: DEVICE_ID,
+                    sender_id: DEVICE_ID,
+                    sender_role: 'seeker',
+                    sender_name: state.profile.name || 'Applicant',
+                    sender_avatar: getAvatar(),
+                    text: messageText,
+                    job_id: jobId,
+                    createdat: new Date().toISOString()
                 })
                 .then(function () {
                     pollConversations();
@@ -2421,32 +2426,23 @@
                 });
             }
 
-            function toggleApply(card, btn) {
+            async function toggleApply(card, btn) {
                 if (blockIfSuspended('apply to jobs')) return;
                 const id = card.dataset.jobId;
                 const willApply = !btn.classList.contains('applied');
                 setApplyButtonState(btn, willApply);
 
-                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/apply', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: DEVICE_ID })
-                })
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        setApplyButtonState(btn, !!data.applied);
-                        if (data.applied) {
-                            sendAutoApplyMessage(card);
-                        }
-                        if (!document.getElementById('view-applications').classList.contains('d-none')) renderApplicationsView();
-                    })
-                    .catch(function (error) {
-                        console.error('Apply failed:', error);
-                        setApplyButtonState(btn, !willApply);
-                    });
+                try {
+                    const applied = await toggleJobRelation('job_applications', id, DEVICE_ID);
+                    setApplyButtonState(btn, applied);
+                    if (applied) {
+                        sendAutoApplyMessage(card);
+                    }
+                    if (!document.getElementById('view-applications').classList.contains('d-none')) renderApplicationsView();
+                } catch (error) {
+                    console.error('Apply failed:', error);
+                    setApplyButtonState(btn, !willApply);
+                }
             }
 
             /* Comments */
@@ -2465,21 +2461,31 @@
                 loadComments(card);
                 return panel;
             }
-            function loadComments(card) {
+            async function loadComments(card) {
                 const id = card.dataset.jobId;
-                return fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/comments')
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function (comments) {
-                        state.comments[id] = comments;
-                        renderComments(card);
-                        updateCommentCount(card);
-                    })
-                    .catch(function (error) {
-                        console.error('Load comments failed:', error);
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('job_comments')
+                        .select('*')
+                        .eq('job_id', id)
+                        .order('id', { ascending: true });
+                    if (error) throw error;
+                    state.comments[id] = (data || []).map(function (row) {
+                        return {
+                            id: row.id,
+                            jobId: row.job_id,
+                            userId: row.user_id,
+                            author: row.author_name,
+                            authorAvatar: row.author_avatar,
+                            text: row.text,
+                            createdAt: row.createdat
+                        };
                     });
+                    renderComments(card);
+                    updateCommentCount(card);
+                } catch (error) {
+                    console.error('Load comments failed:', error);
+                }
             }
             function renderComments(card) {
                 const id = card.dataset.jobId;
@@ -2502,32 +2508,38 @@
                 const span = card.querySelector('.comment-count');
                 if (span) span.textContent = count > 0 ? count : 'Comment';
             }
-            function postComment(card, text) {
+            async function postComment(card, text) {
                 const id = card.dataset.jobId;
-                return fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/comments', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: DEVICE_ID,
-                        author: state.profile.name || 'You',
-                        authorAvatar: getAvatar(),
-                        authorVerified: !!state.profile.verified,
-                        text: text
-                    })
-                })
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function (comment) {
-                        if (!state.comments[id]) state.comments[id] = [];
-                        state.comments[id].push(comment);
-                        renderComments(card);
-                        updateCommentCount(card);
-                    })
-                    .catch(function (error) {
-                        console.error('Post comment failed:', error);
-                    });
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('job_comments')
+                        .insert({
+                            job_id: id,
+                            user_id: DEVICE_ID,
+                            author_name: state.profile.name || 'You',
+                            author_avatar: getAvatar(),
+                            text: text,
+                            createdat: new Date().toISOString()
+                        })
+                        .select()
+                        .single();
+                    if (error) throw error;
+                    const comment = {
+                        id: data.id,
+                        jobId: data.job_id,
+                        userId: data.user_id,
+                        author: data.author_name,
+                        authorAvatar: data.author_avatar,
+                        text: data.text,
+                        createdAt: data.createdat
+                    };
+                    if (!state.comments[id]) state.comments[id] = [];
+                    state.comments[id].push(comment);
+                    renderComments(card);
+                    updateCommentCount(card);
+                } catch (error) {
+                    console.error('Post comment failed:', error);
+                }
             }
 
             /* Mini List Rendering */
@@ -2575,14 +2587,55 @@
                 }
             }
 
+            /* Maps a raw 'jobs' table row (snake_case) to the camelCase shape the UI expects */
+            function mapDbJobRow(row) {
+                return {
+                    id: row.id,
+                    userId: row.user_id,
+                    company: row.company,
+                    title: row.title,
+                    location: row.location,
+                    salary: row.salary,
+                    description: row.description,
+                    attachment: row.attachment,
+                    createdAt: row.createdat,
+                    isNew: row.isnew,
+                    authorName: row.author_name || row.company,
+                    authorPhone: row.author_phone,
+                    authorLocation: row.author_location || row.location,
+                    authorAvatar: row.author_avatar,
+                    authorRole: row.author_role,
+                    authorSkills: row.author_skills
+                };
+            }
+
+            /* Given rows from job_saves/job_applications (job_id, createdat ordered),
+               fetches the matching jobs and returns them in that same order */
+            async function fetchJobsForRelation(table, userId) {
+                const { data: rels, error } = await supabaseClient
+                    .from(table)
+                    .select('job_id, createdat')
+                    .eq('user_id', userId)
+                    .order('createdat', { ascending: false });
+                if (error) throw error;
+                if (!rels || !rels.length) return [];
+
+                const ids = rels.map(function (r) { return r.job_id; });
+                const { data: jobs, error: jobsError } = await supabaseClient
+                    .from('jobs')
+                    .select('*')
+                    .in('id', ids);
+                if (jobsError) throw jobsError;
+
+                const byId = {};
+                (jobs || []).forEach(function (j) { byId[j.id] = j; });
+                return rels.map(function (r) { return byId[r.job_id]; }).filter(Boolean).map(mapDbJobRow);
+            }
+
             function renderSavedView() {
                 const container = document.getElementById('savedList');
                 container.innerHTML = '<div class="text-secondary small">Loading...</div>';
-                fetch(API_BASE + '/users/' + encodeURIComponent(DEVICE_ID) + '/saved')
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
+                fetchJobsForRelation('job_saves', DEVICE_ID)
                     .then(function (jobs) {
                         const entries = jobs.map(jobSnapshot);
                         if (!entries.length) {
@@ -2620,15 +2673,12 @@
                         container.querySelectorAll('.mini-remove').forEach(function (btn) {
                             btn.addEventListener('click', function () {
                                 const id = btn.closest('.mini-card').dataset.jobId;
-                                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/save', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ userId: DEVICE_ID })
-                                }).then(function () {
-                                    const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
-                                    if (card) setSaveButtonState(card.querySelector('.btn-save'), false);
-                                    renderSavedView();
-                                });
+                                supabaseClient.from('job_saves').delete().eq('job_id', id).eq('user_id', DEVICE_ID)
+                                    .then(function () {
+                                        const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
+                                        if (card) setSaveButtonState(card.querySelector('.btn-save'), false);
+                                        renderSavedView();
+                                    });
                             });
                         });
                     })
@@ -2649,8 +2699,7 @@
                 applicantsContainer.innerHTML = '<div class="text-secondary small">Loading applicants...</div>';
 
                 // Fetch Jobs I Applied For
-                fetch(API_BASE + '/users/' + encodeURIComponent(DEVICE_ID) + '/applications')
-                    .then(function (res) { return res.ok ? res.json() : []; })
+                fetchJobsForRelation('job_applications', DEVICE_ID)
                     .then(function (jobs) {
                         const entries = jobs.map(jobSnapshot);
                         appliedCountEl.textContent = entries.length + (entries.length === 1 ? ' Applied' : ' Applied');
@@ -2678,15 +2727,12 @@
                         appliedContainer.querySelectorAll('.mini-remove').forEach(function (btn) {
                             btn.addEventListener('click', function () {
                                 const id = btn.closest('.mini-card').dataset.jobId;
-                                fetch(API_BASE + '/jobs/' + encodeURIComponent(id) + '/apply', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ userId: DEVICE_ID })
-                                }).then(function () {
-                                    const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
-                                    if (card) setApplyButtonState(card.querySelector('.btn-apply'), false);
-                                    renderApplicationsView();
-                                });
+                                supabaseClient.from('job_applications').delete().eq('job_id', id).eq('user_id', DEVICE_ID)
+                                    .then(function () {
+                                        const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
+                                        if (card) setApplyButtonState(card.querySelector('.btn-apply'), false);
+                                        renderApplicationsView();
+                                    });
                             });
                         });
                         appliedContainer.querySelectorAll('.mini-chat').forEach(function (btn) {
@@ -2706,8 +2752,8 @@
                     });
 
                 // Fetch Applicants on My Posted Jobs
-                fetch(API_BASE + '/users/' + encodeURIComponent(DEVICE_ID) + '/conversations')
-                    .then(function (res) { return res.ok ? res.json() : []; })
+                supabaseClient.rpc('get_conversations', { p_user_id: DEVICE_ID })
+                    .then(function (result) { return result.error ? [] : mapConversationRows(result.data); })
                     .then(function (conversations) {
                         const applicantChats = conversations.filter(c => c.myRole === 'recruiter');
                         applicantsCountEl.textContent = applicantChats.length + (applicantChats.length === 1 ? ' Application' : ' Applications');
@@ -2738,14 +2784,14 @@
                             btn.addEventListener('click', function () {
                                 const card = btn.closest('.mini-card');
                                 const seekerId = card.dataset.seekerId;
-                                fetch(API_BASE + '/chats/' + encodeURIComponent(DEVICE_ID) + '/' + encodeURIComponent(seekerId), {
-                                    method: 'DELETE'
-                                }).then(function () {
-                                    renderApplicationsView();
-                                    pollConversations();
-                                }).catch(function () {
-                                    card.remove();
-                                });
+                                supabaseClient.from('chat_messages').delete()
+                                    .eq('recruiter_id', DEVICE_ID).eq('seeker_id', seekerId)
+                                    .then(function () {
+                                        renderApplicationsView();
+                                        pollConversations();
+                                    }).catch(function () {
+                                        card.remove();
+                                    });
                             });
                         });
                         applicantsContainer.querySelectorAll('.mini-chat').forEach(function (btn) {
@@ -2761,6 +2807,29 @@
                     .catch(function () {
                         applicantsContainer.innerHTML = '<div class="text-danger small">Error loading applicants.</div>';
                     });
+            }
+
+            // Maps get_conversations()'s snake_case rows to the camelCase shape
+            // the rest of the chat UI already expects, sorted newest-first.
+            function mapConversationRows(rows) {
+                return (rows || []).map(function (r) {
+                    return {
+                        recruiterId: r.recruiter_id,
+                        seekerId: r.seeker_id,
+                        jobId: r.job_id || null,
+                        jobTitle: r.job_title,
+                        company: r.company,
+                        myRole: r.my_role,
+                        counterpartName: r.counterpart_name,
+                        counterpartAvatar: r.counterpart_avatar,
+                        lastMessage: r.last_message,
+                        lastSenderRole: r.last_sender_role,
+                        lastAt: r.last_at,
+                        unreadCount: r.unread_count
+                    };
+                }).sort(function (a, b) {
+                    return new Date(b.lastAt || 0) - new Date(a.lastAt || 0);
+                });
             }
 
             /* Chat Component */
@@ -2803,12 +2872,10 @@
             }
 
             function pollConversations() {
-                return fetch(API_BASE + '/users/' + encodeURIComponent(DEVICE_ID) + '/conversations')
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function (conversations) {
+                return supabaseClient.rpc('get_conversations', { p_user_id: DEVICE_ID })
+                    .then(function (result) {
+                        if (result.error) throw result.error;
+                        const conversations = mapConversationRows(result.data);
                         const fresh = {};
                         conversations.forEach(function (c) {
                             fresh[conversationKey(c.recruiterId, c.seekerId)] = c;
@@ -2891,11 +2958,9 @@
             }
 
             function markChatRead(recruiterId, seekerId, role) {
-                return fetch(API_BASE + '/chats/' + encodeURIComponent(recruiterId) + '/' + encodeURIComponent(seekerId) + '/read', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ role: role })
-                })
+                const patch = role === 'recruiter' ? { read_by_recruiter: true } : { read_by_seeker: true };
+                return supabaseClient.from('chat_messages').update(patch)
+                    .eq('recruiter_id', recruiterId).eq('seeker_id', seekerId)
                     .then(function () { return pollConversations(); })
                     .catch(function (error) { console.error('Mark read failed:', error); });
             }
@@ -2969,12 +3034,26 @@
 
             function loadActiveChatMessages() {
                 if (!activeRecruiterId || !activeSeekerId) return Promise.resolve();
-                return fetch(API_BASE + '/chats/' + encodeURIComponent(activeRecruiterId) + '/' + encodeURIComponent(activeSeekerId) + '/messages')
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function (messages) {
+                return supabaseClient
+                    .from('chat_messages')
+                    .select('*')
+                    .eq('recruiter_id', activeRecruiterId)
+                    .eq('seeker_id', activeSeekerId)
+                    .order('id', { ascending: true })
+                    .then(function (result) {
+                        if (result.error) throw result.error;
+                        const messages = (result.data || []).map(function (row) {
+                            return {
+                                id: row.id,
+                                senderId: row.sender_id,
+                                senderRole: row.sender_role,
+                                senderName: row.sender_name,
+                                senderAvatar: row.sender_avatar,
+                                text: row.text,
+                                createdAt: row.createdat,
+                                jobId: row.job_id
+                            };
+                        });
                         renderChat(messages);
                         if (chatModalEl.classList.contains('show')) markChatRead(activeRecruiterId, activeSeekerId, activeRole);
                     })
@@ -3043,24 +3122,19 @@
                 if (!text || !activeRecruiterId || !activeSeekerId) return;
                 chatInput.value = '';
 
-                fetch(API_BASE + '/chats/' + encodeURIComponent(activeRecruiterId) + '/' + encodeURIComponent(activeSeekerId) + '/messages', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        senderId: DEVICE_ID,
-                        senderRole: activeRole,
-                        senderName: state.profile.name || 'You',
-                        senderAvatar: getAvatar(),
-                        senderVerified: !!state.profile.verified,
-                        text: text,
-                        jobId: activeContextJobId || undefined
-                    })
+                supabaseClient.from('chat_messages').insert({
+                    recruiter_id: activeRecruiterId,
+                    seeker_id: activeSeekerId,
+                    sender_id: DEVICE_ID,
+                    sender_role: activeRole,
+                    sender_name: state.profile.name || 'You',
+                    sender_avatar: getAvatar(),
+                    text: text,
+                    job_id: activeContextJobId || null,
+                    createdat: new Date().toISOString()
                 })
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function () {
+                    .then(function (result) {
+                        if (result.error) throw result.error;
                         loadActiveChatMessages();
                         pollConversations();
                     })
@@ -3073,6 +3147,22 @@
             chatInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
             });
+
+            // Live chat: subscribe to Postgres changes on chat_messages so any
+            // new message involving this device appears instantly, without
+            // waiting for the next poll - covers both the open chat modal and
+            // the conversations list badge.
+            supabaseClient
+                .channel('chat-messages-' + DEVICE_ID)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, function (payload) {
+                    const row = payload.new;
+                    if (!row || (row.recruiter_id !== DEVICE_ID && row.seeker_id !== DEVICE_ID)) return;
+                    if (activeRecruiterId === row.recruiter_id && activeSeekerId === row.seeker_id) {
+                        loadActiveChatMessages();
+                    }
+                    pollConversations();
+                })
+                .subscribe();
 
             /* User Public Profile Preview Modal */
             const userProfileModalEl = document.getElementById('userProfileModal');
@@ -3108,10 +3198,34 @@
                 const userIdAtRequest = currentModalUserId;
                 const endpoint = '/users/' + encodeURIComponent(currentModalUserId) + '/posts?viewerId=' + encodeURIComponent(DEVICE_ID);
 
-                fetch(API_BASE + endpoint)
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
+                supabaseClient.rpc('get_user_posts', { p_user_id: currentModalUserId, p_viewer_id: DEVICE_ID })
+                    .then(function (result) {
+                        if (result.error) throw result.error;
+                        return (result.data || []).map(function (row) {
+                            return {
+                                id: row.id,
+                                userId: row.user_id,
+                                company: row.company,
+                                title: row.title,
+                                location: row.location,
+                                salary: row.salary,
+                                description: row.description,
+                                attachment: row.attachment,
+                                createdAt: row.createdat,
+                                isNew: row.isnew,
+                                authorName: row.author_name || row.company,
+                                authorPhone: row.author_phone,
+                                authorLocation: row.author_location || row.location,
+                                authorAvatar: row.author_avatar,
+                                authorRole: row.author_role,
+                                authorSkills: row.author_skills,
+                                likeCount: row.like_count,
+                                likedByMe: row.liked_by_me,
+                                commentCount: row.comment_count,
+                                savedByMe: row.saved_by_me,
+                                appliedByMe: row.applied_by_me
+                            };
+                        });
                     })
                     .then(function (jobs) {
                         if (currentModalUserId !== userIdAtRequest) return; // user changed while loading
@@ -3180,8 +3294,11 @@
                 userProfileModal.show();
                 setUserModalTab('posts');
 
-                fetch(API_BASE + '/users/' + encodeURIComponent(userId) + '/public-profile')
-                    .then(function (response) { return response.ok ? response.json() : null; })
+                supabaseClient.rpc('get_public_profile', { raw_id: userId })
+                    .then(function (result) {
+                        if (result.error || !result.data || !result.data.length) return null;
+                        return result.data[0];
+                    })
                     .then(function (profile) {
                         if (profile && currentModalUserId === userId) {
                             populateUserModalHeader(Object.assign({}, profile, { verified: fallback && fallback.verified }));
@@ -3357,38 +3474,51 @@
                 composerAttachmentBox.innerHTML = '';
             }
 
-            /* Sync Backend */
-            function syncJobToBackend(job, statusEl) {
+            /* Sync Backend - writes directly to Supabase (replaces old Render POST /jobs) */
+            async function syncJobToBackend(job, statusEl) {
                 if (statusEl) {
                     statusEl.classList.remove('d-none', 'text-danger', 'text-success');
                     statusEl.classList.add('text-warning');
                     statusEl.innerHTML = '<i class="bi bi-arrow-repeat"></i> Syncing to server...';
                 }
-                fetch(API_BASE + '/jobs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(job)
-                })
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function () {
-                        if (statusEl) {
-                            statusEl.classList.remove('text-warning');
-                            statusEl.classList.add('text-success');
-                            statusEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Posted and visible to everyone.';
-                            setTimeout(function () { statusEl.classList.add('d-none'); }, 3000);
-                        }
-                    })
-                    .catch(function (error) {
-                        console.error('Job sync failed:', error);
-                        if (statusEl) {
-                            statusEl.classList.remove('text-warning');
-                            statusEl.classList.add('text-danger');
-                            statusEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Saved locally only.';
-                        }
-                    });
+                try {
+                    const { error } = await supabaseClient
+                        .from('jobs')
+                        .upsert({
+                            id: job.id,
+                            user_id: job.userId || job.authorName || job.company || '1',
+                            company: job.company || job.authorName || 'Anonymous',
+                            title: job.title,
+                            location: job.location || '',
+                            salary: job.salary || '',
+                            description: job.description || '',
+                            attachment: job.attachment || null,
+                            createdat: job.createdAt || new Date().toISOString(),
+                            isnew: !!job.isNew,
+                            author_name: job.authorName || job.company || 'Anonymous',
+                            author_phone: job.authorPhone || job.phone || '',
+                            author_location: job.authorLocation || job.location || '',
+                            author_avatar: job.authorAvatar || job.avatar || '',
+                            author_role: job.authorRole || 'Jobseeker',
+                            author_skills: job.authorSkills || ''
+                        }, { onConflict: 'id' });
+
+                    if (error) throw error;
+
+                    if (statusEl) {
+                        statusEl.classList.remove('text-warning');
+                        statusEl.classList.add('text-success');
+                        statusEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Posted and visible to everyone.';
+                        setTimeout(function () { statusEl.classList.add('d-none'); }, 3000);
+                    }
+                } catch (error) {
+                    console.error('Job sync failed:', error);
+                    if (statusEl) {
+                        statusEl.classList.remove('text-warning');
+                        statusEl.classList.add('text-danger');
+                        statusEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Saved locally only.';
+                    }
+                }
             }
 
             /* Quick Composer */
@@ -3551,20 +3681,44 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
-            /* Load & Poll Backend */
-            function loadJobsFromBackend(opts) {
+            /* Load & Poll Backend - reads the jobs feed directly from Supabase */
+            async function loadJobsFromBackend(opts) {
                 opts = opts || {};
-                return fetch(API_BASE + '/jobs?userId=' + encodeURIComponent(DEVICE_ID))
-                    .then(function (response) {
-                        if (!response.ok) throw new Error('HTTP ' + response.status);
-                        return response.json();
-                    })
-                    .then(function (jobs) {
-                        insertJobsAtTop(jobs);
-                    })
-                    .catch(function (error) {
-                        console.error('Load jobs failed:', error);
+                try {
+                    const { data, error } = await supabaseClient
+                        .rpc('get_jobs_feed', { viewer_id: DEVICE_ID });
+                    if (error) throw error;
+
+                    const jobs = (data || []).map(function (row) {
+                        return {
+                            id: row.id,
+                            userId: row.user_id,
+                            company: row.company,
+                            title: row.title,
+                            location: row.location,
+                            salary: row.salary,
+                            description: row.description,
+                            attachment: row.attachment,
+                            createdAt: row.createdat,
+                            isNew: row.isnew,
+                            authorName: row.author_name || row.company,
+                            authorPhone: row.author_phone,
+                            authorLocation: row.author_location || row.location,
+                            authorAvatar: row.author_avatar,
+                            authorRole: row.author_role,
+                            authorSkills: row.author_skills,
+                            likeCount: row.like_count,
+                            likedByMe: row.liked_by_me,
+                            commentCount: row.comment_count,
+                            savedByMe: row.saved_by_me,
+                            appliedByMe: row.applied_by_me
+                        };
                     });
+
+                    insertJobsAtTop(jobs);
+                } catch (error) {
+                    console.error('Load jobs failed:', error);
+                }
             }
 
             // Jobs loading banner (shown on every refresh)

@@ -279,7 +279,12 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        const SUPABASE_URL = "https://hhobrwtbgzizlwwaikfd.supabase.co";
+        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_n25X0qzMC_OXxkNr82IoYg_Q9cjPaa7";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
         const API_BASE = 'https://project-connect-001.onrender.com';
         const DEFAULT_AVATAR = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg';
 
@@ -308,10 +313,22 @@
         // FETCH & RENDER USERS
         function loadUsers() {
             const tbody = document.getElementById('usersTableBody');
-            fetch(`${API_BASE}/users`)
-                .then(res => res.json())
-                .then(users => {
-                    cachedUsers = Array.isArray(users) ? users : [];
+            supabaseClient.rpc('get_admin_users')
+                .then(result => {
+                    if (result.error) throw result.error;
+                    cachedUsers = (result.data || []).map(row => ({
+                        id: row.id,
+                        name: row.name,
+                        email: row.email,
+                        phone: row.phone,
+                        role: row.role,
+                        location: row.location,
+                        profession: row.profession,
+                        skills: row.skills,
+                        avatar: row.avatar,
+                        createdAt: row.createdat,
+                        suspended: !!row.suspended
+                    }));
                     updateDashboardStats();
                     renderUsersTable(cachedUsers);
                 })
@@ -390,11 +407,9 @@
                 return;
             }
 
-            fetch(`${API_BASE}/users/${encodeURIComponent(userId)}`, {
-                method: 'DELETE'
-            })
-            .then(res => {
-                if (!res.ok) throw new Error('User deletion failed');
+            supabaseClient.rpc('admin_delete_user', { user_key: String(userId) })
+            .then(result => {
+                if (result.error || result.data === false) throw new Error('User deletion failed');
                 cachedUsers = cachedUsers.filter(u => String(u.id || u._id || u.email) !== String(userId));
                 updateDashboardStats();
                 renderUsersTable(cachedUsers);
@@ -416,16 +431,9 @@
                 : 'Unsuspend this user and restore their full access?';
             if (!confirm(confirmMsg)) return;
 
-            fetch(`${API_BASE}/users/${encodeURIComponent(userId)}/suspend`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ suspended: suspend })
-            })
-            .then(res => {
-                if (!res.ok) throw new Error('Suspension update failed');
-                return res.json();
-            })
-            .then(() => {
+            supabaseClient.rpc('admin_suspend_user', { user_key: String(userId), p_suspended: suspend })
+            .then(result => {
+                if (result.error || result.data === false) throw new Error('Suspension update failed');
                 cachedUsers = cachedUsers.map(u => {
                     const id = u.id || u._id || u.email;
                     if (String(id) === String(userId)) {
@@ -444,10 +452,10 @@
         // FETCH & RENDER JOBS
         function loadJobs() {
             const container = document.getElementById('jobsContainer');
-            fetch(`${API_BASE}/jobs`)
-                .then(res => res.json())
-                .then(jobs => {
-                    cachedJobs = Array.isArray(jobs) ? jobs : [];
+            supabaseClient.from('jobs').select('id, title, company, location').order('createdat', { ascending: false })
+                .then(result => {
+                    if (result.error) throw result.error;
+                    cachedJobs = result.data || [];
                     updateDashboardStats();
                     renderJobsList(cachedJobs);
                 })
@@ -498,11 +506,9 @@
                 return;
             }
 
-            fetch(`${API_BASE}/jobs/${encodeURIComponent(jobId)}`, {
-                method: 'DELETE'
-            })
-            .then(res => {
-                if (!res.ok) throw new Error('Deletion failed');
+            supabaseClient.rpc('admin_delete_job', { p_job_id: String(jobId) })
+            .then(result => {
+                if (result.error) throw new Error('Deletion failed');
                 cachedJobs = cachedJobs.filter(j => String(j.id) !== String(jobId));
                 updateDashboardStats();
                 renderJobsList(cachedJobs);
