@@ -200,7 +200,77 @@
     </div>
 
     <div class="container">
-        
+
+        <!-- ADMIN DASHBOARD LOGIN GATE - nothing below is loaded or shown
+             until this is passed, and it's verified again on the server
+             for every action taken from this page. -->
+        <div id="adminGateScreen" class="d-flex justify-content-center py-5">
+            <div class="admin-card" style="max-width: 420px; width: 100%;">
+                <h4 class="mb-1"><i class="bi bi-shield-lock-fill text-warning me-2"></i>Admin Access</h4>
+                <p class="text-secondary small mb-3">Enter the admin phone number and daughter's name to open the dashboard.</p>
+                <form id="adminGateForm">
+                    <div class="mb-3">
+                        <label class="form-label" for="gatePhone">Phone Number</label>
+                        <input type="tel" class="form-control search-admin" id="gatePhone" autocomplete="off" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label" for="gateDaughter">Daughter's Name</label>
+                        <input type="text" class="form-control search-admin" id="gateDaughter" autocomplete="off" required>
+                    </div>
+                    <div id="gateError" class="text-danger small mt-2 mb-2 d-none">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Incorrect phone number or daughter's name. Please try again.
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill mt-2">
+                        <i class="bi bi-unlock-fill me-1"></i> Unlock Dashboard
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="dashboardContent" class="d-none">
+
+        <!-- WEBSITE AVAILABILITY CONTROL -->
+        <div class="admin-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h4 class="mb-0"><i class="bi bi-power text-success me-2"></i>Website Availability</h4>
+                <span id="availabilityStatusBadge" class="badge rounded-pill px-3 py-2">Loading...</span>
+            </div>
+
+            <p class="text-secondary small mb-2">
+                The website only actually works while you turn it on here - the schedule below is
+                just the expected weekly window shown to visitors as a countdown. Closing it also
+                immediately logs out anyone currently using the site.
+            </p>
+
+            <div class="d-flex gap-2 flex-wrap mb-4">
+                <button type="button" id="openSiteBtn" class="btn btn-success rounded-pill px-4">
+                    <i class="bi bi-unlock-fill me-1"></i> Open Website Now
+                </button>
+                <button type="button" id="closeSiteBtn" class="btn btn-danger rounded-pill px-4">
+                    <i class="bi bi-lock-fill me-1"></i> Close Website Now
+                </button>
+            </div>
+
+            <h6 class="text-secondary mb-2">Weekly Schedule (Africa/Lagos time, 24-hour)</h6>
+            <div id="scheduleEditor" class="table-responsive mb-2">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>Open</th>
+                            <th>Opens at</th>
+                            <th>Closes at</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleTableBody"></tbody>
+                </table>
+            </div>
+            <button type="button" id="saveScheduleBtn" class="btn btn-outline-info rounded-pill px-4">
+                <i class="bi bi-save-fill me-1"></i> Save Schedule
+            </button>
+            <span id="scheduleSavedMsg" class="text-success small ms-2 d-none">Saved.</span>
+        </div>
+
         <!-- STATS DASHBOARD HEADER -->
         <div class="row mb-4">
             <div class="col-md-4">
@@ -276,17 +346,33 @@
             </div>
         </div>
 
+        </div><!-- /dashboardContent -->
+
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_URL = "https://hhobrwtbgzizlwwaikfd.supabase.co";
-        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_n25X0qzMC_OXxkNr82IoYg_Q9cjPaa7";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-        const API_BASE = 'https://project-connect-001.onrender.com';
-        const DEFAULT_AVATAR = 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg';
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_ROOT = '/api';
+        async function api(method, path, body) {
+            const opts = { method: method, headers: {}, credentials: 'same-origin' };
+            if (body !== undefined) {
+                opts.headers['Content-Type'] = 'application/json';
+                opts.body = JSON.stringify(body);
+            }
+            const res = await fetch(API_ROOT + path, opts);
+            let data = null;
+            try { data = await res.json(); } catch (e) { }
+            if (!res.ok) {
+                const err = new Error((data && (data.message || data.error)) || ('Request failed (' + res.status + ')'));
+                err.status = res.status;
+                err.data = data;
+                throw err;
+            }
+            return data;
+        }
+
+        const DEFAULT_AVATAR = 'images/default-avatar.jpg';
 
         let cachedUsers = [];
         let cachedJobs = [];
@@ -303,7 +389,7 @@
             
             const posterCount = cachedUsers.filter(u => {
                 const role = u.role || u.accounttype || u.accountType || '';
-                return role.toLowerCase().includes('poster');
+                return role.toLowerCase().includes('poster') || role.toLowerCase().includes('recruiter');
             }).length;
 
             document.getElementById('totalPostersCount').textContent = posterCount;
@@ -313,22 +399,9 @@
         // FETCH & RENDER USERS
         function loadUsers() {
             const tbody = document.getElementById('usersTableBody');
-            supabaseClient.rpc('get_admin_users')
-                .then(result => {
-                    if (result.error) throw result.error;
-                    cachedUsers = (result.data || []).map(row => ({
-                        id: row.id,
-                        name: row.name,
-                        email: row.email,
-                        phone: row.phone,
-                        role: row.role,
-                        location: row.location,
-                        profession: row.profession,
-                        skills: row.skills,
-                        avatar: row.avatar,
-                        createdAt: row.createdat,
-                        suspended: !!row.suspended
-                    }));
+            api('GET', '/users/')
+                .then(users => {
+                    cachedUsers = users || [];
                     updateDashboardStats();
                     renderUsersTable(cachedUsers);
                 })
@@ -407,9 +480,8 @@
                 return;
             }
 
-            supabaseClient.rpc('admin_delete_user', { user_key: String(userId) })
-            .then(result => {
-                if (result.error || result.data === false) throw new Error('User deletion failed');
+            api('DELETE', '/users/' + encodeURIComponent(userId) + '/')
+            .then(() => {
                 cachedUsers = cachedUsers.filter(u => String(u.id || u._id || u.email) !== String(userId));
                 updateDashboardStats();
                 renderUsersTable(cachedUsers);
@@ -431,9 +503,8 @@
                 : 'Unsuspend this user and restore their full access?';
             if (!confirm(confirmMsg)) return;
 
-            supabaseClient.rpc('admin_suspend_user', { user_key: String(userId), p_suspended: suspend })
-            .then(result => {
-                if (result.error || result.data === false) throw new Error('Suspension update failed');
+            api('PATCH', '/users/' + encodeURIComponent(userId) + '/suspend/', { suspended: suspend })
+            .then(() => {
                 cachedUsers = cachedUsers.map(u => {
                     const id = u.id || u._id || u.email;
                     if (String(id) === String(userId)) {
@@ -452,10 +523,9 @@
         // FETCH & RENDER JOBS
         function loadJobs() {
             const container = document.getElementById('jobsContainer');
-            supabaseClient.from('jobs').select('id, title, company, location').order('createdat', { ascending: false })
-                .then(result => {
-                    if (result.error) throw result.error;
-                    cachedJobs = result.data || [];
+            api('GET', '/jobs/')
+                .then(jobs => {
+                    cachedJobs = jobs || [];
                     updateDashboardStats();
                     renderJobsList(cachedJobs);
                 })
@@ -506,9 +576,8 @@
                 return;
             }
 
-            supabaseClient.rpc('admin_delete_job', { p_job_id: String(jobId) })
-            .then(result => {
-                if (result.error) throw new Error('Deletion failed');
+            api('DELETE', '/jobs/' + encodeURIComponent(jobId) + '/')
+            .then(() => {
                 cachedJobs = cachedJobs.filter(j => String(j.id) !== String(jobId));
                 updateDashboardStats();
                 renderJobsList(cachedJobs);
@@ -519,17 +588,149 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        /* ============================================================
+           ADMIN DASHBOARD GATE
+           Verification itself is a server-side session flag (stored in
+           the django_session table in Postgres, tied to a secure cookie
+           this page never reads) - nothing about being "verified" is
+           kept in the browser. Every admin action below is re-checked
+           against that same server-side flag, not just gated here.
+           ============================================================ */
+        function unlockDashboard() {
+            document.getElementById('adminGateScreen').classList.add('d-none');
+            document.getElementById('dashboardContent').classList.remove('d-none');
             loadUsers();
             loadJobs();
+            loadAvailability();
+        }
+
+        const adminGateForm = document.getElementById('adminGateForm');
+        const gateError = document.getElementById('gateError');
+
+        adminGateForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            gateError.classList.add('d-none');
+
+            const phone = document.getElementById('gatePhone').value.trim();
+            const name = document.getElementById('gateDaughter').value.trim();
+
+            api('POST', '/admin/verify/', { adminPhone: phone, adminName: name })
+                .then(function () {
+                    unlockDashboard();
+                })
+                .catch(function () {
+                    gateError.classList.remove('d-none');
+                });
+        });
+
+        // On load, ask the server whether this browser already passed the
+        // gate earlier in this session (it remembers via the cookie) so a
+        // page refresh doesn't force re-entering the phone/name every time.
+        api('GET', '/admin/status/')
+            .then(function (status) {
+                if (status && status.verified) unlockDashboard();
+            })
+            .catch(function () { });
+
+        /* ============================================================
+           WEBSITE AVAILABILITY
+           ============================================================ */
+        const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        let lastSchedule = null;
+
+        function renderStatusBadge(status) {
+            const badge = document.getElementById('availabilityStatusBadge');
+            if (status.state === 'open') {
+                badge.className = 'badge rounded-pill px-3 py-2 bg-success';
+                badge.textContent = 'Website is OPEN';
+            } else if (status.state === 'opening_soon') {
+                badge.className = 'badge rounded-pill px-3 py-2 bg-warning text-dark';
+                badge.textContent = 'Scheduled window - not yet opened';
+            } else {
+                badge.className = 'badge rounded-pill px-3 py-2 bg-danger';
+                badge.textContent = 'Website is CLOSED';
+            }
+            document.getElementById('openSiteBtn').disabled = status.isOpen;
+            document.getElementById('closeSiteBtn').disabled = !status.isOpen;
+        }
+
+        function renderScheduleEditor(schedule) {
+            lastSchedule = schedule;
+            const tbody = document.getElementById('scheduleTableBody');
+            tbody.innerHTML = DAY_NAMES.map(function (name, i) {
+                const d = schedule[String(i)] || { enabled: false, open: '09:00', close: '18:00' };
+                return '<tr>' +
+                    '<td>' + name + '</td>' +
+                    '<td><input type="checkbox" class="form-check-input" data-day="' + i + '" data-field="enabled"' + (d.enabled ? ' checked' : '') + '></td>' +
+                    '<td><input type="time" class="form-control form-control-sm" style="max-width:130px;" data-day="' + i + '" data-field="open" value="' + d.open + '"></td>' +
+                    '<td><input type="time" class="form-control form-control-sm" style="max-width:130px;" data-day="' + i + '" data-field="close" value="' + d.close + '"></td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function loadAvailability() {
+            api('GET', '/site-status/')
+                .then(function (status) {
+                    renderStatusBadge(status);
+                    renderScheduleEditor(status.schedule);
+                })
+                .catch(function (err) {
+                    console.error('Failed to load site status:', err);
+                });
+        }
+
+        document.getElementById('openSiteBtn').addEventListener('click', function () {
+            if (!confirm('Open the website now? Signup/login will work immediately.')) return;
+            api('POST', '/admin/site-open/', { isOpen: true })
+                .then(function (status) { renderStatusBadge(status); })
+                .catch(function (err) { alert('Could not open the website: ' + err.message); });
+        });
+
+        document.getElementById('closeSiteBtn').addEventListener('click', function () {
+            if (!confirm('Close the website now? Everyone currently using it will be logged out immediately.')) return;
+            api('POST', '/admin/site-open/', { isOpen: false })
+                .then(function (status) { renderStatusBadge(status); })
+                .catch(function (err) { alert('Could not close the website: ' + err.message); });
+        });
+
+        document.getElementById('saveScheduleBtn').addEventListener('click', function () {
+            const schedule = {};
+            for (let i = 0; i < 7; i++) {
+                const enabledEl = document.querySelector('[data-day="' + i + '"][data-field="enabled"]');
+                const openEl = document.querySelector('[data-day="' + i + '"][data-field="open"]');
+                const closeEl = document.querySelector('[data-day="' + i + '"][data-field="close"]');
+                schedule[String(i)] = {
+                    enabled: enabledEl.checked,
+                    open: openEl.value || '09:00',
+                    close: closeEl.value || '18:00'
+                };
+            }
+            api('POST', '/admin/site-schedule/', { schedule: schedule })
+                .then(function (status) {
+                    renderStatusBadge(status);
+                    renderScheduleEditor(status.schedule);
+                    const msg = document.getElementById('scheduleSavedMsg');
+                    msg.classList.remove('d-none');
+                    setTimeout(function () { msg.classList.add('d-none'); }, 2500);
+                })
+                .catch(function (err) {
+                    alert('Could not save schedule: ' + err.message);
+                });
+        });
+
+        setInterval(function () {
+            loadAvailability();
+        }, 15000);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Dashboard data (loadUsers/loadJobs/loadAvailability) only
+            // starts loading once the gate above is passed.
         });
 
         // ADMIN VERIFIED ACCOUNT LOGIN
-        const ADMIN_CREDENTIALS = {
-            phone: '09072825649',
-            daughterName: 'jasmine'
-        };
-
+        // Verified server-side, then logs this browser into a real,
+        // permanent Admin User account via a normal Django session
+        // (same mechanism as any other login) - nothing stored here.
         const adminLoginForm = document.getElementById('adminLoginForm');
         const adminLoginError = document.getElementById('adminLoginError');
 
@@ -537,22 +738,16 @@
             e.preventDefault();
 
             const enteredPhone = document.getElementById('adminLoginPhone').value.trim();
-            const enteredDaughter = document.getElementById('adminLoginDaughter').value.trim().toLowerCase();
+            const enteredDaughter = document.getElementById('adminLoginDaughter').value.trim();
 
-            const isValid = enteredPhone === ADMIN_CREDENTIALS.phone &&
-                             enteredDaughter === ADMIN_CREDENTIALS.daughterName;
-
-            if (!isValid) {
-                adminLoginError.classList.remove('d-none');
-                return;
-            }
-
-            adminLoginError.classList.add('d-none');
-
-            // home.html reads ?admin=1 and signs this device into its own
-            // dedicated, permanent Admin account (kept separate from any
-            // other account already signed in on this device/phone).
-            window.location.href = 'home.html?admin=1';
+            api('POST', '/admin/enter-home/', { adminPhone: enteredPhone, adminName: enteredDaughter })
+                .then(function () {
+                    adminLoginError.classList.add('d-none');
+                    window.location.href = 'home.html';
+                })
+                .catch(function () {
+                    adminLoginError.classList.remove('d-none');
+                });
         });
     </script>
 

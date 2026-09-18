@@ -139,6 +139,42 @@
             color: white;
         }
 
+        .availability-banner {
+            padding: 10px 12px;
+            font-size: 0.92rem;
+            font-weight: 500;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .availability-banner.state-open {
+            background: #103b1e;
+            color: #b9f5c9;
+        }
+
+        .availability-banner.state-opening_soon {
+            background: #4a3a09;
+            color: #ffe08a;
+        }
+
+        .availability-banner.state-closed {
+            background: #4a1414;
+            color: #ffc2c2;
+        }
+
+        .availability-dot {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .availability-countdown {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+
         .hero {
             padding: 50px 0;
             flex: 1;
@@ -365,6 +401,15 @@
 
         </nav>
 
+        <!-- SITE AVAILABILITY BANNER - always visible, live-counting -->
+        <div id="availabilityBanner" class="availability-banner d-none">
+            <div class="container d-flex align-items-center justify-content-center gap-2 flex-wrap text-center">
+                <span id="availabilityDot" class="availability-dot"></span>
+                <span id="availabilityText" class="availability-text"></span>
+                <span id="availabilityCountdown" class="availability-countdown"></span>
+            </div>
+        </div>
+
         <section class="hero">
 
             <div class="container">
@@ -562,6 +607,24 @@
 
         </footer>
 
+        <!-- SITE CLOSED / OPENING SOON MODAL - shown when login/signup is
+             attempted while the site is not open -->
+        <div class="modal fade" id="siteClosedModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content bg-dark text-light border-secondary">
+                    <div class="modal-body text-center py-4 px-4">
+                        <div id="siteClosedIcon" style="font-size: 2.5rem;" class="mb-2">🔒</div>
+                        <h5 id="siteClosedTitle" class="mb-2">Website is closed</h5>
+                        <p id="siteClosedMessage" class="text-secondary mb-3"></p>
+                        <div id="siteClosedCountdownWrap" class="d-none mb-3">
+                            <span class="availability-countdown fs-5" id="siteClosedCountdown"></span>
+                        </div>
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- SIGNUP / LOGIN POPUP -->
@@ -703,463 +766,579 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- SUPABASE -->
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
 
-    <script>
+    /* ===========================
+       SITE AVAILABILITY
+       Always-visible banner + countdown, and a gate that blocks
+       login/signup while the Django backend says the site isn't open.
+    =========================== */
+    let siteStatus = { state: 'closed', isOpen: false, nextOpenAt: null };
 
-        /* ===========================
-           SUPABASE CONNECTION
-        =========================== */
+    function formatCountdown(msRemaining) {
+        if (msRemaining <= 0) return '00:00:00:00';
+        const totalSeconds = Math.floor(msRemaining / 1000);
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const pad = n => String(n).padStart(2, '0');
+        return days + 'd ' + pad(hours) + 'h ' + pad(minutes) + 'm ' + pad(seconds) + 's';
+    }
 
-        const SUPABASE_URL = "https://hhobrwtbgzizlwwaikfd.supabase.co";
+    function renderAvailabilityBanner() {
+        const banner = document.getElementById('availabilityBanner');
+        const dot = document.getElementById('availabilityDot');
+        const text = document.getElementById('availabilityText');
+        const countdownEl = document.getElementById('availabilityCountdown');
+        if (!banner) return;
 
-        const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_n25X0qzMC_OXxkNr82IoYg_Q9cjPaa7";
+        banner.classList.remove('d-none', 'state-open', 'state-opening_soon', 'state-closed');
+        banner.classList.add('state-' + siteStatus.state);
 
-        const { createClient } = supabase;
-
-        const supabaseClient = createClient(
-            SUPABASE_URL,
-            SUPABASE_PUBLISHABLE_KEY
-        );
-
-
-        /* ===========================
-           HERO IMAGE SLIDER
-        =========================== */
-
-        const images = [
-            "https://images.pexels.com/photos/15927123/pexels-photo-15927123.jpeg",
-            "https://images.pexels.com/photos/34906874/pexels-photo-34906874.jpeg",
-            "https://images.pexels.com/photos/36463969/pexels-photo-36463969.jpeg",
-            "https://images.pexels.com/photos/7520156/pexels-photo-7520156.jpeg",
-            "https://images.pexels.com/photos/19805878/pexels-photo-19805878.jpeg",
-            "https://images.pexels.com/photos/8486908/pexels-photo-8486908.jpeg"
-        ];
-
-        let current = 0;
-
-        const heroImage = document.getElementById("heroImage");
-
-        setInterval(() => {
-
-            heroImage.style.opacity = "0";
-
-            setTimeout(() => {
-
-                current = (current + 1) % images.length;
-
-                heroImage.src = images[current];
-
-                heroImage.style.opacity = "1";
-
-            }, 500);
-
-        }, 5000);
-
-
-        /* ===========================
-           FIT SCREEN
-        =========================== */
-
-        const pageWrapper = document.getElementById("pageWrapper");
-
-        function fitToScreen() {
-
-            if (window.innerWidth < 992) {
-
-                pageWrapper.style.transform = "none";
-                pageWrapper.style.width = "100%";
-
-                return;
+        if (siteStatus.state === 'open') {
+            text.textContent = 'Website is open now.';
+            countdownEl.textContent = '';
+        } else if (siteStatus.state === 'opening_soon') {
+            text.textContent = siteStatus.closedMessage || 'Website will be opened soon, please wait a moment.';
+            countdownEl.textContent = '';
+        } else {
+            text.textContent = 'Website is closed. Opens in:';
+            if (siteStatus.nextOpenAt) {
+                const ms = new Date(siteStatus.nextOpenAt).getTime() - Date.now();
+                countdownEl.textContent = formatCountdown(ms);
+            } else {
+                countdownEl.textContent = '';
             }
+        }
+    }
+
+    function fetchSiteStatus() {
+        return fetch('/api/site-status/')
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                siteStatus = data;
+                renderAvailabilityBanner();
+                return data;
+            })
+            .catch(function (err) {
+                console.error('Could not load site status:', err);
+            });
+    }
+
+    // Live tick every second for the countdown digits; re-fetch the real
+    // status from the server every 15s so it stays accurate if the admin
+    // opens/closes the site or edits the schedule while someone's here.
+    setInterval(renderAvailabilityBanner, 1000);
+    setInterval(fetchSiteStatus, 15000);
+    fetchSiteStatus();
+
+    function showSiteClosedModal() {
+        const title = document.getElementById('siteClosedTitle');
+        const msg = document.getElementById('siteClosedMessage');
+        const icon = document.getElementById('siteClosedIcon');
+        const countdownWrap = document.getElementById('siteClosedCountdownWrap');
+        const countdownEl = document.getElementById('siteClosedCountdown');
+
+        if (siteStatus.state === 'opening_soon') {
+            icon.textContent = '⏳';
+            title.textContent = 'Almost there';
+            msg.textContent = siteStatus.closedMessage ||
+                'Website will be opened soon, please wait a moment or call +2349072825649 for enquiries.';
+            countdownWrap.classList.add('d-none');
+        } else {
+            icon.textContent = '🔒';
+            title.textContent = 'Website is closed';
+            msg.textContent = 'Please come back when the website re-opens.';
+            countdownWrap.classList.remove('d-none');
+            if (siteStatus.nextOpenAt) {
+                countdownEl.textContent = formatCountdown(new Date(siteStatus.nextOpenAt).getTime() - Date.now());
+            }
+        }
+
+        const modalEl = document.getElementById('siteClosedModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    // Re-checks with the server right before letting a submit through, so
+    // a stale client-side status (up to 15s old) can't let someone sneak
+    // past the gate right as the site closes.
+    function verifySiteOpenBeforeSubmit() {
+        return fetchSiteStatus().then(function () {
+            if (siteStatus.state !== 'open') {
+                showSiteClosedModal();
+                return false;
+            }
+            return true;
+        });
+    }
+
+    /* ===========================
+       HERO IMAGE SLIDER
+    =========================== */
+
+    const images = [
+        "https://images.pexels.com/photos/15927123/pexels-photo-15927123.jpeg",
+        "https://images.pexels.com/photos/34906874/pexels-photo-34906874.jpeg",
+        "https://images.pexels.com/photos/36463969/pexels-photo-36463969.jpeg",
+        "https://images.pexels.com/photos/7520156/pexels-photo-7520156.jpeg",
+        "https://images.pexels.com/photos/19805878/pexels-photo-19805878.jpeg",
+        "https://images.pexels.com/photos/8486908/pexels-photo-8486908.jpeg"
+    ];
+
+    let current = 0;
+
+    const heroImage = document.getElementById("heroImage");
+
+    setInterval(() => {
+
+        heroImage.style.opacity = "0";
+
+        setTimeout(() => {
+
+            current = (current + 1) % images.length;
+
+            heroImage.src = images[current];
+
+            heroImage.style.opacity = "1";
+
+        }, 500);
+
+    }, 5000);
+
+
+    /* ===========================
+       FIT SCREEN
+    =========================== */
+
+    const pageWrapper = document.getElementById("pageWrapper");
+
+    function fitToScreen() {
+
+        if (window.innerWidth < 992) {
 
             pageWrapper.style.transform = "none";
             pageWrapper.style.width = "100%";
 
-            requestAnimationFrame(() => {
+            return;
+        }
 
-                const contentHeight = pageWrapper.scrollHeight;
-                const viewportHeight = window.innerHeight;
+        pageWrapper.style.transform = "none";
+        pageWrapper.style.width = "100%";
 
-                if (contentHeight > viewportHeight) {
+        requestAnimationFrame(() => {
 
-                    const scale = viewportHeight / contentHeight;
+            const contentHeight = pageWrapper.scrollHeight;
+            const viewportHeight = window.innerHeight;
 
-                    pageWrapper.style.transform = `scale(${scale})`;
+            if (contentHeight > viewportHeight) {
 
-                    pageWrapper.style.width = (100 / scale) + "%";
+                const scale = viewportHeight / contentHeight;
 
+                pageWrapper.style.transform = `scale(${scale})`;
+
+                pageWrapper.style.width = (100 / scale) + "%";
+
+            }
+
+        });
+
+    }
+
+    window.addEventListener("load", fitToScreen);
+
+    window.addEventListener("resize", fitToScreen);
+
+    const menuEl = document.getElementById("menu");
+
+    menuEl.addEventListener("shown.bs.collapse", fitToScreen);
+
+    menuEl.addEventListener("hidden.bs.collapse", fitToScreen);
+
+
+    /* ===========================
+       SIGNUP / LOGIN OVERLAY
+    =========================== */
+
+    const overlay = document.getElementById("overlay");
+
+    const authTitle = document.getElementById("authTitle");
+
+    const signupForm = document.getElementById("signupForm");
+
+    const loginForm = document.getElementById("loginForm");
+
+    const signupError = document.getElementById("signupError");
+
+    const loginError = document.getElementById("loginError");
+
+
+    function hideErrors() {
+
+        signupError.classList.add("d-none");
+
+        loginError.classList.add("d-none");
+
+    }
+
+
+    function showError(el, msg) {
+
+        el.textContent = msg;
+
+        el.classList.remove("d-none");
+
+    }
+
+
+    function openModal(mode) {
+
+        hideErrors();
+
+        if (mode === "login") {
+
+            authTitle.textContent = "Welcome Back";
+
+            loginForm.classList.remove("d-none");
+
+            signupForm.classList.add("d-none");
+
+        } else {
+
+            authTitle.textContent = "Create Account";
+
+            signupForm.classList.remove("d-none");
+
+            loginForm.classList.add("d-none");
+
+        }
+
+        overlay.style.display = "flex";
+
+    }
+
+
+    function closeModal() {
+
+        overlay.style.display = "none";
+
+    }
+
+
+    overlay.addEventListener("click", function (e) {
+
+        if (e.target === overlay) {
+
+            closeModal();
+
+        }
+
+    });
+
+
+    /* NAVIGATION */
+
+    document.querySelectorAll('.nav-link[data-gate]').forEach(function (link) {
+
+        link.addEventListener("click", function (e) {
+
+            e.preventDefault();
+
+            openModal("signup");
+
+        });
+
+    });
+
+
+    document.getElementById("navAuthBtn").addEventListener("click", function (e) {
+
+        e.preventDefault();
+
+        openModal("signup");
+
+    });
+
+
+    document.getElementById("joinFreeBtn").addEventListener("click", function (e) {
+
+        e.preventDefault();
+
+        openModal("signup");
+
+    });
+
+
+    document.getElementById("browseJobsBtn").addEventListener("click", function (e) {
+
+        e.preventDefault();
+
+        openModal("signup");
+
+    });
+
+
+    document.getElementById("showLoginLink").addEventListener("click", function (e) {
+
+        e.preventDefault();
+
+        openModal("login");
+
+    });
+
+
+    document.getElementById("showSignupLink").addEventListener("click", function (e) {
+
+        e.preventDefault();
+
+        openModal("signup");
+
+    });
+
+
+    /* AUTO POPUP */
+
+    setTimeout(() => {
+
+        fetch('/api/me/', { credentials: 'same-origin' })
+            .then(function (res) { return res.json(); })
+            .then(function (me) {
+                if (!me || !me.authenticated) {
+                    openModal("signup");
                 }
-
+            })
+            .catch(function () {
+                openModal("signup");
             });
 
-        }
-
-        window.addEventListener("load", fitToScreen);
-
-        window.addEventListener("resize", fitToScreen);
-
-        const menuEl = document.getElementById("menu");
-
-        menuEl.addEventListener("shown.bs.collapse", fitToScreen);
-
-        menuEl.addEventListener("hidden.bs.collapse", fitToScreen);
+    }, 3000);
 
 
-        /* ===========================
-           SIGNUP / LOGIN OVERLAY
-        =========================== */
+    /* ===========================
+       GO HOME
+    =========================== */
 
-        const overlay = document.getElementById("overlay");
+    function goToHome() {
 
-        const authTitle = document.getElementById("authTitle");
+        window.location.href = "home.html";
 
-        const signupForm = document.getElementById("signupForm");
-
-        const loginForm = document.getElementById("loginForm");
-
-        const signupError = document.getElementById("signupError");
-
-        const loginError = document.getElementById("loginError");
+    }
 
 
-        function hideErrors() {
+    /* ===========================
+       SIGN UP → DJANGO
+    =========================== */
 
-            signupError.classList.add("d-none");
+    signupForm.addEventListener("submit", async function (e) {
 
-            loginError.classList.add("d-none");
+        e.preventDefault();
 
-        }
+        hideErrors();
+
+        const canProceed = await verifySiteOpenBeforeSubmit();
+        if (!canProceed) return;
+
+        const fullname =
+            document.getElementById("signupName").value.trim();
+
+        const email =
+            document.getElementById("signupEmail").value.trim().toLowerCase();
+
+        const phone =
+            document.getElementById("signupPhone").value.trim();
+
+        const accountType =
+            document.getElementById("signupType").value;
+
+        const location =
+            document.getElementById("signupLocation").value.trim();
+
+        const profession =
+            document.getElementById("signupProfession").value.trim();
+
+        const password =
+            document.getElementById("signupPassword").value;
 
 
-        function showError(el, msg) {
+        /* VALIDATION */
 
-            el.textContent = msg;
+        if (
+            !fullname ||
+            !email ||
+            !phone ||
+            !accountType ||
+            !location ||
+            !profession ||
+            !password
+        ) {
 
-            el.classList.remove("d-none");
+            showError(
+                signupError,
+                "Please fill all fields."
+            );
 
-        }
-
-
-        function openModal(mode) {
-
-            hideErrors();
-
-            if (mode === "login") {
-
-                authTitle.textContent = "Welcome Back";
-
-                loginForm.classList.remove("d-none");
-
-                signupForm.classList.add("d-none");
-
-            } else {
-
-                authTitle.textContent = "Create Account";
-
-                signupForm.classList.remove("d-none");
-
-                loginForm.classList.add("d-none");
-
-            }
-
-            overlay.style.display = "flex";
-
+            return;
         }
 
 
-        function closeModal() {
+        if (password.length < 6) {
 
-            overlay.style.display = "none";
+            showError(
+                signupError,
+                "Password must be at least 6 characters."
+            );
 
+            return;
         }
 
 
-        overlay.addEventListener("click", function (e) {
+        try {
 
-            if (e.target === overlay) {
+            const role =
+                accountType === "Recruiter"
+                    ? "recruiter"
+                    : "job_seeker";
 
-                closeModal();
 
-            }
+            /* SEND TO DJANGO */
 
-        });
+            const response = await fetch(
+                "/api/signup/",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
 
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
 
-        /* NAVIGATION */
+                    body: JSON.stringify({
+                        full_name: fullname,
+                        email: email,
+                        phone_number: phone,
+                        role: role,
+                        password: password
+                    })
+                }
+            );
 
-        document.querySelectorAll('.nav-link[data-gate]').forEach(function (link) {
 
-            link.addEventListener("click", function (e) {
+            const data = await response.json();
 
-                e.preventDefault();
 
-                openModal("signup");
+            /* DJANGO ERROR */
 
-            });
+            if (!response.ok) {
 
-        });
-
-
-        document.getElementById("navAuthBtn").addEventListener("click", function (e) {
-
-            e.preventDefault();
-
-            openModal("signup");
-
-        });
-
-
-        document.getElementById("joinFreeBtn").addEventListener("click", function (e) {
-
-            e.preventDefault();
-
-            openModal("signup");
-
-        });
-
-
-        document.getElementById("browseJobsBtn").addEventListener("click", function (e) {
-
-            e.preventDefault();
-
-            openModal("signup");
-
-        });
-
-
-        document.getElementById("showLoginLink").addEventListener("click", function (e) {
-
-            e.preventDefault();
-
-            openModal("login");
-
-        });
-
-
-        document.getElementById("showSignupLink").addEventListener("click", function (e) {
-
-            e.preventDefault();
-
-            openModal("signup");
-
-        });
-
-
-        /* AUTO POPUP */
-
-        setTimeout(() => {
-
-            if (!localStorage.getItem("ylm_currentUser")) {
-
-                openModal("signup");
-
-            }
-
-        }, 3000);
-
-
-        /* ===========================
-           GO HOME
-        =========================== */
-
-        function goToHome() {
-
-            window.location.href = "home.html";
-
-        }
-
-
-        /* ===========================
-           SIGN UP → SUPABASE
-        =========================== */
-
-        signupForm.addEventListener("submit", async function (e) {
-
-            e.preventDefault();
-
-            hideErrors();
-
-            const fullname =
-                document.getElementById("signupName").value.trim();
-
-            const email =
-                document.getElementById("signupEmail").value.trim().toLowerCase();
-
-            const phone =
-                document.getElementById("signupPhone").value.trim();
-
-            const accountType =
-                document.getElementById("signupType").value;
-
-            const location =
-                document.getElementById("signupLocation").value.trim();
-
-            const profession =
-                document.getElementById("signupProfession").value.trim();
-
-            const password =
-                document.getElementById("signupPassword").value;
-
-
-            /* VALIDATION */
-
-            if (
-                !fullname ||
-                !email ||
-                !phone ||
-                !accountType ||
-                !location ||
-                !profession ||
-                !password
-            ) {
-
-                showError(
-                    signupError,
-                    "Please fill all fields."
-                );
-
-                return;
-            }
-
-
-            if (password.length < 6) {
-
-                showError(
-                    signupError,
-                    "Password must be at least 6 characters."
-                );
-
-                return;
-            }
-
-
-            try {
-
-                /* SEND DIRECTLY TO SUPABASE */
-
-                const { data, error } = await supabaseClient
-                    .from("users")
-                    .insert([
-                        {
-                            fullname: fullname,
-                            email: email,
-                            phone: phone,
-                            password: password,
-                            accounttype: accountType,
-                            location: location,
-                            profession: profession,
-                            skills: "",
-                            avatar: "",
-                            suspended: false,
-                            createdat: new Date().toISOString()
-                        }
-                    ])
-                    .select()
-                    .single();
-
-
-                /* SUPABASE ERROR */
-
-                if (error) {
-
-                    console.error("Supabase signup error:", error);
-
-                    if (
-                        error.code === "23505" ||
-                        error.message.toLowerCase().includes("duplicate")
-                    ) {
-
-                        showError(
-                            signupError,
-                            "An account with this email already exists."
-                        );
-
-                    } else {
-
-                        showError(
-                            signupError,
-                            error.message
-                        );
-
-                    }
-
+                if (response.status === 423) {
+                    if (data.siteStatus) siteStatus = data.siteStatus;
+                    renderAvailabilityBanner();
+                    showSiteClosedModal();
                     return;
                 }
 
-
-                /* SUCCESS */
-
-                console.log("Account created in Supabase:", data);
-
-                localStorage.setItem(
-                    "ylm_currentUser",
-                    email
-                );
-
-
-                const accountId = "acct-" + email;
-
-                localStorage.setItem(
-                    "ylm.profile",
-                    JSON.stringify({
-                        name: fullname,
-                        phone: phone,
-                        location: location,
-                        skills: "",
-                        role: accountType,
-                        avatar: ""
-                    })
-                );
-
-
-                localStorage.setItem(
-                    "ylm.activeAccount",
-                    accountId
-                );
-
-
-                goToHome();
-
-
-            } catch (error) {
-
-                console.error(error);
-
                 showError(
                     signupError,
-                    "Something went wrong while creating your account."
+                    data.error || "Something went wrong while creating your account."
                 );
 
+                return;
             }
 
-        });
+
+            /* SUCCESS */
+            // The Django backend already logged this browser in (a secure,
+            // server-side session cookie - not anything this page stores),
+            // so home.html can just ask the server who's logged in.
+
+            console.log("Account created in Django:", data);
+
+            goToHome();
 
 
-        /* ===========================
-           LOGIN → SUPABASE
-        =========================== */
+        } catch (error) {
 
-        loginForm.addEventListener("submit", async function (e) {
+            console.error(error);
 
-            e.preventDefault();
+            showError(
+                signupError,
+                "Unable to connect to the Django server."
+            );
 
-            hideErrors();
+        }
 
-            const email =
-                document.getElementById("loginEmail").value.trim().toLowerCase();
-
-            const password =
-                document.getElementById("loginPassword").value;
+    });
 
 
-            if (!email || !password) {
+      /* ===========================
+       LOGIN → DJANGO
+    =========================== */
+
+    loginForm.addEventListener("submit", async function (e) {
+
+        e.preventDefault();
+
+        hideErrors();
+
+        const canProceed = await verifySiteOpenBeforeSubmit();
+        if (!canProceed) return;
+
+        const email =
+            document.getElementById("loginEmail").value.trim().toLowerCase();
+
+        const password =
+            document.getElementById("loginPassword").value;
+
+
+        if (!email || !password) {
+
+            showError(
+                loginError,
+                "Please enter your email and password."
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const response = await fetch(
+                "/api/login/",
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            if (!response.ok) {
+
+                if (response.status === 423) {
+                    if (data.siteStatus) siteStatus = data.siteStatus;
+                    renderAvailabilityBanner();
+                    showSiteClosedModal();
+                    return;
+                }
 
                 showError(
                     loginError,
-                    "Please enter your email and password."
+                    data.message || "Incorrect email or password."
                 );
 
                 return;
@@ -1167,79 +1346,25 @@
             }
 
 
-            try {
+            // Django already logged this browser in via a server-side
+            // session cookie during /api/login/ - nothing to store here.
 
-                const { data: userRow, error: fetchError } = await supabaseClient
-                    .from("users")
-                    .select("*")
-                    .eq("email", email)
-                    .maybeSingle();
+            goToHome();
 
-                if (fetchError) {
-                    console.error("Supabase login error:", fetchError);
-                    showError(
-                        loginError,
-                        "Something went wrong while logging in."
-                    );
-                    return;
-                }
+        } catch (error) {
 
-                if (!userRow || userRow.password !== password) {
+            console.error(error);
 
-                    showError(
-                        loginError,
-                        "Incorrect email or password."
-                    );
+            showError(
+                loginError,
+                "Unable to connect to the Django server."
+            );
 
-                    return;
+        }
 
-                }
+    });
 
-                localStorage.setItem(
-                    "ylm_currentUser",
-                    email
-                );
-
-
-                const accountId = "acct-" + email;
-
-
-                localStorage.setItem(
-                    "ylm.profile",
-                    JSON.stringify({
-                        name: userRow.fullname || "",
-                        phone: userRow.phone || "",
-                        location: userRow.location || "",
-                        skills: userRow.skills || "",
-                        role: userRow.accounttype || "Jobseeker",
-                        avatar: userRow.avatar || ""
-                    })
-                );
-
-
-                localStorage.setItem(
-                    "ylm.activeAccount",
-                    accountId
-                );
-
-
-                goToHome();
-
-
-            } catch (error) {
-
-                console.log(error);
-
-                showError(
-                    loginError,
-                    "Something went wrong while logging in."
-                );
-
-            }
-
-        });
-
-    </script>
+</script>
 
 </body>
 

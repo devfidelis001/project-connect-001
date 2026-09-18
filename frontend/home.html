@@ -1450,239 +1450,113 @@
     </button>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
         (async function () {
             'use strict';
 
-            const SUPABASE_URL = "https://hhobrwtbgzizlwwaikfd.supabase.co";
-            const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_n25X0qzMC_OXxkNr82IoYg_Q9cjPaa7";
-            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+            /* ============================================================
+               DJANGO API HELPER
+               Replaces the old Supabase client. Every call goes to the
+               Django backend on this same origin (/api/...), which talks
+               to PostgreSQL on this machine.
+               ============================================================ */
+            const API_ROOT = '/api';
+            async function api(method, path, body) {
+                const opts = { method: method, headers: {}, credentials: 'same-origin' };
+                if (body !== undefined) {
+                    opts.headers['Content-Type'] = 'application/json';
+                    opts.body = JSON.stringify(body);
+                }
+                const res = await fetch(API_ROOT + path, opts);
+                let data = null;
+                try { data = await res.json(); } catch (e) { }
+                if (!res.ok) {
+                    const err = new Error((data && (data.message || data.error)) || ('Request failed (' + res.status + ')'));
+                    err.status = res.status;
+                    err.data = data;
+                    throw err;
+                }
+                return data;
+            }
 
             const POLL_INTERVAL_MS = 15000;
 
-            const STORAGE_KEYS = {
-                profile: 'ylm.profile',
-                settings: 'ylm.settings',
-                seenJobIds: 'ylm.seenJobIds',
-                accounts: 'ylm.accounts',
-                activeAccount: 'ylm.activeAccount'
-            };
+            /* ============================================================
+               FILE UPLOAD HELPERS
 
-            const ADMIN_ACCOUNT_ID = 'admin-verified';
+               Photos are always compressed client-side before they're ever
+               sent anywhere - a normal 5-8MB phone photo becomes roughly
+               100-300KB, automatically, with no change to how anyone uses
+               the site. This keeps every upload comfortably under the
+               server's request-size limit and stops the database (and
+               everyone else's feed) from filling up with full-size photos.
 
-            function loadJSON(key, fallback) {
-                try {
-                    const raw = localStorage.getItem(key);
-                    return raw ? JSON.parse(raw) : fallback;
-                } catch (err) {
-                    return fallback;
-                }
+               Videos/documents can't be shrunk the same way in the
+               browser, so those get a plain, generous size cap instead
+               (checked instantly, before any upload is attempted) with a
+               clear message if a file is too big - rather than trying and
+               silently failing.
+               ============================================================ */
+            const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024; // 8MB
+
+            function compressImageFile(file, maxDimension, quality) {
+                maxDimension = maxDimension || 1100;
+                quality = quality || 0.72;
+                return new Promise(function (resolve, reject) {
+                    const reader = new FileReader();
+                    reader.onerror = function () { reject(new Error('Could not read that image.')); };
+                    reader.onload = function () {
+                        const img = new Image();
+                        img.onerror = function () { reject(new Error('That file doesn\'t look like a valid image.')); };
+                        img.onload = function () {
+                            let w = img.naturalWidth, h = img.naturalHeight;
+                            if (w > maxDimension || h > maxDimension) {
+                                if (w >= h) { h = Math.round(h * (maxDimension / w)); w = maxDimension; }
+                                else { w = Math.round(w * (maxDimension / h)); h = maxDimension; }
+                            }
+                            try {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = w;
+                                canvas.height = h;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, w, h);
+                                resolve(canvas.toDataURL('image/jpeg', quality));
+                            } catch (err) {
+                                reject(new Error('Could not process that image.'));
+                            }
+                        };
+                        img.src = reader.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
             }
-            function saveJSON(key, value) {
-                try { localStorage.setItem(key, JSON.stringify(value)); }
-                catch (err) { }
+
+            function readFileAsDataURL(file) {
+                return new Promise(function (resolve, reject) {
+                    if (file.size > MAX_ATTACHMENT_BYTES) {
+                        reject(new Error('That file is ' + Math.round(file.size / 1024 / 1024) + 'MB - please choose one under ' + Math.round(MAX_ATTACHMENT_BYTES / 1024 / 1024) + 'MB.'));
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onerror = function () { reject(new Error('Could not read that file.')); };
+                    reader.onload = function () { resolve(reader.result); };
+                    reader.readAsDataURL(file);
+                });
             }
 
             /* ============================================================
-               ACCOUNT SYSTEM
+               ACCOUNT / SESSION
 
-               Identity now comes from the real backend login on index.html
-               (Login / Sign Up page), which authenticates against the server
-               and stores the session as:
-                 - ylm_currentUser  -> the logged-in person's email
-                 - ylm.profile      -> {name, avatar} from that signup/login
-
-               That backend session is the single source of truth. Every time
-               this page loads, it is re-synced into an account keyed by that
-               email (acct-<email>), and that account is ALWAYS made the
-               active one - so a fresh signup can never be shadowed by some
-               older account that happened to still be "active" in this
-               browser from an earlier test or a previous person. That
-               mismatch (new signup silently kept showing an old, unrelated
-               user) was the actual bug - fixed by removing the old
-               "only sync if nobody is active yet" guard and the separate,
-               confusing local "switch account" system that could get out of
-               sync with the real login.
-
-               If there is no backend session at all, the person is sent to
-               index.html to sign in - this page never invents its own
-               account anymore.
+               Identity, profile, settings, and "seen job" tracking all
+               live in PostgreSQL, not in this browser. The only thing the
+               browser holds is a session cookie Django itself manages
+               (set during login/signup on index.html) - this page never
+               reads or writes it directly. On every load, this page just
+               asks the server "who am I" via GET /api/me/ and uses
+               whatever comes back; if nobody is logged in, it's sent
+               straight to index.html.
                ============================================================ */
-
-            function loadAccounts() { return loadJSON(STORAGE_KEYS.accounts, {}); }
-            function saveAccounts(accounts) { saveJSON(STORAGE_KEYS.accounts, accounts); }
-
-            function getStoredActiveAccountId() {
-                try { return localStorage.getItem(STORAGE_KEYS.activeAccount) || ''; }
-                catch (err) { return ''; }
-            }
-            function setStoredActiveAccountId(id) {
-                try { localStorage.setItem(STORAGE_KEYS.activeAccount, id); }
-                catch (err) { }
-            }
-
-            function getActiveAccountId() {
-                const id = getStoredActiveAccountId();
-                const accounts = loadAccounts();
-                return (id && accounts[id]) ? id : '';
-            }
-
-            // ADMIN VERIFIED ACCOUNT DETECTION
-            // Set when the login form on the Admin Dashboard is completed correctly.
-            // The Admin account is its own special, permanent account, so it always
-            // shows as "Admin" with the verified badge, and never leaks onto another
-            // person's account.
-            (function checkAdminEntry() {
-                const params = new URLSearchParams(window.location.search);
-                if (params.get('admin') === '1') {
-                    const accounts = loadAccounts();
-                    accounts[ADMIN_ACCOUNT_ID] = { name: 'Admin', phone: '' };
-                    saveAccounts(accounts);
-
-                    const adminProfile = loadJSON(STORAGE_KEYS.profile + '.' + ADMIN_ACCOUNT_ID, {});
-                    adminProfile.name = 'Admin';
-                    adminProfile.role = 'Admin';
-                    adminProfile.verified = true;
-                    saveJSON(STORAGE_KEYS.profile + '.' + ADMIN_ACCOUNT_ID, adminProfile);
-
-                    setStoredActiveAccountId(ADMIN_ACCOUNT_ID);
-                    // clean the URL so a refresh doesn't keep re-triggering
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }
-            })();
-
-            // Sync the real backend session (index.html) into this page's active
-            // account, EVERY load - not just when nobody is active yet. That
-            // "only if empty" condition was the bug: it let a stale, unrelated
-            // account stay active forever once set, so a brand-new signup could
-            // load home.html and still show the previous person's name.
-            await (async function syncBackendSession() {
-                if (getActiveAccountId() === ADMIN_ACCOUNT_ID) return; // never touch an active admin session
-
-                let email = '';
-                try { email = (localStorage.getItem('ylm_currentUser') || '').trim().toLowerCase(); } catch (err) { }
-                if (!email) return; // handled by the redirect below
-
-                let sessionProfile = null;
-                try {
-                    const raw = localStorage.getItem(STORAGE_KEYS.profile);
-                    sessionProfile = raw ? JSON.parse(raw) : null;
-                } catch (err) { sessionProfile = null; }
-
-                const id = 'acct-' + email;
-                const accounts = loadAccounts();
-                accounts[id] = {
-                    name: (sessionProfile && sessionProfile.name) || (accounts[id] && accounts[id].name) || '',
-                    phone: (sessionProfile && sessionProfile.phone) || (accounts[id] && accounts[id].phone) || ''
-                };
-                saveAccounts(accounts);
-
-                const existingProfile = loadJSON(STORAGE_KEYS.profile + '.' + id, null);
-                if (!existingProfile) {
-                    // No cached profile on THIS device yet. That does not mean
-                    // the account is new - it may just be a different browser
-                    // or phone. sessionProfile (just written at login, from the
-                    // server's own user record) is the fastest, most reliable
-                    // source. The public-profile fetch below is a second,
-                    // best-effort top-up in case sessionProfile is missing
-                    // something - it must never be allowed to blank out a
-                    // field sessionProfile already has real data for. Uses a
-                    // real async fetch (not a synchronous XHR) so this works
-                    // on mobile browsers, which commonly block synchronous
-                    // requests outright.
-                    let serverProfile = null;
-                    try {
-                        const { data: profRows, error: profError } = await supabaseClient.rpc('get_public_profile', { raw_id: id });
-                        if (!profError && profRows && profRows.length) {
-                            const found = profRows[0];
-                            serverProfile = {
-                                name: found.name || '',
-                                avatar: found.avatar || '',
-                                location: found.location || '',
-                                skills: found.skills || '',
-                                role: found.role || 'Jobseeker',
-                                phone: found.phone || ''
-                            };
-                        }
-                    } catch (err) { serverProfile = null; }
-
-                    // Layer defaults -> server fetch -> session (login) data,
-                    // but only let a later layer override an earlier one when
-                    // it actually has a non-empty value. An empty string from
-                    // a thinner source must never erase good data.
-                    function applyNonEmpty(target, source) {
-                        if (!source) return;
-                        Object.keys(source).forEach(function (key) {
-                            const val = source[key];
-                            if (val !== undefined && val !== null && val !== '') {
-                                target[key] = val;
-                            }
-                        });
-                    }
-
-                    const merged = { name: '', avatar: '', location: '', skills: '', role: 'Jobseeker', phone: '', verified: false };
-                    applyNonEmpty(merged, serverProfile);
-                    applyNonEmpty(merged, sessionProfile);
-                    saveJSON(STORAGE_KEYS.profile + '.' + id, merged);
-
-                    if (!serverProfile && !(sessionProfile && sessionProfile.name)) {
-                        // Genuinely nothing saved for this account anywhere -
-                        // flag it so the "complete your profile" banner shows.
-                        try { localStorage.setItem('ylm.justSignedUp', id); } catch (err) { }
-                    }
-                }
-                // NOTE: deliberately NOT syncing the name back from sessionProfile
-                // once a per-account profile already exists. sessionProfile only
-                // ever gets refreshed at login time, so blindly copying it over
-                // here used to overwrite any edit made on the My Profile page
-                // the very next time this page loaded - the profile page is the
-                // single source of truth for an existing account from here on.
-
-                setStoredActiveAccountId(id);
-            })();
-
-            const ACCOUNT_ID = getActiveAccountId();
-
-            if (!ACCOUNT_ID) {
-                // Nobody is signed in on this device - send them to the real
-                // sign-in page instead of showing a local account picker here.
-                window.location.href = 'index.html';
-                return;
-            }
-
-            // Namespace every piece of per-person storage under this account id so
-            // this device never mixes one person's data into another's.
-            STORAGE_KEYS.profile = STORAGE_KEYS.profile + '.' + ACCOUNT_ID;
-            STORAGE_KEYS.settings = STORAGE_KEYS.settings + '.' + ACCOUNT_ID;
-            STORAGE_KEYS.seenJobIds = STORAGE_KEYS.seenJobIds + '.' + ACCOUNT_ID;
-
-            // DEVICE_ID is kept as the name used throughout the rest of this file,
-            // but it is this specific signed-in account's permanent id, sent to the
-            // server for every like, comment, application, and message so activity
-            // is always counted against the right person.
-            const DEVICE_ID = ACCOUNT_ID;
-
-            function isAdminVerified() {
-                return ACCOUNT_ID === ADMIN_ACCOUNT_ID;
-            }
-
-            const logoutLink = document.getElementById('logoutLink');
-            function clearLocalSession() {
-                try {
-                    localStorage.removeItem('ylm_currentUser');
-                    localStorage.removeItem('ylm.profile');
-                    localStorage.removeItem('ylm.activeAccount');
-                } catch (err) { }
-            }
-            if (logoutLink) {
-                logoutLink.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    clearLocalSession();
-                    window.location.href = 'index.html';
-                });
-            }
 
             const DEFAULT_SETTINGS = {
                 categories: [],
@@ -1695,36 +1569,70 @@
                 publicProfile: true
             };
 
+            let me = null;
+            try {
+                me = await api('GET', '/me/');
+            } catch (err) {
+                me = null;
+            }
+
+            if (!me || !me.authenticated) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const DEVICE_ID = me.id;
+
+            function isAdminVerified() {
+                return !!me.isAdminAccount;
+            }
+
+            function clearLocalSession() {
+                // The real logout happens on the server (deletes the
+                // session row in Postgres and clears the cookie) - there
+                // is nothing to remove in the browser itself.
+                api('POST', '/logout/', {}).catch(function () { });
+            }
+
+            const logoutLink = document.getElementById('logoutLink');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    clearLocalSession();
+                    window.location.href = 'index.html';
+                });
+            }
+
             const state = {
                 saved: {},
                 applied: {},
                 comments: {},
                 conversations: {},
                 recentJobsNotif: [],
-                seenJobIds: new Set(loadJSON(STORAGE_KEYS.seenJobIds, [])),
-                profile: loadJSON(STORAGE_KEYS.profile, {
-                    name: '',
-                    avatar: '',
-                    location: '',
-                    skills: '',
-                    role: 'Jobseeker',
-                    phone: '',
-                    verified: false
-                }),
-                settings: Object.assign({}, DEFAULT_SETTINGS, loadJSON(STORAGE_KEYS.settings, {}))
+                seenJobIds: new Set(me.seenJobIds || []),
+                profile: {
+                    name: me.name || '',
+                    avatar: me.avatar || '',
+                    location: me.location || '',
+                    skills: me.skills || '',
+                    role: me.role || 'Jobseeker',
+                    phone: me.phone || '',
+                    verified: !!me.isAdminAccount
+                },
+                settings: Object.assign({}, DEFAULT_SETTINGS, me.settings || {})
             };
 
             // The Admin account always displays as "Admin" with the verified badge,
             // everywhere its name shows - posts, comments, chat messages, profile.
-            // Verification only ever comes from the Admin Dashboard login gate.
-            state.profile.verified = isAdminVerified();
             if (state.profile.verified) {
                 state.profile.name = 'Admin';
                 state.profile.role = 'Admin';
             }
-            saveJSON(STORAGE_KEYS.profile, state.profile);
 
-            function persistProfile() { saveJSON(STORAGE_KEYS.profile, state.profile); }
+            // Saves the current in-memory profile back to Postgres. Called
+            // right before the network sync below so anything reading
+            // state.profile mid-request sees the intended values.
+            function persistProfile() { /* server is the source of truth - see the save-profile handler below, which POSTs to /api/users/profile/ */ }
 
             /* ============================================================
                ACCOUNT STATUS POLLING (deletion + suspension)
@@ -1750,16 +1658,11 @@
             }
 
             function checkSessionStatus() {
-                if (isAdminVerified()) return; // the admin account isn't a row in `users`
-                let email = '';
-                try { email = (localStorage.getItem('ylm_currentUser') || '').trim().toLowerCase(); } catch (err) { }
-                if (!email) return;
-
-                supabaseClient.rpc('get_session_status', { user_key: email })
-                    .then(function (result) {
-                        if (result.error) throw result.error;
-                        const status = (result.data && result.data[0]) || { exists_flag: false, suspended: false };
-                        if (!status.exists_flag) {
+                if (isAdminVerified()) return; // the admin account never gets suspended/removed this way
+                api('GET', '/me/')
+                    .then(function (status) {
+                        status = status || { authenticated: false };
+                        if (!status.authenticated) {
                             forceLogoutRemoved();
                             return;
                         }
@@ -1799,6 +1702,46 @@
 
             checkSessionStatus();
             setInterval(checkSessionStatus, SESSION_CHECK_INTERVAL_MS);
+
+            /* ============================================================
+               SITE AVAILABILITY POLLING
+
+               The admin can click "Close Website Now" on admin.html at any
+               moment. This tab has no way to know until it asks - so on
+               the same timer as the account status check above, also ask
+               whether the site is still open, and if not, log everyone
+               out immediately (matches the login/signup gate on
+               index.html, which blocks anyone from getting back in until
+               the admin re-opens it).
+               ============================================================ */
+            let loggedOutForClosure = false;
+
+            function forceLogoutSiteClosed(status) {
+                if (loggedOutForClosure) return;
+                loggedOutForClosure = true;
+                clearLocalSession();
+                const message = (status && status.state === 'opening_soon')
+                    ? (status.closedMessage || 'Website will be opened soon, please wait a moment or call +2349072825649 for enquiries.')
+                    : 'The website has been closed by an administrator. Please check back later.';
+                alert(message);
+                window.location.href = 'index.html';
+            }
+
+            function checkSiteAvailability() {
+                if (isAdminVerified()) return; // the admin isn't bound by the open/close gate
+                api('GET', '/site-status/')
+                    .then(function (status) {
+                        if (!status || status.state !== 'open') {
+                            forceLogoutSiteClosed(status);
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error('Site availability check failed:', err);
+                    });
+            }
+
+            checkSiteAvailability();
+            setInterval(checkSiteAvailability, SESSION_CHECK_INTERVAL_MS);
 
             function verifiedBadgeHtml(isVerified) {
                 return isVerified ? ' <i class="bi bi-patch-check-fill badge-verified-icon" title="Verified Account"></i>' : '';
@@ -1891,20 +1834,26 @@
                     // Admin is its own account now - "Exit" just signs out of it on
                     // this device and returns to the sign-in screen so whoever is
                     // using the phone next signs into their own account.
-                    try { localStorage.removeItem(STORAGE_KEYS.activeAccount); } catch (err) { }
-                    window.location.reload();
+                    // Admin is its own account now - "Exit" logs it out on the
+                    // server so whoever uses this device next signs into their
+                    // own account.
+                    clearLocalSession();
+                    window.location.href = 'index.html';
                 });
             }
 
             profileAvatarInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function () {
-                    state.profile.avatar = reader.result;
-                    document.getElementById('profileAvatarPreview').src = reader.result;
-                };
-                reader.readAsDataURL(file);
+                document.getElementById('profileAvatarPreview').style.opacity = '0.5';
+                compressImageFile(file, 500, 0.75).then(function (dataUrl) {
+                    state.profile.avatar = dataUrl;
+                    document.getElementById('profileAvatarPreview').src = dataUrl;
+                    document.getElementById('profileAvatarPreview').style.opacity = '1';
+                }).catch(function (err) {
+                    document.getElementById('profileAvatarPreview').style.opacity = '1';
+                    alert('Could not use that photo: ' + err.message);
+                });
             });
 
             profileForm.addEventListener('submit', function (e) {
@@ -1925,28 +1874,32 @@
                 persistProfile();
                 updateProfileUI();
 
+                profileSavedMsg.classList.add('d-none');
+
                 // Push the updated profile to the backend, which cascades the new
                 // name/avatar/phone/location/role/skills onto every post this
                 // person has ever made - so it shows up everywhere, not just here.
-                supabaseClient.rpc('sync_user_profile', {
-                    p_user_id: DEVICE_ID,
-                    p_name: state.profile.name,
-                    p_phone: state.profile.phone,
-                    p_location: state.profile.location,
-                    p_skills: state.profile.skills,
-                    p_role: state.profile.role,
-                    p_avatar: state.profile.avatar
+                api('POST', '/users/profile/', {
+                    userId: DEVICE_ID,
+                    name: state.profile.name,
+                    phone: state.profile.phone,
+                    location: state.profile.location,
+                    skills: state.profile.skills,
+                    role: state.profile.role,
+                    avatar: state.profile.avatar
                 }).then(function () {
                     // Refresh any of this person's cards already on screen so the
                     // change is visible immediately, without waiting on the next poll.
                     applyProfileToOwnCards();
                     loadJobsFromBackend();
+                    // Only shown once the server has actually confirmed the save -
+                    // never before, so this message can always be trusted.
+                    profileSavedMsg.classList.remove('d-none');
+                    setTimeout(function () { profileSavedMsg.classList.add('d-none'); }, 3500);
                 }).catch(function (err) {
                     console.error('Profile sync error:', err);
+                    alert('Your profile could not be saved: ' + err.message);
                 });
-
-                profileSavedMsg.classList.remove('d-none');
-                setTimeout(function () { profileSavedMsg.classList.add('d-none'); }, 3500);
             });
 
             // Optimistically updates every post card owned by this account so a
@@ -1994,7 +1947,8 @@
                 state.settings.notifyJobs = document.getElementById('settingsNotifyJobs').checked;
                 state.settings.notifyApplications = document.getElementById('settingsNotifyApplications').checked;
                 state.settings.publicProfile = document.getElementById('settingsPublicProfile').checked;
-                saveJSON(STORAGE_KEYS.settings, state.settings);
+                api('POST', '/me/settings/', { settings: state.settings })
+                    .catch(function (err) { console.error('Save settings failed:', err); });
                 updateNotifBadge();
                 document.getElementById('settingsSavedMsg').classList.remove('d-none');
                 setTimeout(function () { document.getElementById('settingsSavedMsg').classList.add('d-none'); }, 2500);
@@ -2119,8 +2073,8 @@
                     container.innerHTML = '';
                     return;
                 }
-                supabaseClient.rpc('search_users', { q: q })
-                    .then(function (result) { return result.error ? [] : (result.data || []); })
+                api('GET', '/users/search/?q=' + encodeURIComponent(q))
+                    .then(function (people) { return people || []; })
                     .then(function (people) {
                         const currentQuery = ((searchDesktop && searchDesktop.value) || (searchMobile && searchMobile.value) || '').trim();
                         if (currentQuery !== q) return; // stale response for an old keystroke
@@ -2325,28 +2279,6 @@
             }
 
             /* Like */
-            /* Shared helper for likes/saves/applications - all three tables have the
-               same (job_id, user_id) shape, toggle by checking then insert/delete */
-            async function toggleJobRelation(table, jobId, userId) {
-                const { data: existing, error: selError } = await supabaseClient
-                    .from(table)
-                    .select('job_id')
-                    .eq('job_id', jobId)
-                    .eq('user_id', userId)
-                    .maybeSingle();
-                if (selError) throw selError;
-
-                if (existing) {
-                    const { error } = await supabaseClient.from(table).delete().eq('job_id', jobId).eq('user_id', userId);
-                    if (error) throw error;
-                    return false;
-                } else {
-                    const { error } = await supabaseClient.from(table).insert({ job_id: jobId, user_id: userId, createdat: new Date().toISOString() });
-                    if (error) throw error;
-                    return true;
-                }
-            }
-
             async function toggleLike(card, btn) {
                 const id = card.dataset.jobId;
                 const countEl = btn.querySelector('.like-count');
@@ -2358,14 +2290,9 @@
                 countEl.textContent = optimisticCount > 0 ? optimisticCount : 'Like';
 
                 try {
-                    const liked = await toggleJobRelation('job_likes', id, DEVICE_ID);
-                    const { count, error: countError } = await supabaseClient
-                        .from('job_likes')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('job_id', id);
-                    if (countError) throw countError;
-                    btn.classList.toggle('liked', liked);
-                    countEl.textContent = count > 0 ? count : 'Like';
+                    const result = await api('POST', '/jobs/' + encodeURIComponent(id) + '/like/', { userId: DEVICE_ID });
+                    btn.classList.toggle('liked', result.liked);
+                    countEl.textContent = result.likeCount > 0 ? result.likeCount : 'Like';
                 } catch (error) {
                     console.error('Like failed:', error);
                     btn.classList.toggle('liked', wasLiked);
@@ -2386,8 +2313,8 @@
                 setSaveButtonState(btn, willSave);
 
                 try {
-                    const saved = await toggleJobRelation('job_saves', id, DEVICE_ID);
-                    setSaveButtonState(btn, saved);
+                    const result = await api('POST', '/jobs/' + encodeURIComponent(id) + '/save/', { userId: DEVICE_ID });
+                    setSaveButtonState(btn, result.saved);
                     if (!document.getElementById('view-saved').classList.contains('d-none')) renderSavedView();
                 } catch (error) {
                     console.error('Save failed:', error);
@@ -2407,16 +2334,13 @@
                 if (!recruiterId) return;
                 const messageText = 'I am interested in this role: [JOB:' + jobId + '|' + jobTitle + ']';
 
-                supabaseClient.from('chat_messages').insert({
-                    recruiter_id: recruiterId,
-                    seeker_id: DEVICE_ID,
-                    sender_id: DEVICE_ID,
-                    sender_role: 'seeker',
-                    sender_name: state.profile.name || 'Applicant',
-                    sender_avatar: getAvatar(),
+                api('POST', '/chats/' + encodeURIComponent(recruiterId) + '/' + encodeURIComponent(DEVICE_ID) + '/messages/', {
+                    senderId: DEVICE_ID,
+                    senderRole: 'seeker',
+                    senderName: state.profile.name || 'Applicant',
+                    senderAvatar: getAvatar(),
                     text: messageText,
-                    job_id: jobId,
-                    createdat: new Date().toISOString()
+                    jobId: jobId
                 })
                 .then(function () {
                     pollConversations();
@@ -2433,9 +2357,9 @@
                 setApplyButtonState(btn, willApply);
 
                 try {
-                    const applied = await toggleJobRelation('job_applications', id, DEVICE_ID);
-                    setApplyButtonState(btn, applied);
-                    if (applied) {
+                    const result = await api('POST', '/jobs/' + encodeURIComponent(id) + '/apply/', { userId: DEVICE_ID });
+                    setApplyButtonState(btn, result.applied);
+                    if (result.applied) {
                         sendAutoApplyMessage(card);
                     }
                     if (!document.getElementById('view-applications').classList.contains('d-none')) renderApplicationsView();
@@ -2464,23 +2388,8 @@
             async function loadComments(card) {
                 const id = card.dataset.jobId;
                 try {
-                    const { data, error } = await supabaseClient
-                        .from('job_comments')
-                        .select('*')
-                        .eq('job_id', id)
-                        .order('id', { ascending: true });
-                    if (error) throw error;
-                    state.comments[id] = (data || []).map(function (row) {
-                        return {
-                            id: row.id,
-                            jobId: row.job_id,
-                            userId: row.user_id,
-                            author: row.author_name,
-                            authorAvatar: row.author_avatar,
-                            text: row.text,
-                            createdAt: row.createdat
-                        };
-                    });
+                    const data = await api('GET', '/jobs/' + encodeURIComponent(id) + '/comments/');
+                    state.comments[id] = data || [];
                     renderComments(card);
                     updateCommentCount(card);
                 } catch (error) {
@@ -2511,28 +2420,12 @@
             async function postComment(card, text) {
                 const id = card.dataset.jobId;
                 try {
-                    const { data, error } = await supabaseClient
-                        .from('job_comments')
-                        .insert({
-                            job_id: id,
-                            user_id: DEVICE_ID,
-                            author_name: state.profile.name || 'You',
-                            author_avatar: getAvatar(),
-                            text: text,
-                            createdat: new Date().toISOString()
-                        })
-                        .select()
-                        .single();
-                    if (error) throw error;
-                    const comment = {
-                        id: data.id,
-                        jobId: data.job_id,
-                        userId: data.user_id,
-                        author: data.author_name,
-                        authorAvatar: data.author_avatar,
-                        text: data.text,
-                        createdAt: data.createdat
-                    };
+                    const comment = await api('POST', '/jobs/' + encodeURIComponent(id) + '/comments/', {
+                        userId: DEVICE_ID,
+                        author: state.profile.name || 'You',
+                        authorAvatar: getAvatar(),
+                        text: text
+                    });
                     if (!state.comments[id]) state.comments[id] = [];
                     state.comments[id].push(comment);
                     renderComments(card);
@@ -2555,12 +2448,17 @@
             }
 
             // Marks a job as "seen" so it stops showing up in the notifications
-            // dropdown, and remembers that in localStorage so it stays gone even
-            // after the page is reloaded or the app polls the backend again.
+            // dropdown, and saves that to this account's row in Postgres so it
+            // stays gone even after the page is reloaded or on another device.
+            let seenJobsSaveTimer = null;
             function markJobSeen(id) {
                 if (!id || state.seenJobIds.has(id)) return;
                 state.seenJobIds.add(id);
-                saveJSON(STORAGE_KEYS.seenJobIds, Array.from(state.seenJobIds));
+                clearTimeout(seenJobsSaveTimer);
+                seenJobsSaveTimer = setTimeout(function () {
+                    api('POST', '/me/seen-jobs/', { seenJobIds: Array.from(state.seenJobIds) })
+                        .catch(function (err) { console.error('Save seen jobs failed:', err); });
+                }, 800);
                 const before = state.recentJobsNotif.length;
                 state.recentJobsNotif = state.recentJobsNotif.filter(function (j) { return j.id !== id; });
                 if (state.recentJobsNotif.length !== before) updateNotifBadge();
@@ -2609,27 +2507,12 @@
                 };
             }
 
-            /* Given rows from job_saves/job_applications (job_id, createdat ordered),
-               fetches the matching jobs and returns them in that same order */
-            async function fetchJobsForRelation(table, userId) {
-                const { data: rels, error } = await supabaseClient
-                    .from(table)
-                    .select('job_id, createdat')
-                    .eq('user_id', userId)
-                    .order('createdat', { ascending: false });
-                if (error) throw error;
-                if (!rels || !rels.length) return [];
-
-                const ids = rels.map(function (r) { return r.job_id; });
-                const { data: jobs, error: jobsError } = await supabaseClient
-                    .from('jobs')
-                    .select('*')
-                    .in('id', ids);
-                if (jobsError) throw jobsError;
-
-                const byId = {};
-                (jobs || []).forEach(function (j) { byId[j.id] = j; });
-                return rels.map(function (r) { return byId[r.job_id]; }).filter(Boolean).map(mapDbJobRow);
+            /* Fetches this person's saved or applied jobs, already in the
+               camelCase shape the UI expects, newest first. */
+            async function fetchJobsForRelation(relation, userId) {
+                const endpoint = relation === 'job_saves' ? '/saved/' : '/applications/';
+                const jobs = await api('GET', '/users/' + encodeURIComponent(userId) + endpoint + '?viewerId=' + encodeURIComponent(DEVICE_ID));
+                return jobs || [];
             }
 
             function renderSavedView() {
@@ -2673,7 +2556,7 @@
                         container.querySelectorAll('.mini-remove').forEach(function (btn) {
                             btn.addEventListener('click', function () {
                                 const id = btn.closest('.mini-card').dataset.jobId;
-                                supabaseClient.from('job_saves').delete().eq('job_id', id).eq('user_id', DEVICE_ID)
+                                api('POST', '/jobs/' + encodeURIComponent(id) + '/save/', { userId: DEVICE_ID })
                                     .then(function () {
                                         const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
                                         if (card) setSaveButtonState(card.querySelector('.btn-save'), false);
@@ -2727,7 +2610,7 @@
                         appliedContainer.querySelectorAll('.mini-remove').forEach(function (btn) {
                             btn.addEventListener('click', function () {
                                 const id = btn.closest('.mini-card').dataset.jobId;
-                                supabaseClient.from('job_applications').delete().eq('job_id', id).eq('user_id', DEVICE_ID)
+                                api('POST', '/jobs/' + encodeURIComponent(id) + '/apply/', { userId: DEVICE_ID })
                                     .then(function () {
                                         const card = jobFeed.querySelector('[data-job-id="' + CSS.escape(id) + '"]');
                                         if (card) setApplyButtonState(card.querySelector('.btn-apply'), false);
@@ -2752,8 +2635,8 @@
                     });
 
                 // Fetch Applicants on My Posted Jobs
-                supabaseClient.rpc('get_conversations', { p_user_id: DEVICE_ID })
-                    .then(function (result) { return result.error ? [] : mapConversationRows(result.data); })
+                api('GET', '/users/' + encodeURIComponent(DEVICE_ID) + '/conversations/')
+                    .then(function (conversations) { return conversations || []; })
                     .then(function (conversations) {
                         const applicantChats = conversations.filter(c => c.myRole === 'recruiter');
                         applicantsCountEl.textContent = applicantChats.length + (applicantChats.length === 1 ? ' Application' : ' Applications');
@@ -2784,8 +2667,7 @@
                             btn.addEventListener('click', function () {
                                 const card = btn.closest('.mini-card');
                                 const seekerId = card.dataset.seekerId;
-                                supabaseClient.from('chat_messages').delete()
-                                    .eq('recruiter_id', DEVICE_ID).eq('seeker_id', seekerId)
+                                api('DELETE', '/chats/' + encodeURIComponent(DEVICE_ID) + '/' + encodeURIComponent(seekerId) + '/')
                                     .then(function () {
                                         renderApplicationsView();
                                         pollConversations();
@@ -2807,29 +2689,6 @@
                     .catch(function () {
                         applicantsContainer.innerHTML = '<div class="text-danger small">Error loading applicants.</div>';
                     });
-            }
-
-            // Maps get_conversations()'s snake_case rows to the camelCase shape
-            // the rest of the chat UI already expects, sorted newest-first.
-            function mapConversationRows(rows) {
-                return (rows || []).map(function (r) {
-                    return {
-                        recruiterId: r.recruiter_id,
-                        seekerId: r.seeker_id,
-                        jobId: r.job_id || null,
-                        jobTitle: r.job_title,
-                        company: r.company,
-                        myRole: r.my_role,
-                        counterpartName: r.counterpart_name,
-                        counterpartAvatar: r.counterpart_avatar,
-                        lastMessage: r.last_message,
-                        lastSenderRole: r.last_sender_role,
-                        lastAt: r.last_at,
-                        unreadCount: r.unread_count
-                    };
-                }).sort(function (a, b) {
-                    return new Date(b.lastAt || 0) - new Date(a.lastAt || 0);
-                });
             }
 
             /* Chat Component */
@@ -2872,10 +2731,9 @@
             }
 
             function pollConversations() {
-                return supabaseClient.rpc('get_conversations', { p_user_id: DEVICE_ID })
-                    .then(function (result) {
-                        if (result.error) throw result.error;
-                        const conversations = mapConversationRows(result.data);
+                return api('GET', '/users/' + encodeURIComponent(DEVICE_ID) + '/conversations/')
+                    .then(function (conversations) {
+                        conversations = conversations || [];
                         const fresh = {};
                         conversations.forEach(function (c) {
                             fresh[conversationKey(c.recruiterId, c.seekerId)] = c;
@@ -2958,9 +2816,7 @@
             }
 
             function markChatRead(recruiterId, seekerId, role) {
-                const patch = role === 'recruiter' ? { read_by_recruiter: true } : { read_by_seeker: true };
-                return supabaseClient.from('chat_messages').update(patch)
-                    .eq('recruiter_id', recruiterId).eq('seeker_id', seekerId)
+                return api('POST', '/chats/' + encodeURIComponent(recruiterId) + '/' + encodeURIComponent(seekerId) + '/read/', { role: role })
                     .then(function () { return pollConversations(); })
                     .catch(function (error) { console.error('Mark read failed:', error); });
             }
@@ -3034,27 +2890,9 @@
 
             function loadActiveChatMessages() {
                 if (!activeRecruiterId || !activeSeekerId) return Promise.resolve();
-                return supabaseClient
-                    .from('chat_messages')
-                    .select('*')
-                    .eq('recruiter_id', activeRecruiterId)
-                    .eq('seeker_id', activeSeekerId)
-                    .order('id', { ascending: true })
-                    .then(function (result) {
-                        if (result.error) throw result.error;
-                        const messages = (result.data || []).map(function (row) {
-                            return {
-                                id: row.id,
-                                senderId: row.sender_id,
-                                senderRole: row.sender_role,
-                                senderName: row.sender_name,
-                                senderAvatar: row.sender_avatar,
-                                text: row.text,
-                                createdAt: row.createdat,
-                                jobId: row.job_id
-                            };
-                        });
-                        renderChat(messages);
+                return api('GET', '/chats/' + encodeURIComponent(activeRecruiterId) + '/' + encodeURIComponent(activeSeekerId) + '/messages/')
+                    .then(function (messages) {
+                        renderChat(messages || []);
                         if (chatModalEl.classList.contains('show')) markChatRead(activeRecruiterId, activeSeekerId, activeRole);
                     })
                     .catch(function (error) {
@@ -3122,19 +2960,15 @@
                 if (!text || !activeRecruiterId || !activeSeekerId) return;
                 chatInput.value = '';
 
-                supabaseClient.from('chat_messages').insert({
-                    recruiter_id: activeRecruiterId,
-                    seeker_id: activeSeekerId,
-                    sender_id: DEVICE_ID,
-                    sender_role: activeRole,
-                    sender_name: state.profile.name || 'You',
-                    sender_avatar: getAvatar(),
+                api('POST', '/chats/' + encodeURIComponent(activeRecruiterId) + '/' + encodeURIComponent(activeSeekerId) + '/messages/', {
+                    senderId: DEVICE_ID,
+                    senderRole: activeRole,
+                    senderName: state.profile.name || 'You',
+                    senderAvatar: getAvatar(),
                     text: text,
-                    job_id: activeContextJobId || null,
-                    createdat: new Date().toISOString()
+                    jobId: activeContextJobId || null
                 })
-                    .then(function (result) {
-                        if (result.error) throw result.error;
+                    .then(function () {
                         loadActiveChatMessages();
                         pollConversations();
                     })
@@ -3148,21 +2982,9 @@
                 if (e.key === 'Enter') { e.preventDefault(); sendChatMessage(); }
             });
 
-            // Live chat: subscribe to Postgres changes on chat_messages so any
-            // new message involving this device appears instantly, without
-            // waiting for the next poll - covers both the open chat modal and
-            // the conversations list badge.
-            supabaseClient
-                .channel('chat-messages-' + DEVICE_ID)
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, function (payload) {
-                    const row = payload.new;
-                    if (!row || (row.recruiter_id !== DEVICE_ID && row.seeker_id !== DEVICE_ID)) return;
-                    if (activeRecruiterId === row.recruiter_id && activeSeekerId === row.seeker_id) {
-                        loadActiveChatMessages();
-                    }
-                    pollConversations();
-                })
-                .subscribe();
+            // Chat updates arrive via polling: the open chat modal polls every
+            // CHAT_POLL_INTERVAL_MS (see openChatById), and the conversation
+            // list/notification badge polls every POLL_INTERVAL_MS below.
 
             /* User Public Profile Preview Modal */
             const userProfileModalEl = document.getElementById('userProfileModal');
@@ -3196,37 +3018,10 @@
                 if (!currentModalUserId) return;
                 container.innerHTML = '<div class="text-secondary small">Loading...</div>';
                 const userIdAtRequest = currentModalUserId;
-                const endpoint = '/users/' + encodeURIComponent(currentModalUserId) + '/posts?viewerId=' + encodeURIComponent(DEVICE_ID);
+                const endpoint = '/users/' + encodeURIComponent(currentModalUserId) + '/posts/?viewerId=' + encodeURIComponent(DEVICE_ID);
 
-                supabaseClient.rpc('get_user_posts', { p_user_id: currentModalUserId, p_viewer_id: DEVICE_ID })
-                    .then(function (result) {
-                        if (result.error) throw result.error;
-                        return (result.data || []).map(function (row) {
-                            return {
-                                id: row.id,
-                                userId: row.user_id,
-                                company: row.company,
-                                title: row.title,
-                                location: row.location,
-                                salary: row.salary,
-                                description: row.description,
-                                attachment: row.attachment,
-                                createdAt: row.createdat,
-                                isNew: row.isnew,
-                                authorName: row.author_name || row.company,
-                                authorPhone: row.author_phone,
-                                authorLocation: row.author_location || row.location,
-                                authorAvatar: row.author_avatar,
-                                authorRole: row.author_role,
-                                authorSkills: row.author_skills,
-                                likeCount: row.like_count,
-                                likedByMe: row.liked_by_me,
-                                commentCount: row.comment_count,
-                                savedByMe: row.saved_by_me,
-                                appliedByMe: row.applied_by_me
-                            };
-                        });
-                    })
+                api('GET', endpoint)
+                    .then(function (jobs) { return jobs || []; })
                     .then(function (jobs) {
                         if (currentModalUserId !== userIdAtRequest) return; // user changed while loading
                         if (!jobs.length) {
@@ -3294,11 +3089,8 @@
                 userProfileModal.show();
                 setUserModalTab('posts');
 
-                supabaseClient.rpc('get_public_profile', { raw_id: userId })
-                    .then(function (result) {
-                        if (result.error || !result.data || !result.data.length) return null;
-                        return result.data[0];
-                    })
+                api('GET', '/users/' + encodeURIComponent(userId) + '/public-profile/')
+                    .catch(function () { return null; })
                     .then(function (profile) {
                         if (profile && currentModalUserId === userId) {
                             populateUserModalHeader(Object.assign({}, profile, { verified: fallback && fallback.verified }));
@@ -3440,23 +3232,31 @@
             photoInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function () {
-                    setComposerAttachment({ kind: 'image', url: reader.result, name: file.name });
-                };
-                reader.readAsDataURL(file);
+                compressImageFile(file).then(function (dataUrl) {
+                    setComposerAttachment({ kind: 'image', url: dataUrl, name: file.name });
+                }).catch(function (err) {
+                    alert('Could not use that photo: ' + err.message);
+                });
                 e.target.value = '';
             });
             videoInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                setComposerAttachment({ kind: 'video', url: URL.createObjectURL(file), name: file.name });
+                readFileAsDataURL(file).then(function (dataUrl) {
+                    setComposerAttachment({ kind: 'video', url: dataUrl, name: file.name });
+                }).catch(function (err) {
+                    alert(err.message);
+                });
                 e.target.value = '';
             });
             documentInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                setComposerAttachment({ kind: 'document', url: URL.createObjectURL(file), name: file.name });
+                readFileAsDataURL(file).then(function (dataUrl) {
+                    setComposerAttachment({ kind: 'document', url: dataUrl, name: file.name });
+                }).catch(function (err) {
+                    alert(err.message);
+                });
                 e.target.value = '';
             });
 
@@ -3474,7 +3274,7 @@
                 composerAttachmentBox.innerHTML = '';
             }
 
-            /* Sync Backend - writes directly to Supabase (replaces old Render POST /jobs) */
+            /* Sync Backend - creates/updates the job via the Django API */
             async function syncJobToBackend(job, statusEl) {
                 if (statusEl) {
                     statusEl.classList.remove('d-none', 'text-danger', 'text-success');
@@ -3482,28 +3282,23 @@
                     statusEl.innerHTML = '<i class="bi bi-arrow-repeat"></i> Syncing to server...';
                 }
                 try {
-                    const { error } = await supabaseClient
-                        .from('jobs')
-                        .upsert({
-                            id: job.id,
-                            user_id: job.userId || job.authorName || job.company || '1',
-                            company: job.company || job.authorName || 'Anonymous',
-                            title: job.title,
-                            location: job.location || '',
-                            salary: job.salary || '',
-                            description: job.description || '',
-                            attachment: job.attachment || null,
-                            createdat: job.createdAt || new Date().toISOString(),
-                            isnew: !!job.isNew,
-                            author_name: job.authorName || job.company || 'Anonymous',
-                            author_phone: job.authorPhone || job.phone || '',
-                            author_location: job.authorLocation || job.location || '',
-                            author_avatar: job.authorAvatar || job.avatar || '',
-                            author_role: job.authorRole || 'Jobseeker',
-                            author_skills: job.authorSkills || ''
-                        }, { onConflict: 'id' });
-
-                    if (error) throw error;
+                    await api('POST', '/jobs/', {
+                        id: job.id,
+                        userId: job.userId || DEVICE_ID,
+                        company: job.company || job.authorName || 'Anonymous',
+                        title: job.title,
+                        location: job.location || '',
+                        salary: job.salary || '',
+                        description: job.description || '',
+                        attachment: job.attachment || null,
+                        isNew: !!job.isNew,
+                        authorName: job.authorName || job.company || 'Anonymous',
+                        authorPhone: job.authorPhone || job.phone || '',
+                        authorLocation: job.authorLocation || job.location || '',
+                        authorAvatar: job.authorAvatar || job.avatar || '',
+                        authorRole: job.authorRole || 'Jobseeker',
+                        authorSkills: job.authorSkills || ''
+                    });
 
                     if (statusEl) {
                         statusEl.classList.remove('text-warning');
@@ -3516,7 +3311,7 @@
                     if (statusEl) {
                         statusEl.classList.remove('text-warning');
                         statusEl.classList.add('text-danger');
-                        statusEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Saved locally only.';
+                        statusEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i> Not saved: ' + escapeHtml(error.message || 'unknown error');
                     }
                 }
             }
@@ -3578,13 +3373,13 @@
             jobImageFileInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function () {
-                    jobModalImageDataUrl = reader.result;
-                    jobImagePreview.src = reader.result;
+                compressImageFile(file).then(function (dataUrl) {
+                    jobModalImageDataUrl = dataUrl;
+                    jobImagePreview.src = dataUrl;
                     jobImagePreview.classList.remove('d-none');
-                };
-                reader.readAsDataURL(file);
+                }).catch(function (err) {
+                    alert('Could not use that photo: ' + err.message);
+                });
             });
 
             jobForm.addEventListener('submit', function (e) {
@@ -3681,41 +3476,12 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
-            /* Load & Poll Backend - reads the jobs feed directly from Supabase */
+            /* Load & Poll Backend - reads the jobs feed from the Django API */
             async function loadJobsFromBackend(opts) {
                 opts = opts || {};
                 try {
-                    const { data, error } = await supabaseClient
-                        .rpc('get_jobs_feed', { viewer_id: DEVICE_ID });
-                    if (error) throw error;
-
-                    const jobs = (data || []).map(function (row) {
-                        return {
-                            id: row.id,
-                            userId: row.user_id,
-                            company: row.company,
-                            title: row.title,
-                            location: row.location,
-                            salary: row.salary,
-                            description: row.description,
-                            attachment: row.attachment,
-                            createdAt: row.createdat,
-                            isNew: row.isnew,
-                            authorName: row.author_name || row.company,
-                            authorPhone: row.author_phone,
-                            authorLocation: row.author_location || row.location,
-                            authorAvatar: row.author_avatar,
-                            authorRole: row.author_role,
-                            authorSkills: row.author_skills,
-                            likeCount: row.like_count,
-                            likedByMe: row.liked_by_me,
-                            commentCount: row.comment_count,
-                            savedByMe: row.saved_by_me,
-                            appliedByMe: row.applied_by_me
-                        };
-                    });
-
-                    insertJobsAtTop(jobs);
+                    const jobs = await api('GET', '/jobs/?userId=' + encodeURIComponent(DEVICE_ID));
+                    insertJobsAtTop(jobs || []);
                 } catch (error) {
                     console.error('Load jobs failed:', error);
                 }
@@ -3733,20 +3499,13 @@
                 }, 30000);
             })();
 
-            // "Set up your profile" banner - only for a brand-new account,
-            // and only the very first time it lands on this page. Disappears
-            // on its own after 12 seconds, or sooner if the button is used.
+            // "Set up your profile" banner - shown while the profile is
+            // still basically empty (no avatar or skills filled in yet).
+            // Disappears on its own after 12 seconds, or sooner if used.
             (function () {
                 const banner = document.getElementById('profileSetupBanner');
                 if (!banner) return;
-
-                let justSignedUpId = '';
-                try { justSignedUpId = localStorage.getItem('ylm.justSignedUp') || ''; } catch (err) { }
-                if (justSignedUpId !== ACCOUNT_ID) return;
-
-                // Consume the flag immediately so this never shows again on
-                // this device for this account, even if they refresh right away.
-                try { localStorage.removeItem('ylm.justSignedUp'); } catch (err) { }
+                if (me.avatar || me.skills) return;
 
                 requestAnimationFrame(function () {
                     banner.classList.add('show');
