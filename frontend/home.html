@@ -1617,14 +1617,16 @@
                     skills: me.skills || '',
                     role: me.role || 'Jobseeker',
                     phone: me.phone || '',
-                    verified: !!me.isAdminAccount
+                    isAdmin: !!me.isAdminAccount,
+                    verified: !!me.verified || !!me.isAdminAccount
                 },
                 settings: Object.assign({}, DEFAULT_SETTINGS, me.settings || {})
             };
 
             // The Admin account always displays as "Admin" with the verified badge,
             // everywhere its name shows - posts, comments, chat messages, profile.
-            if (state.profile.verified) {
+            // (isAdmin only - a regular Blue Badge holder keeps their own name/role.)
+            if (state.profile.isAdmin) {
                 state.profile.name = 'Admin';
                 state.profile.role = 'Admin';
             }
@@ -1807,7 +1809,7 @@
                 }
 
                 const adminModeBanner = document.getElementById('adminModeBanner');
-                if (adminModeBanner) adminModeBanner.classList.toggle('d-none', !state.profile.verified);
+                if (adminModeBanner) adminModeBanner.classList.toggle('d-none', !state.profile.isAdmin);
 
                 const profileVerifiedBadge = document.getElementById('profileVerifiedBadge');
                 if (profileVerifiedBadge) profileVerifiedBadge.classList.toggle('d-none', !state.profile.verified);
@@ -1819,8 +1821,8 @@
                 if (phoneInput && document.activeElement !== phoneInput) phoneInput.value = state.profile.phone || '';
 
                 // The Admin account's name is fixed - lock it so it can't be edited away.
-                if (nameInput) nameInput.disabled = !!state.profile.verified;
-                if (roleInput) roleInput.disabled = !!state.profile.verified;
+                if (nameInput) nameInput.disabled = !!state.profile.isAdmin;
+                if (roleInput) roleInput.disabled = !!state.profile.isAdmin;
             }
 
             const profileAvatarInput = document.getElementById('profileAvatarInput');
@@ -1862,7 +1864,7 @@
                 state.profile.skills = document.getElementById('profileSkills').value.trim();
                 state.profile.phone = document.getElementById('profilePhone').value.trim();
 
-                if (state.profile.verified) {
+                if (state.profile.isAdmin) {
                     // The Admin account always stays "Admin" - never overwritten by the form.
                     state.profile.name = 'Admin';
                     state.profile.role = 'Admin';

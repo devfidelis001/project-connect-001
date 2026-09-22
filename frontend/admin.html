@@ -429,6 +429,7 @@
                 const userId = user.id || user._id || user.email;
 
                 const isSuspended = !!user.suspended;
+                const isVerified = !!user.verified;
 
                 return `
                     <tr id="admin-user-${escapeHtml(String(userId))}">
@@ -436,7 +437,7 @@
                             <div class="d-flex align-items-center gap-2">
                                 <img src="${escapeHtml(avatar)}" class="profile-img-sm" alt="User">
                                 <div>
-                                    <div class="fw-semibold">${escapeHtml(userName)}${user.verified ? ' <i class="bi bi-patch-check-fill text-primary" title="Verified Account"></i>' : ''}</div>
+                                    <div class="fw-semibold">${escapeHtml(userName)}${isVerified ? ' <i class="bi bi-patch-check-fill text-primary" title="Verified Account"></i>' : ''}</div>
                                     <small class="text-secondary">${escapeHtml(user.email || 'No email provided')}</small>
                                 </div>
                             </div>
@@ -449,6 +450,9 @@
                         <td>${escapeHtml(user.location || 'N/A')}</td>
                         <td><small class="text-secondary">${dateStr}</small></td>
                         <td class="text-end">
+                            <button class="btn-suspend-user ${isVerified ? 'is-unsuspend' : ''}" onclick="setUserVerified('${escapeHtml(String(userId))}', ${!isVerified})">
+                                <i class="bi ${isVerified ? 'bi-patch-check-fill' : 'bi-patch-check'} me-1"></i> ${isVerified ? 'Unverify' : 'Verify'}
+                            </button>
                             <button class="btn-suspend-user ${isSuspended ? 'is-unsuspend' : ''}" onclick="setUserSuspended('${escapeHtml(String(userId))}', ${!isSuspended})">
                                 <i class="bi ${isSuspended ? 'bi-unlock-fill' : 'bi-slash-circle'} me-1"></i> ${isSuspended ? 'Unsuspend' : 'Suspend'}
                             </button>
@@ -517,6 +521,33 @@
             .catch(err => {
                 console.error('Error updating suspension:', err);
                 alert('Could not update suspension status. Please try again.');
+            });
+        }
+
+        // GIVE / REMOVE THE BLUE VERIFICATION BADGE
+        // Only reachable from this admin dashboard - the server rejects
+        // this call unless the admin session is verified, so a normal
+        // user can never grant or remove their own badge.
+        function setUserVerified(userId, verify) {
+            const confirmMsg = verify
+                ? 'Give this user the Blue Verification Badge?'
+                : 'Remove the Blue Verification Badge from this user?';
+            if (!confirm(confirmMsg)) return;
+
+            api('PATCH', '/users/' + encodeURIComponent(userId) + '/verify/', { verified: verify })
+            .then(() => {
+                cachedUsers = cachedUsers.map(u => {
+                    const id = u.id || u._id || u.email;
+                    if (String(id) === String(userId)) {
+                        return Object.assign({}, u, { verified: verify });
+                    }
+                    return u;
+                });
+                renderUsersTable(cachedUsers);
+            })
+            .catch(err => {
+                console.error('Error updating verification:', err);
+                alert('Could not update verification status. Please try again.');
             });
         }
 

@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/users/<str:user_id>/applications/', views.user_applications, name='user_applications'),
     path('api/users/<str:user_id>/conversations/', views.user_conversations, name='user_conversations'),
     path('api/users/<str:user_id>/suspend/', views.suspend_user, name='suspend_user'),
+    path('api/users/<str:user_id>/verify/', views.set_user_verified, name='set_user_verified'),
     path('api/users/<str:user_id>/', views.delete_user, name='delete_user'),
 
     # Jobs

@@ -273,6 +273,7 @@ def user_public_dict(user):
         'profession': user.profession,
         'skills': user.skills,
         'avatar': user.avatar,
+        'verified': bool(user.is_verified),
         'source': 'profile',
     }
 
@@ -300,6 +301,7 @@ def me(request):
         'role': user.role,
         'avatar': user.avatar,
         'suspended': user.suspended,
+        'verified': bool(user.is_verified),
         'isAdminAccount': user.is_admin_account,
         'settings': user.settings or {},
         'seenJobIds': user.seen_job_ids or [],
@@ -354,6 +356,7 @@ def job_to_dict(job, like_count=None, comment_count=None, liked=False, saved=Fal
         'authorAvatar': job.author_avatar,
         'authorRole': job.author_role,
         'authorSkills': job.author_skills,
+        'authorVerified': bool(job.user.is_verified) if job.user_id else False,
         'likeCount': job.like_count if like_count is None else like_count,
         'likedByMe': bool(liked),
         'commentCount': job.comment_count if comment_count is None else comment_count,
@@ -394,6 +397,7 @@ def comment_to_dict(c):
         'userId': external_id(c.user) if c.user_id else None,
         'author': c.author_name,
         'authorAvatar': c.author_avatar,
+        'authorVerified': bool(c.user.is_verified) if c.user_id else False,
         'text': c.text,
         'createdAt': c.created_at.isoformat() if c.created_at else None,
     }
@@ -409,6 +413,7 @@ def message_to_dict(m):
         'senderRole': m.sender_role,
         'senderName': m.sender_name,
         'senderAvatar': m.sender_avatar,
+        'senderVerified': bool(m.sender.is_verified),
         'text': m.text,
         'createdAt': m.created_at.isoformat() if m.created_at else None,
         'readBySeeker': m.read_by_seeker,
@@ -612,6 +617,7 @@ def list_users(request):
             'avatar': u.avatar,
             'createdAt': u.created_at.isoformat() if u.created_at else None,
             'suspended': bool(u.suspended),
+            'verified': bool(u.is_verified),
         }
         for u in users
     ], safe=False)
@@ -638,6 +644,7 @@ def search_users(request):
             'profession': u.profession,
             'skills': u.skills,
             'avatar': u.avatar,
+            'verified': bool(u.is_verified),
         }
         for u in users
     ], safe=False)
@@ -741,6 +748,31 @@ def suspend_user(request, user_id):
         "message": "User suspended successfully" if suspended else "User unsuspended successfully",
         "id": user.id,
         "suspended": user.suspended,
+    })
+
+
+@csrf_exempt
+@require_http_methods(["PATCH"])
+def set_user_verified(request, user_id):
+    """Admin-only toggle for the Blue Verification Badge. Gated the same
+    way as suspend_user/delete_user - only a verified admin session can
+    call this, so a normal user (even editing their own profile via
+    sync_profile) has no path that can ever change is_verified."""
+    if not is_admin_session(request):
+        return _admin_denied()
+    data = _json_body(request)
+    verified = data.get("verified")
+    if not isinstance(verified, bool):
+        return JsonResponse({"message": "verified (true/false) is required"}, status=400)
+    user = resolve_user(user_id)
+    if not user:
+        return JsonResponse({"message": "User not found"}, status=404)
+    user.is_verified = verified
+    user.save(update_fields=['is_verified'])
+    return JsonResponse({
+        "message": "User verified successfully" if verified else "Verification removed",
+        "id": user.id,
+        "verified": user.is_verified,
     })
 
 
@@ -890,7 +922,7 @@ def job_comments(request, job_id):
         denied = require_login(request)
         if denied:
             return denied
-        comments = JobComment.objects.filter(job=job).order_by('id')
+        comments = JobComment.objects.filter(job=job).select_related('user').order_by('id')
         return JsonResponse([comment_to_dict(c) for c in comments], safe=False)
 
     if request.method == "POST":
@@ -935,7 +967,7 @@ def chat_messages(request, recruiter_id, seeker_id):
         return JsonResponse({"message": "You're not part of this conversation."}, status=403)
 
     if request.method == "GET":
-        msgs = ChatMessage.objects.filter(recruiter=recruiter, seeker=seeker).order_by('id')
+        msgs = ChatMessage.objects.filter(recruiter=recruiter, seeker=seeker).select_related('sender').order_by('id')
         return JsonResponse([message_to_dict(m) for m in msgs], safe=False)
 
     if request.method == "POST":
