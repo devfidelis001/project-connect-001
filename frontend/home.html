@@ -2054,9 +2054,10 @@
 
             function renderPersonCard(p) {
                 const subtitleParts = [p.role, p.profession, p.location].filter(Boolean);
+                const badge = verifiedBadgeHtml(!!p.verified);
                 return '<div class="mini-card" data-user-id="' + escapeHtml(resolvePersonId(p)) + '">' +
                     '<img src="' + (p.avatar || DEFAULT_AVATAR) + '" alt="">' +
-                    '<div class="mini-info"><h6>' + escapeHtml(p.name || 'User') + '</h6>' +
+                    '<div class="mini-info"><h6>' + escapeHtml(p.name || 'User') + badge + '</h6>' +
                     '<small>' + escapeHtml(subtitleParts.join(' • ')) + (p.skills ? ('<br>' + escapeHtml(p.skills)) : '') + '</small></div>' +
                     '<div class="mini-actions">' +
                     '<button class="mini-view-profile"><i class="bi bi-person-fill"></i> View Profile</button>' +
@@ -2272,6 +2273,7 @@
                     authorAvatar: row.authorAvatar,
                     authorRole: row.authorRole,
                     authorSkills: row.authorSkills,
+                    authorVerified: !!row.authorVerified,
                     likeCount: row.likeCount || 0,
                     likedByMe: !!row.likedByMe,
                     commentCount: row.commentCount || 0,
@@ -3095,7 +3097,10 @@
                     .catch(function () { return null; })
                     .then(function (profile) {
                         if (profile && currentModalUserId === userId) {
-                            populateUserModalHeader(Object.assign({}, profile, { verified: fallback && fallback.verified }));
+                            // Use the server's live verified value - never the
+                            // fallback's, which can be stale/absent (e.g. a
+                            // search result or an older cached post card).
+                            populateUserModalHeader(profile);
                         }
                     })
                     .catch(function () { });
